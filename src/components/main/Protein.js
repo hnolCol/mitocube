@@ -1,7 +1,7 @@
 import { useState } from "react";
 import React from "react";
 import { Link, } from "react-router-dom";
-import { Button, PopoverPosition } from "@blueprintjs/core";
+import { Button } from "@blueprintjs/core";
 import { MCIconWithTooltip } from "../utils/components/IconWithTooltip";
 import { MCTagButton } from "../utils/components/MCTagButton";
 import { MCAddButton } from "../utils/components/MCAddButton";
@@ -35,7 +35,7 @@ export function ProteinMainView(props) {
     const [featureIDs, setfeatureIDs] = useState({items:[],selected:"",invisible:[]}) 
     const [experimentInfo, setExperimentInfo] = useState({isOpen:false,"dataID":undefined,isSummary:false})
     const [dataForTable , setDataForTable] = useState({isOpen:false,data:null,columnNames:[],title:"Data View",fileNameID:"download"})
-    console.log(QueryParam().get("q"))
+    //console.log(QueryParam().get("q"))
     // experimental info request (e.g. opening drwaer)
 
 

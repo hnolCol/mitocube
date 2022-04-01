@@ -66,7 +66,7 @@ class ChartDataForFeatures(Resource):
                         for groupName2 in groupings[groupingNames[1]].keys():
                             
                             groupData = groupedBoxData.get_group((groupName1,groupName2))
-                            groupData["value"] = groupData["value"].replace({np.nan: None})
+                            groupData.loc[:,"value"] = groupData["value"].replace({np.nan: None})
 
                             vv = dict([(idx,value) for idx,value in groupData.loc[:,[quantileColumnName,"value"]].values])
                             vv["fillColor"] = groupingColors[groupingNames[1]][groupName2]

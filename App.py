@@ -28,11 +28,12 @@ app = Flask(__name__,
 api = Api(app)
 
 #defin improtant paths
+pathToTokens = os.path.join(app.root_path,"backend","data","dynamic","tokens.json")
 pathToData = os.path.join(app.root_path,"backend","data","static","datasets")
 pathToDB = os.path.join(app.root_path,"backend","data","static","dbs","uniprot")
 pathToAPIConfig = os.path.join(app.root_path,"backend","config","docs")
 #define data helpers
-tokenManager = Token()
+tokenManager = Token(pathToTokens)
 dbManager = DBFeatures(pathToDB=pathToDB)
 dataManger = Data(pathToData,pathToAPIConfig,dbManager)
 

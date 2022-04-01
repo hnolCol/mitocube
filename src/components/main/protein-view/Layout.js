@@ -21,7 +21,7 @@ export function MCMenuIcon(props) {
                   <svg width = {props.size} height={props.size} viewBox="0 0 20 20">
                     {[0.25,0.5,0.75].map(v => {
                       return(
-                        <line x1 = {0.15*20} x2 = {0.85*20}
+                        <line key = {v} x1 = {0.15*20} x2 = {0.85*20}
                         y1 = {v * 20} y2 = {v * 20} stroke="black" strokeWidth={0.75}/>
                       )
                     })}
@@ -145,14 +145,19 @@ export function MCProteinLayout(props) {
       axios.post('/api/features/cards' ,
             {featureIDs:props.featureIDItems,filter:{},columnNumber:columnNumbers,token:props.token}, 
             {headers : {'Content-Type': 'application/json'}}).then(response => {
-              if ("error" in response.data & response.data["error"] === "Token is not valid.") {
-                resetAuthStatus()
+              console.log(response.data)
+              if (response.status === 200){
+                const responseData = response.data
+                if ("error" in responseData & responseData["error"] === "Token is not valid.") {
+                  resetAuthStatus()
+                }
+                else if ("layout" in responseData) {
+                  const ll = {...responseData["layout"],...layoutAndCards.layout} //saved layout should overwrite "old" ones
+                  responseData["layout"] = ll
+                  setLayoutAndCards(responseData)
               }
-              else if ("layout" in response.data) {
-                const ll = {...response.data["layout"],...layoutAndCards.layout} //saved layout should overwrite "old" ones
-                response.data["layout"] = ll
-                setLayoutAndCards(response.data)
-            }
+              }
+              
         })
     }, [props.featureIDItems,layoutAndCards.layout,props.token, resetAuthStatus]);
     
@@ -161,7 +166,7 @@ export function MCProteinLayout(props) {
     // lastSavedLayout[props.selectedFeature.Entry]===undefined?layoutAndCards.layout[props.selectedFeature.Entry]:lastSavedLayout[props.selectedFeature.Entry]
     
     const localMitoCubeFilter = MCGetFilterFromLocalStorage()
-   
+    console.log(localMitoCubeFilter)
       return (
         
         <div style = {{paddingBottom:"50px"}}>
@@ -202,7 +207,7 @@ export function MCProteinLayout(props) {
                                   layoutAndCards.activeFilter.includes(v.filterName) || 
                                   removedItems.includes(v.id) || 
                                   removedItems.includes(v.id) || 
-                                  (v.filterName!=="Summary"&&!localMitoCubeFilter["Type"].includes(v.filterName))
+                                  (v.filterName!=="Summary"&&localMitoCubeFilter!==null&&!localMitoCubeFilter["Type"].includes(v.filterName))
                      
                       return(
                       <div className="card-frame" key={`${v.id}`} style={{visibility:cardHidden?"hidden":"visible"}}>

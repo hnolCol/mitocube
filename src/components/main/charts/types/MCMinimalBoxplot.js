@@ -396,7 +396,7 @@ export function MCMinimalBoxplot(props) {
                                     verticalAnchor="start" 
                                     textAnchor="start"
                                     fontSize={11}
-                                    fontWeight={isColorLegendItem?800:250}
+                                    fontWeight={isColorLegendItem  ||  i === 0?800:250}
                                     fill = {isColorLegendItem?legend[t]:legendTextProps.fill}
                                     width = {35}
                                     scaleToFit={"shrink-only"}>

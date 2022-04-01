@@ -18,7 +18,8 @@ __pycache__/
 # production
 /build
 /backend/data
-
+/backend/data/data.zip
+/backend/data.zip
 # misc
 .DS_Store
 .env.local

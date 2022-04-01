@@ -32,7 +32,7 @@ export function MCCardHeader(props){
                                 icon = {"calculator"} 
                                 text = {"ANOVA Statistics"}
                                 intent="success"
-                                minimal = {true}
+                                minimal = {"true"}
                                 onClick = {() => props.showDataInTable(statsData,columnNames,"ANOVA Statistic",`(${props.label}-${props.dataID})`)}/>:null}
                             
                             {!props.isSummary & props.dataID !== null?
@@ -40,7 +40,7 @@ export function MCCardHeader(props){
                                 icon={props.correlationShown?"stacked-chart":"heat-grid"} 
                                 text = {props.correlationShown?"Boxplot View":"Top20 correlation"}
                                 intent="primary" 
-                                minimal = {true}
+                                minimal = {"true"}
                                 // tooltipStr="Toggle between boxplot and correlated features (heatmap)."
                                 onClick = {() => props.requestCorrelatedFeatures(props.dataID,props.featureID)}
                                 />:null}
