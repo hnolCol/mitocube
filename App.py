@@ -15,9 +15,7 @@ from backend.helper.FeatureFinder import FeatureFinder
 #external package imports
 
 import os
-import sys
-import time
-import pickle
+
 
 
 #internal imports
@@ -61,4 +59,4 @@ def build_index():
         return render_template("index.html")#
 
 if __name__ == '__main__':
-    app.run(use_reloader=True, port=5000)
+    app.run(host='0.0.0.0', port=5000)
