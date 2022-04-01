@@ -145,7 +145,7 @@ export function MCProteinLayout(props) {
       axios.post('/api/features/cards' ,
             {featureIDs:props.featureIDItems,filter:{},columnNumber:columnNumbers,token:props.token}, 
             {headers : {'Content-Type': 'application/json'}}).then(response => {
-              console.log(response.data)
+              
               if (response.status === 200){
                 const responseData = response.data
                 if ("error" in responseData & responseData["error"] === "Token is not valid.") {
@@ -166,7 +166,7 @@ export function MCProteinLayout(props) {
     // lastSavedLayout[props.selectedFeature.Entry]===undefined?layoutAndCards.layout[props.selectedFeature.Entry]:lastSavedLayout[props.selectedFeature.Entry]
     
     const localMitoCubeFilter = MCGetFilterFromLocalStorage()
-    console.log(localMitoCubeFilter)
+    
       return (
         
         <div style = {{paddingBottom:"50px"}}>
@@ -193,7 +193,6 @@ export function MCProteinLayout(props) {
                 onBreakpointChange = {onBpChange}
                 margin = {[8,8]}
                 rowHeight={columnNumbers[breakpoint] < 5 ? 150: 100}
-                
               >
 
                 {Object.keys(layoutAndCards.cards).map(featureKey => {

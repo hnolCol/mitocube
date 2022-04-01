@@ -440,10 +440,12 @@ class Data(object):
         boxplotData = groupedData.quantile(q=[0,0.25,0.5,0.75,1]).reset_index() 
         quantileColumnName = "level_{}".format(len(groupingNames)) # get name for quantile
         boxplotData[quantileColumnName] = boxplotData[ quantileColumnName].replace([0,0.25,0.5,0.75,1],["min","q25","m","q75","max"])
-
-        statsData = anova(meltedData,dv="value",between=groupingNames)
-        statsData.columns = [pingouinColumn[colName] if colName in pingouinColumn else colName for colName in statsData.columns]
+        try:
+            statsData = anova(meltedData,dv="value",between=groupingNames)
+            statsData.columns = [pingouinColumn[colName] if colName in pingouinColumn else colName for colName in statsData.columns]
         # ´handle data extraction depending on the number of groupings
+        except:
+            statsData = pd.DataFrame(["ANOVA could not be calculted."], columns=["Error"])
         v = []
         if len(groupingNames) == 1:
             for groupName,groupData in boxplotData.groupby(groupingNames):

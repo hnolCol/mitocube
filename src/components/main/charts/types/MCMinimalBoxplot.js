@@ -373,7 +373,7 @@ export function MCMinimalBoxplot(props) {
                 <rect 
                     x={highlightDetails[2]-4} 
                     y = {mouseOverY} 
-                    width={55+8} 
+                    width={60+8} 
                     height={12*mouseOverBoxplotDetails.length+8} 
                     opacity={1} 
                     fill={"#e8e8e8"}/>
@@ -395,10 +395,10 @@ export function MCMinimalBoxplot(props) {
                                     y ={mouseOverY+(12*i)+4} 
                                     verticalAnchor="start" 
                                     textAnchor="start"
-                                    fontSize={11}
-                                    fontWeight={isColorLegendItem  ||  i === 0?800:250}
+                                    fontSize={12}
+                                    fontWeight={isColorLegendItem  ||  i === 0?700:250}
                                     fill = {isColorLegendItem?legend[t]:legendTextProps.fill}
-                                    width = {35}
+                                    width = {40}
                                     scaleToFit={"shrink-only"}>
                                         {t}
                                 </Text>

@@ -63,7 +63,7 @@ class DatasetExperimentalInfo(Resource):
     def get(self):
         token = request.args.get('token', default="None", type=str)
         if token == "None" or not self.token.isValid(token):
-            return {"error":"Token is not valid."}
+            return {"error":"Token is not valid.","success":False}
         dataID = request.args.get('dataID', default="None", type=str)
         succes, params = self.data.getExperimentalInformation(dataID=dataID)
         if succes:

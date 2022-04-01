@@ -70,7 +70,7 @@ class OmnibarSearch extends React.Component {
     if (filteredItems.length > 200){
       filteredItems = filteredItems.slice(1,50)
     }
-    return(filteredItems)
+    return(_.sortBy(filteredItems,"Gene names  (primary )"))
 }
 
  
