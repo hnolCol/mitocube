@@ -1,13 +1,25 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
 
+import reportWebVitals from './reportWebVitals';
+import { BrowserRouter } from "react-router-dom";
+
+import "@blueprintjs/icons/lib/css/blueprint-icons.css";
+import "@blueprintjs/core/lib/css/blueprint.css";
+import "@blueprintjs/popover2/lib/css/blueprint-popover2.css"
+import "@blueprintjs/select/lib/css/blueprint-select.css"
+import "@blueprintjs/table/lib/css/table.css"
+
+import "react-grid-layout/css/styles.css"
+import "react-resizable/css/styles.css"
+import App from './App';
 ReactDOM.render(
-  <React.StrictMode>
+ 
+    <BrowserRouter>
     <App />
-  </React.StrictMode>,
+    </BrowserRouter>
+  ,
   document.getElementById('root')
 );
 

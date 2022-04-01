@@ -1,0 +1,108 @@
+{
+
+    "welcome-text" : "Welcome to the MitoCube API docs.",
+    "info-text" : "The MitoCube separtes between feature-specific (e.g. protein or peptide) and data-set specific requests.",
+    "base-url" : "https://mitocube.com/api/",
+    "pw": "",
+    "side-menu" : {
+        "main" : [
+            "Feature",
+            "Data set"
+        ],
+        "sub" : {
+            "Feature" : [
+
+
+            ],
+            "Data set" : [
+
+            ]
+        }
+        
+    },
+    "api":{
+        "entries": [
+            {
+                "sub":"dataset",
+                "id":"dataset/summary",
+                "method":"get",
+                "description":"Returns datasets summary as a JSON object such as name, short description and dataID."
+            },
+            {
+                "sub":"dataset",
+                "id":"dataset/params",
+                "method":"get",
+                "fields" : ["dataID"],
+                "description":"Returns a dataset's parameter file as a JSON object containing groupings and expression values."
+            },
+            {
+                "sub":"dataset",
+                "id":"dataset/details",
+                "method":"get",
+                "fields" : ["dataID"],
+                "description":"Returns details about a specific dataset such as the experimental procedure including the meterial used, the species."
+            },
+            {
+                "sub":"dataset",
+                "id":"dataset/groupings",
+                "method":"get",
+                "fields" : ["dataID"],
+                "description":"Returns groupings (object) and groupingNames (list) defined in the parameter file as a JSON object. These groupings are also used to calculate pairwise statistics."
+            },
+            {
+                "sub":"features",
+                "id":"",
+                "method":"get",
+                "fields" : ["filter"],
+                "description":"Returns a JSON object containing a information about the features present in the MitoCube."
+            },
+            {
+                "sub":"features",
+                "id":"features/datasets",
+                "method":"get",
+                "fields" : ["featureIDs","filter"],
+                "description":"Returns a JSON object containing the datasets in which this feature was detected."
+            },
+            {
+                "sub":"features",
+                "id":"features/charts",
+                "method":"get",
+                "fields" : [""],
+                "description":"Returns a JSON providing the available chartIDs."
+            },
+            {
+                "sub":"features",
+                "id":"features/charts/data",
+                "method":"post",
+                "fields" : ["featureIDs","chartID"],
+                "description":"Returns a JSON object containing the data for the given featureID and chartID."
+            },
+            {
+                "sub":"features",
+                "id":"features/charts/data/correlation",
+                "method":"post",
+                "fields" : ["featureIDs","dataID"],
+                "description":"Returns a JSON object containing the data for the given featureID (list/array) and dataID(string)."
+            },
+            {
+                "sub":"features",
+                "id":"features/cards",
+                "method":"post",
+                "fields" : ["featureIDs","filter","columnNumber"],
+                "description":"Returns a JSON object the layout for the react-grid for each featureID in feautureIDs (list). The columnNumber is a dict/object looking like {lg:12,md:5,s:5} where the keys are the breakpoints."
+            }
+
+        ],
+        "detail-params" : ["Creation Date","Experimentator","groupingNames"],
+        "filter-params" : ["Type","Organism"],
+        "data-presentation" : ["Creation Date","shortDescription","Type","Organism","Experimentator"],
+        "data-presentation-sort-by" : ["Organism","Type","Creation Date"],
+        "db-summary-params" : ["Subcellular location [CC]","Function [CC]","Domain [CC]","Gene ontology (cellular component)","Interacts with","ComplexName","MitoCarta3.0_List","MitoCarta3.0_Evidence","MitoCarta3.0_SubMitoLocalization","MitoCarta3.0_MitoPathways","MitoCoP","MitoCoP disease gene","MitoCoP disease association",	"Functional MitoCoP classification","MitoCoP","MitoCoP disease gene"],
+        "experiment-procedure-params" : ["Creation Date","Publication","Experimental Info","Experimentator"],
+        "short-cut-filter-param" : "Type",
+        "short-cut-colors" : ["#365072","#6e5b7b","#b66476","#e8696e","#eaac89","#8c7f77"]
+        
+        
+    } 
+
+}
