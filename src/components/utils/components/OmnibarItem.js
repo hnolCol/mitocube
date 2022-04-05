@@ -58,7 +58,8 @@ export function OmnibarItem(props) {
         text={text} 
         onMouseOver = {(e) => (e.stopPropagation())}
         /> */}
-        <div style={{fontSize:"10px",marginTop:"3px",marginLeft:"10px",paddingBottom:"10px",clear: "both", wordWrap:"break-word"}}>
+        <div style={{fontSize:"10px",marginTop:"2px",marginLeft:"10px",paddingBottom:"4px",clear: "both", wordWrap:"break-word"}}>
+            <p>{`Synonyms: ${item["Gene names"]}`}</p>
             <p className="item-organism">{item["Organism"]}</p>
             <p>{item["Protein names"]}</p>
         </div>

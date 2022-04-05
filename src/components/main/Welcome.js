@@ -63,14 +63,14 @@ export function Welcome(props) {
          </div>
           
           
-          <p>MitoCube offers protein-centric searches to explore the expression of a protein in all datasets.</p>
+          <p>MitoCube offers protein-centric searches to explore the expression of a protein in all acquired proteomic datasets.</p>
           
           {props.isAuthenthicated?
             <div className="tag-container-evenly">
 
               <Link to="/protein"><MCProteinSearchIcon/></Link>
               <Link to="/dataset"><MCDatasetSearchIcon/></Link>
-            
+              
             </div>
           :
           <div>

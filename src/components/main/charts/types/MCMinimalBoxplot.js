@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { localPoint } from '@visx/event';
 import { Text } from '@visx/text';
 import { scaleLinear } from '@visx/scale';
+import { getLuma } from '../../../utils/Misc';
 
 
 const legendTextProps = {textAnchor:"start",
@@ -167,7 +168,7 @@ export function MCMinimalBoxplot(props) {
                     legendItems[highlightDetails[1]],
                     `m=${Math.round(values[highlightDetails[0]][highlightDetails[1]].m*100)/100}`,
                     `n=${values[highlightDetails[0]][highlightDetails[1]].n}`
-                ]
+                ].filter((v) => v!=="")
                     :
                     undefined
                  //highlightDetails[0] === i && highlightDetails[1] === ii
@@ -260,6 +261,28 @@ export function MCMinimalBoxplot(props) {
                 )
                 
             })}
+            {labelText!==undefined?<g>
+                        <Text 
+                        x = {x+width-marginRight-2}
+                        y = {y+marginTop+2}
+                        textAnchor={"end"}
+                        verticalAnchor={"start"}
+                        fontSize = {8}
+                        >
+                            {Math.round(maxValue*10)/10}
+
+                        </Text>
+                        <Text 
+                        x = {x+width-marginRight-2}
+                        y = {y+height-marginBottom-2}
+                        textAnchor={"end"}
+                        verticalAnchor={"end"}
+                        fontSize = {8}
+                        >
+                            {Math.round(minValue*10)/10}
+
+                        </Text>
+                        </g>:null}
 
             {labelText!==undefined?
             props.vertical?
@@ -387,6 +410,10 @@ export function MCMinimalBoxplot(props) {
                         
                         mouseOverBoxplotDetails.map((t,i)=>{
                             const isColorLegendItem = legendItems.includes(t)
+                            var rgbColor = isColorLegendItem?legend[t]:legendTextProps.fill
+                            if (getLuma(rgbColor) > 220){
+                                rgbColor = "black"
+                            }
                             return(
                                 
                                 <Text 
@@ -397,7 +424,7 @@ export function MCMinimalBoxplot(props) {
                                     textAnchor="start"
                                     fontSize={12}
                                     fontWeight={isColorLegendItem  ||  i === 0?700:250}
-                                    fill = {isColorLegendItem?legend[t]:legendTextProps.fill}
+                                    fill = {rgbColor }
                                     width = {35}
                                     scaleToFit={"shrink-only"}>
                                         {t}

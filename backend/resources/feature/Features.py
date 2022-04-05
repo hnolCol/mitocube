@@ -36,7 +36,7 @@ class FeatureSummary(Resource):
             data = json.loads(request.data, strict=False)
             if "featureIDs" in data:
                 featureIDs = data["featureIDs"]
-                featureFilter = getFilterFromRequest(request)
+                #featureFilter = getFilterFromRequest(request)
                 return self.featureFinder.getSummaryInformation(featureIDs)
 
 

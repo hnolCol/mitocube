@@ -65,7 +65,7 @@ class OmnibarSearch extends React.Component {
                 
     const re = new RegExp(_.escapeRegExp(searchString), 'i')
     
-    const isMatch = result => re.test(result.Entry) | re.test(result["Protein names"]) | re.test(result["Gene names  (primary )"])
+    const isMatch = result => re.test(result.Entry) | re.test(result["Protein names"]) | re.test(result["Gene names  (primary )"]) | re.test(result["Gene names"])
     var filteredItems = _.filter(this.state.items, isMatch)
     if (filteredItems.length > 200){
       filteredItems = filteredItems.slice(1,50)

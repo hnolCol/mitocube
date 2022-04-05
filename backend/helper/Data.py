@@ -10,6 +10,17 @@ from scipy.stats import zscore
 import seaborn as sns 
 from pingouin import anova
 from decouple import config
+Set6 = ["#444444", "#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99",
+            "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6", "#6a3d9a"]
+Set7 = ["#f0f0f1","#99999c","#3b9673","#f0ab04","#11395d","#bc3618"]
+customColors = dict(
+    [("Set6",Set6),
+     ("Set7",Set7)]
+)
+for paletteName, colorList in customColors.items():
+    sns.palettes.SEABORN_PALETTES[paletteName] = colorList
+
+
 pingouinColumn = {"SS":"Sum of squares", "F":"F-values","MS" : "Mean squares","DF":"Degree of freedom","p-unc":"p-value (uncorrected)"}
 
 DB_ENTRY_COLUMN = "Entry"
@@ -428,15 +439,15 @@ class Data(object):
         
         if groupings is None: return {}
         groupingNames = list(groupings.keys())
-        groupingColormaps = self.getParam(dataID,"groupingCmap")
-        colorsForGroupings = dict([(groupingName,sns.color_palette(groupingColormaps[groupingName],n_colors=len(groupings[groupingName]),desat=0.75).as_hex()) for groupingName in groupingNames if groupingName in groupingColormaps])
+        #groupingColormaps = self.getParam(dataID,"groupingCmap")
+        #colorsForGroupings = dict([(groupingName,sns.color_palette(groupingColormaps[groupingName],n_colors=len(groupings[groupingName]),desat=0.75).as_hex()) for groupingName in groupingNames if groupingName in groupingColormaps])
       #  groupingColors = dict([(groupingName, dict([(groupName,colorsForGroupings[groupingName][n]) for n,groupName in enumerate(groupings[groupingName].keys())])) for groupingName in groupingNames])
                 
         #get data (quantiles for boxplot)
-        tickLabel = [group for group in groupings[groupingNames[0]].keys()]
+        
         minValue, maxValue = meltedData["value"].quantile(q=[0,1]).values
         marginRange = np.sqrt(maxValue**2 - minValue**2) * 0.05
-        groupedData = meltedData.groupby(by = groupingNames) #level_X == quantile due to reset_index
+        groupedData = meltedData.groupby(by = groupingNames,sort=False) #level_X == quantile due to reset_index
         boxplotData = groupedData.quantile(q=[0,0.25,0.5,0.75,1]).reset_index() 
         quantileColumnName = "level_{}".format(len(groupingNames)) # get name for quantile
         boxplotData[quantileColumnName] = boxplotData[ quantileColumnName].replace([0,0.25,0.5,0.75,1],["min","q25","m","q75","max"])
@@ -445,22 +456,26 @@ class Data(object):
             statsData.columns = [pingouinColumn[colName] if colName in pingouinColumn else colName for colName in statsData.columns]
         # ´handle data extraction depending on the number of groupings
         except:
-            statsData = pd.DataFrame(["ANOVA could not be calculted."], columns=["Error"])
+            statsData = pd.DataFrame(["ANOVA could not be calculated."], columns=["Error"])
         v = []
         if len(groupingNames) == 1:
-            for groupName,groupData in boxplotData.groupby(groupingNames):
+            tickLabel = [""]
+            for groupName,groupData in boxplotData.groupby(groupingNames,sort=False):
+                groupData.loc[:,"value"] = groupData["value"].replace({np.nan: None})
                 N = groupedData.get_group(groupName).dropna(subset=["value"]).index.size
                 vv = dict([(idx,value) for idx,value in groupData.loc[:,[quantileColumnName,"value"]].values])
                 vv["fillColor"] = groupingColorMapper[groupingNames[0]][groupName]
                 vv["n"] = N
                 v.append(vv)
-            legendData = {}
-            legendTitle = ""
+            legendTitle = groupingNames[0]
+            legendData = groupingColorMapper[legendTitle]
+            v = [v]
+            #return {"success":True,"download":meltedData.to_json(orient="records"),"chart":chartData,"statsData":statsData.to_json(orient="records")}
         elif len(groupingNames) == 2:
-            
+            tickLabel = [group for group in groupings[groupingNames[0]].keys()]
             #calculate statistics
-        
-            groupedBoxData = boxplotData.groupby(groupingNames)
+
+            groupedBoxData = boxplotData.groupby(groupingNames,sort=False)
             for groupName1 in groupings[groupingNames[0]].keys():
                 vi = []
                 for groupName2 in groupings[groupingNames[1]].keys():
@@ -471,8 +486,7 @@ class Data(object):
 
                     vv = dict([(idx,value) for idx,value in groupData.loc[:,[quantileColumnName,"value"]].values])
                     vv["fillColor"] = groupingColorMapper[groupingNames[1]][groupName2]
-                    vv["n"] = N
-                    
+                    vv["n"] = N  
                     vi.append(vv)
                 v.append(vi)
             legendTitle = groupingNames[1]
@@ -483,21 +497,21 @@ class Data(object):
                     
             #print(v)
             
-            chartData = {"graphType":{"1":"boxplot"},
-                            "graphData":{
-                                "1":{
-                                    "minValue" : minValue - marginRange,
-                                    "maxValue" : maxValue + marginRange,
-                                    "values" : v,
-                                    "title" : "",
-                                    "featureNames" : tickLabel,
-                                    "legend" : legendData,
-                                    "legendTitle" : legendTitle
-                                }
-                                }, 
-                            
-                }
-            
-            #print(chartData)
+        chartData = {"graphType":{"1":"boxplot"},
+                        "graphData":{
+                            "1":{
+                                "minValue" : minValue - marginRange,
+                                "maxValue" : maxValue + marginRange,
+                                "values" : v,
+                                "title" : "",
+                                "featureNames" : tickLabel,
+                                "legend" : legendData,
+                                "legendTitle" : legendTitle
+                            }
+                            }, 
+                        
+            }
+        
+        #print(chartData)
 
-            return {"success":True,"download":meltedData.to_json(orient="records"),"chart":chartData,"statsData":statsData.to_json(orient="records")}
+        return {"success":True,"download":meltedData.to_json(orient="records"),"chart":chartData,"statsData":statsData.to_json(orient="records")}

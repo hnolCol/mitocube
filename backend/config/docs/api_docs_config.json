@@ -95,10 +95,10 @@
         ],
         "detail-params" : ["Creation Date","Experimentator","groupingNames"],
         "filter-params" : ["Type","Organism"],
-        "data-presentation" : ["Creation Date","shortDescription","Type","Organism","Experimentator"],
+        "data-presentation" : ["Creation Date","shortDescription","Material","Type","Organism","Experimentator"],
         "data-presentation-sort-by" : ["Organism","Type","Creation Date"],
-        "db-summary-params" : ["Subcellular location [CC]","Function [CC]","Domain [CC]","Gene ontology (cellular component)","Interacts with","ComplexName","MitoCarta3.0_List","MitoCarta3.0_Evidence","MitoCarta3.0_SubMitoLocalization","MitoCarta3.0_MitoPathways","MitoCoP","MitoCoP disease gene","MitoCoP disease association",	"Functional MitoCoP classification","MitoCoP","MitoCoP disease gene"],
-        "experiment-procedure-params" : ["Creation Date","Publication","Experimental Info","Experimentator"],
+        "db-summary-params" : ["Gene names","Subcellular location [CC]","Function [CC]","Domain [CC]","Gene ontology (cellular component)","Interacts with","ComplexName","MitoCarta3.0_List","MitoCarta3.0_Evidence","MitoCarta3.0_SubMitoLocalization","MitoCarta3.0_MitoPathways","MitoCoP","MitoCoP disease gene","MitoCoP disease association",	"Functional MitoCoP classification","MitoCoP","MitoCoP disease gene"],
+        "experiment-procedure-params" : ["Creation Date","Material","Publication","Experimental Info","Experimentator"],
         "short-cut-filter-param" : "Type",
         "short-cut-colors" : ["#365072","#6e5b7b","#b66476","#e8696e","#eaac89","#8c7f77"]
         

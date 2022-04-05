@@ -1,4 +1,4 @@
-import { H3, PopoverPosition } from "@blueprintjs/core";
+import { H3 } from "@blueprintjs/core";
 import React from "react";
 import {useLocation, Link, Outlet} from 'react-router-dom';
 

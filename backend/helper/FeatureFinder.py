@@ -67,7 +67,7 @@ class FeatureFinder(object):
             if len(featureIDs) == 0:
                 featureIDs = self.getFeatures(filter)
             
-            return self.DB.getDBInfoForFeatureList(featureIDs,requiredColNames=["Entry","","Protein names","Gene names  (primary )","Organism"])
+            return self.DB.getDBInfoForFeatureList(featureIDs,requiredColNames=["Entry","","Protein names","Gene names","Gene names  (primary )","Organism"])
         return []
        
     def getSummaryInformation(self,featureIDs,filter = {"Type" : "Whole proteome"}):

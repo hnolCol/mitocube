@@ -179,9 +179,22 @@ export function ProteinMainView(props) {
                 title={experimentInfo.isSummary?"Protein Summary":"Experimental Information"}
                 token = {props.token}/>
 
-      <MCDialog children={<MCDataFilter onClose = {setFilterDialogOpen}/>} isOpen={filterDialogOpen} onClose = {setFilterDialogOpen}/>
-      <MCDialog children={<MCSettings  onClose = {setSettingDialogOpen}/>} isOpen = {settingDialogOpen} onClose = {setSettingDialogOpen} title="MitoCube Settings"/>
-      <MCDialog children={<MCDataSummary onClose={setDataSummaryDialogOpen} token={props.token}/>} isOpen={dataSummaryDialogOpen} onClose={setDataSummaryDialogOpen} title="Data Summary" style = {{minWidth:"90%"}}/>
+      <MCDialog children={<MCDataFilter 
+                onClose = {setFilterDialogOpen} 
+                title={"Dataset Filtering Settings"}/>} 
+                isOpen={filterDialogOpen} 
+                onClose = {setFilterDialogOpen}/> 
+      <MCDialog children={<MCSettings  onClose = {setSettingDialogOpen}/>} 
+                isOpen = {settingDialogOpen} 
+                onClose = {setSettingDialogOpen} 
+                title="MitoCube Settings"/>
+      <MCDialog children={<MCDataSummary 
+                  onClose={setDataSummaryDialogOpen} 
+                  token={props.token}/>} 
+                  isOpen={dataSummaryDialogOpen} 
+                  onClose={setDataSummaryDialogOpen} 
+                  title="Data Summary" 
+                  style = {{minWidth:"90%"}}/>
       {!allItemsHidden?
 
         <MCProteinLayout 

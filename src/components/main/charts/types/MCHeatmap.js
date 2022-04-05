@@ -9,6 +9,8 @@ fill:"#262626"
 }
 
 
+
+
 export function MCHeatmap (props) {
 
     const {width, height, values, groupingColors, groupingLegend, featureNames} = props
@@ -62,8 +64,9 @@ export function MCHeatmap (props) {
                     {...legendTextProps}>Z-Score</Text>
             </g>:null}
             {marginForGroupingLegend>marginBetweenGroupsAndHeat && renderHeatmap?Object.keys(groupingLegend).map((groupingName,ig) => {
-                const gropingColor = groupingLegend[groupingName]
-                const groupNames = Object.keys(gropingColor)
+                const groupingColor = groupingLegend[groupingName]
+                
+                const groupNames = Object.keys(groupingColor)
                 const legendY = margin.top + binHeight * ig
                 const widthPerLegendItem = (heatmapWidth) / groupNames.length
                 return(
@@ -71,9 +74,9 @@ export function MCHeatmap (props) {
                     const legendItemStart = margin.left + widthPerLegendItem * i 
                     return(
                         <g key = {`${i}${ig}-legend.item`}>
-                        <rect x={legendItemStart} y = {legendY+2} width={binWidth} height={binHeight-2} fill = {gropingColor[v]} {...props.heatmapRectProps}/>
+                        <rect x={legendItemStart} y = {legendY+2} width={10} height={binHeight-2} fill = {groupingColor[v]} {...props.heatmapRectProps}/>
                         <Text
-                        x = {legendItemStart+22}
+                        x = {legendItemStart+18}
                         y = {legendY+2+(binHeight-2)/2}
                         {...legendTextProps}
                         >
