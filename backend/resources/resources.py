@@ -1,9 +1,10 @@
 from .dataset.Summary import DatasetsSummary
 from .dataset.Params import DatasetParams
-from .dataset.Details import DatasetDetails, DatasetGroupings, DatasetExperimentalInfo
+from .dataset.Details import DatasetDetails, DatasetGroupings, DatasetExperimentalInfo, DatasetsHeatmap, DatasetsVolcano
 from .feature.Features import Features, FeaturesInDatasets, FeatureDetails, FeatureDBInfo, FeatureSummary
 from .feature.cards.Data import ChartDataForFeatures, CorrelationsToFeature
 from .feature.cards.Layout import CardLayout
+from .submission.ID import DataID, DataSubmissionDetails
 from .filter.Filter import Filter
 from .login.Login import LoginWebsite, TokenValid
 
@@ -92,8 +93,28 @@ mitoCubeResources = [
         "url":'/api/data/summary',
         "obj": DatasetsSummary,
         "reqKwargs" : ["data","token"]
+    },
+    {
+        "url":'/api/data/heatmap',
+        "obj": DatasetsHeatmap,
+        "reqKwargs" : ["data","token"]
+    },
+    {
+        "url":'/api/data/volcano',
+        "obj": DatasetsVolcano,
+        "reqKwargs" : ["data","token"]
+    },
+    ###Sample submission
+    {
+        "url":'/api/data/submission/id',
+        "obj": DataID,
+        "reqKwargs" : ["data","token"]
+    },
+    {
+        "url":'/api/data/submission/details',
+        "obj": DataSubmissionDetails,
+        "reqKwargs" : ["data","token"]
     }
-
     
 
     

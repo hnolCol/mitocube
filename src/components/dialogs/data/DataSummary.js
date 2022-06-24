@@ -11,18 +11,15 @@ export function  MCDataSummary (props) {
     
     const [dataSummary, setDataSummary] = useState({isLoading:true,data:[],columnNames:[],infoText:""})
     
-    
     const cellRenderer = (rowIndex,columnIndex) => {
         const columnNames = dataSummary.columnNames
         if (dataSummary.data === undefined){
             return <Cell> </Cell>}
-        else if (dataSummary.data[rowIndex][columnNames[columnIndex]] === null){
-            return <Cell></Cell>
+        else if (dataSummary.data[rowIndex] === undefined) return <Cell></Cell>
+        else if (dataSummary.data[rowIndex][columnNames[columnIndex]] === null) return <Cell></Cell>
+        else {
+            return <Cell wrapText={columnNames[columnIndex] === "shortDescription"}>{dataSummary.data[rowIndex][columnNames[columnIndex]]}</Cell>
         }
-    
-           
-        return <Cell wrapText={columnNames[columnIndex] === "shortDescription"}>{dataSummary.data[rowIndex][columnNames[columnIndex]]}</Cell>
-       
         }
 
 
@@ -62,7 +59,7 @@ export function  MCDataSummary (props) {
                {dataSummary.isLoading?<MCSpinner/>:
                     dataSummary.data.length > 0?
                         <Table2
-                            numRows={dataSummary.data.length}
+                            numRows={dataSummary.data.length+1}
                             enableMultipleSelection = {false}
                             forceRerenderOnSelectionChange={true}
                             selectionModes = {SelectionModes.ROWS_AND_CELLS}

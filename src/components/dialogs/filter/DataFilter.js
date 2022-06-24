@@ -58,7 +58,7 @@ export function  MCDataFilter (props) {
       }, []);
     
     return(
-        <div style={{margin:"0 1rem"}}>
+        <div style={{margin:"0 1rem",paddingTop:"0.4rem"}}>
             <p>Click on the filter tags do disable/enable them. Datasets that match any disabled tag will be filtered out. If all tags are disabled of a filter, only the summary card will be shown.</p>
             <div style={{overflowY:"scroll"}}>
             {Object.keys(availableFilter).map(filterHeader => {

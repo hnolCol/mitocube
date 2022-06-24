@@ -1,7 +1,8 @@
-import { Button, ButtonGroup, Menu, MenuItem, Icon } from "@blueprintjs/core";
+import { ButtonGroup, Menu, MenuItem } from "@blueprintjs/core";
 import { Popover2 } from "@blueprintjs/popover2";
 import { MCIndicatorCircle, MCMenuIcon } from "./Layout";
 import { downloadTxtFile, arrayOfObjectsToTabDel, downloadSVGAsText } from "../../utils/Misc";
+import { Link } from "react-router-dom";
 const saveSvgAsPng = require('save-svg-as-png')
 const imageOptions = {
     backgroundColor: 'white',
@@ -44,12 +45,15 @@ export function MCCardHeader(props){
                                 // tooltipStr="Toggle between boxplot and correlated features (heatmap)."
                                 onClick = {() => props.requestCorrelatedFeatures(props.dataID,props.featureID)}
                                 />:null}
-                            
+                            {props.dataID !== null?
+                            <Link style={{ textDecoration: 'none' }} to={`/dataset/${props.dataID}`} target="_blank" rel="noopener noreferrer"> 
+                                <MenuItem icon={"satellite"} minimal={"true"} intent={"danger"} text = {"Explore dataset"}/> 
+                            </Link>:null}
                             <MenuItem text="Save image" icon={"graph"} onClick={() => {
                                             saveSvgAsPng.saveSvgAsPng(document.getElementById(`${props.id}`), `MitoCubeImg(${props.label}-${props.dataID}).png`, imageOptions)}}/>
                             
                             <MenuItem text="Save svg" icon={"graph"} onClick={() => {
-                                            downloadSVGAsText(document.getElementById(`${props.id}`),`MitoCube(${props.label}-${props.dataID}).png`)}}/>
+                                            downloadSVGAsText(document.getElementById(`${props.id}`),`MitoCube(${props.label}-${props.dataID}).svg`)}}/>
                             
                             <MenuItem 
                                 text="Download data"

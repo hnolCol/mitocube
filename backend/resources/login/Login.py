@@ -13,7 +13,7 @@ class LoginWebsite(Resource):
         self.token = kwargs["token"]
         self.data = kwargs["data"]
         self.pwHash = generate_password_hash(self.data.getConfigParam("pw"))
-    
+        
     def post(self):
         "Returns features in data"
         data = json.loads(request.data, strict=False)

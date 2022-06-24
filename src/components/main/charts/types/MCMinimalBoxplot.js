@@ -180,8 +180,8 @@ export function MCMinimalBoxplot(props) {
     
     const mouseOverY = 
         highlightDetails!==undefined?
-            hoverBoxUp?scaleX(values[highlightDetails[0]][highlightDetails[1]].max)-12*mouseOverBoxplotDetails.length-10:
-                scaleX(values[highlightDetails[0]][highlightDetails[1]].min) + 10:
+            hoverBoxUp?scaleX(values[highlightDetails[0]][highlightDetails[1]].q75)-12*mouseOverBoxplotDetails.length-10:
+                scaleX(values[highlightDetails[0]][highlightDetails[1]].q25) + 10:
                     undefined
         
     //      values[highlightDetails[0]][highlightDetails[1]].min:values[highlightDetails[0]][highlightDetails[1]].max:undefined
@@ -197,7 +197,7 @@ export function MCMinimalBoxplot(props) {
             
             {/* plot legend */}
             {
-            marginForLegend > 0?
+            marginForLegend > 0 && Object.keys(legend).length < 20?
                 <g> 
                     <Text 
                         x = {x+marginLeft} 
@@ -235,7 +235,31 @@ export function MCMinimalBoxplot(props) {
                     })}
 
                 </g>
-            :null
+            :
+                        <g>
+                        <Text 
+                        x = {x+marginLeft} 
+                        y={y+1} 
+                        textAnchor={"start"} 
+                        verticalAnchor={"start"}
+                        fontSize = {11}
+                        fill = "#262626"
+                        scaleToFit = "shrink-only"
+                        >
+                            {legendTitle}
+                        </Text>
+                        <Text 
+                            x = {x+marginLeft} 
+                            y={legendY+6} 
+                            textAnchor={"start"} 
+                            verticalAnchor={"start"}
+                            fontSize = {11}
+                            fill = "#262626"
+                            scaleToFit = "shrink-only"
+                            >
+                                {"To many legend items. Please use tooltip to identify groups."}
+                        </Text>
+                        </g>
             }
         
             <g>
@@ -411,7 +435,7 @@ export function MCMinimalBoxplot(props) {
                         mouseOverBoxplotDetails.map((t,i)=>{
                             const isColorLegendItem = legendItems.includes(t)
                             var rgbColor = isColorLegendItem?legend[t]:legendTextProps.fill
-                            if (getLuma(rgbColor) > 220){
+                            if (getLuma(rgbColor) > 180){
                                 rgbColor = "black"
                             }
                             return(

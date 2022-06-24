@@ -1,7 +1,9 @@
+
+
+
 from ast import Or
-from errno import EADDRNOTAVAIL
-from importlib.resources import path
 from typing import OrderedDict
+import matplotlib
 import pandas as pd 
 import numpy as np 
 import os 
@@ -9,7 +11,19 @@ import json
 from scipy.stats import zscore
 import seaborn as sns 
 from pingouin import anova
+from sklearn import cluster
 from decouple import config
+import matplotlib.cm as cm
+from matplotlib.colors import ListedColormap, to_hex
+import scipy.cluster.hierarchy as sch
+from scipy.stats import f_oneway,ttest_ind
+import fastcluster
+import itertools
+from statsmodels.stats.multitest import multipletests
+
+from .Misc import buildRegex
+
+
 Set6 = ["#444444", "#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99",
             "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6", "#6a3d9a"]
 Set7 = ["#f0f0f1","#99999c","#3b9673","#f0ab04","#11395d","#bc3618"]
@@ -100,13 +114,17 @@ class DBFeatures(object):
                         DBInfo[DB.loc[entry,"Entry"]] = databaseInfo
                     return True, DBInfo
 
-    def getDBInfoForFeatureListByColumnName(self,featureIDs,columnName = "Gene names  (primary )"):
+    def getDBInfoForFeatureListByColumnName(self,featureIDs,columnName = "Gene names  (primary )",checkShape=True):
         ""
+        
         if columnName in self.DBs.columns:
             idxIntersection = self.DBs.index.intersection(featureIDs)
-        
+
             if idxIntersection.size == len(featureIDs):
                 return self.DBs.loc[featureIDs,columnName]
+            elif not checkShape:
+                
+                return self.DBs.loc[idxIntersection,columnName]
             else:
                 return pd.Series([self.DBs.loc[idx,columnName] if idx in idxIntersection else "-" for idx in featureIDs], index=featureIDs)
 
@@ -372,6 +390,7 @@ class Data(object):
                     XX = self.dfs[dataID]["data"].loc[corrHead.index,]
                     values = XX.loc[:,expColumns].values                
                     
+
                     if scale:
                         values = zscore(values,axis=1,nan_policy="omit")
                         maxValue = np.nanmax(np.abs(values.flatten()))
@@ -428,7 +447,258 @@ class Data(object):
             filterOptions[h] = pd.Series(availableOptions).unique().tolist() 
         return filterOptions
 
+    def getGroupingDetails(self,dataID, expColumns):
+        ""
+        groupings = self.getParam(dataID,"groupings") 
+        
+            
+        groupingNames = list(groupings.keys())
+        groupingMapper = self.getGroupingMapper(dataID)
+        groupingColorMapper = self.getGroupingColorMapper(dataID)
 
+        groupColorValues = OrderedDict()
+        groupingItems = OrderedDict()
+        for groupingName, groupingSpecMapper in groupingMapper.items():
+            hexColorValues = [groupingColorMapper[groupingName][groupingSpecMapper[colName]] for colName in expColumns]
+            groupColorValues[groupingName] = hexColorValues
+            #print(groupingMapper)
+            groupingItems[groupingName] = list(groupingColorMapper[groupingName].keys())
+
+        return groupings, groupingNames, groupingMapper, groupingColorMapper, groupColorValues, groupingItems
+
+    def getHeatmapData(self,dataID,anovaCutoff = 0.0001):
+        ""
+        if dataID in self.dfs:
+            expColumns = self.getExpressionColumns(dataID)
+            annotationColumn = self.getAPIParam("annotation-colum")
+            extraColumns = self.getAPIParam("extra-colums-in-dataset-heatmaps")
+            groupings, groupingNames, groupingMapper, groupingColorMapper, groupColorValues, groupingItems = self.getGroupingDetails(dataID,expColumns)
+            
+            X = self.dfs[dataID]["data"].dropna(subset=expColumns)
+            #print(X.index.size)
+            results = pd.DataFrame(index = X.index)
+            groupingName = groupingNames[0]
+            testGroupData = [X[columnNames].values for columnNames in groupings[groupingName].values()]
+            F,p = f_oneway(*testGroupData,axis=1)
+            oneWayANOVAColumnName = "p-1WANOVA({})".format(groupingName)
+            results[oneWayANOVAColumnName] = p
+            boolIdx = results.index[results[oneWayANOVAColumnName] < anovaCutoff]
+
+            if not np.any(boolIdx):
+                return False, "Signficance cutoff resulted in an empty data frame (e.g. no signficiantly different proteins)."
+
+            X = X.loc[boolIdx]
+           
+            values = X.loc[:,expColumns].values   
+            values = zscore(values,axis=1,nan_policy="omit")
+            maxValue = np.nanmax(np.abs(values.flatten()))
+           # print(values)
+            colorPalette = sns.color_palette("RdBu_r",n_colors=5).as_hex()
+            colorValues = np.linspace(-maxValue,maxValue,num=5).flatten().tolist()
+            rowLinkage = fastcluster.linkage(values, method ="complete", metric = "euclidean")   
+            maxD = 0.75*max(rowLinkage[:,2])
+            Z_row = sch.dendrogram(rowLinkage, orientation='left', color_threshold= maxD, 
+                                    leaf_rotation=90, ax = None, no_plot=True)
+            clusters = sch.fcluster(rowLinkage,16,'maxclust')
+           
+            vvs = pd.DataFrame(values,columns=expColumns)
+           
+            vvs = vvs.join([
+                pd.Series(clusters,name="clusterIndex"),
+                pd.Series(X.index,name="idx"),
+                pd.Series(self.dbManager.getDBInfoForFeatureListByColumnName(X.index,annotationColumn).values.flatten(), 
+                                name="annotationColumn").fillna("-"),
+                pd.Series(results.loc[X.index,oneWayANOVAColumnName].values, name=oneWayANOVAColumnName)
+                                ] + [
+                pd.Series(self.dbManager.getDBInfoForFeatureListByColumnName(X.index,colName).values.flatten(),
+                        name = colName).fillna("-") for colName in extraColumns])
+            columnNamesForExport = expColumns+["idx","clusterIndex","annotationColumn",oneWayANOVAColumnName]+extraColumns
+            #print(vvs)
+
+            #print([pd.Series(self.dbManager.getDBInfoForFeatureListByColumnName(X.index,colName).values.flatten(),
+             #                   name = colName).fillna("-") for colName in extraColumns])
+           # print([pd.Series(self.dbManager.getDBInfoForFeatureListByColumnName(X.index,colName).unique(),
+           #                     name = colName).fillna("-") for colName in extraColumns])
+            vvs = vvs.iloc[Z_row['leaves']]
+            values = vvs.loc[:,columnNamesForExport]
+            
+            columnsForClusterMedian = [colName for colName in columnNamesForExport if colName != oneWayANOVAColumnName]
+
+            nClusters = np.unique(clusters).size
+           
+            clusterMedians = vvs[columnsForClusterMedian].groupby("clusterIndex").agg("median")
+            clusterSize = vvs[columnsForClusterMedian].groupby("clusterIndex").agg("size")
+            clusterMediansT = clusterMedians.transpose()
+           
+            for groupingName in groupingNames:
+                clusterMediansT[groupingName] = [groupingMapper[groupingName][x] for x in clusterMediansT.index]
+            clustersMediansGrouped  = clusterMediansT.groupby(by=groupingNames, sort=False).agg("median").transpose()
+
+            #save group names and colors 
+            r = []
+            for x in clustersMediansGrouped.columns:
+                
+                if isinstance(x,tuple):
+                    x1,x2 = x 
+                    cs = groupingColorMapper[groupingNames[0]][x1],groupingColorMapper[groupingNames[1]][x2]
+                    r.append([x,cs])
+                elif isinstance(x,str):
+                    cs = groupingColorMapper[groupingNames[0]][x]
+                    r.append([[x],[cs]])
+
+            out = {
+                "legend" : {
+                        "groupingNames" : groupingNames,
+                        "groupingColorMapper" : groupingColorMapper,
+                        "groupingItems" : groupingItems,
+                        "groupingMapper" : groupingMapper
+                    },
+
+                "heatmap" : {
+                        "nColumns" : len(expColumns),
+                        "values" : values.values.tolist(),
+                        "groupColorValues" : groupColorValues,
+                        "colorPalette" : colorPalette,
+                        "colorValues" : colorValues,
+                        "clusterIndex" : vvs["clusterIndex"].values.flatten().tolist(),
+                        "columnNames" : columnNamesForExport,
+                        "dataID" : dataID,
+                        "nExtraColumns" : len(extraColumns)
+                    },
+                "clusterView" : {
+                    "clusterIndexValues" : clusterSize.index.values.tolist(),
+                    "values" : clustersMediansGrouped.values.tolist(),
+                    "clusterColors" : dict([(int(clusterSize.index.values[n]),hex) for n,hex in enumerate(sns.color_palette("Blues",n_colors=nClusters).as_hex())]),
+                    "nValuesInCluster" : clusterSize.values.tolist(),
+                    "hoverColorAndGroups" : r
+
+                }
+
+            }
+    #        n : 5,
+    # values : [[-1,2,3,4],[2,2,3,4,1,-3,-3,4,5,2],[1,2,1,-1],[1,2,1,-1],[1,2,1,-1]],
+    # nValuesInCluster : [3,400,5,6,6],
+    # clusterColors : ["red","green","blue","yellow","orange"]
+            return True, out
+        return False, "Unknwon error."
+
+    def getVolcanoData(self,dataID,grouping):
+        ""
+       
+        if dataID in self.dfs:
+
+            #check grouping
+            if "withinGrouping" not in grouping:
+                grouping["withinGrouping"] = "None"
+
+            expColumns = self.getExpressionColumns(dataID)
+            
+            annotationColumn = self.getAPIParam("annotation-colum")
+            filterColumns = self.getAPIParam("filters-in-volcano-plots")
+            highlightColumns = self.getAPIParam("highlight-in-volcano-plots")
+            highlightColumnSepForMenu = self.getAPIParam("highlight-in-volcano-plots-sep-cat-by")
+            #print(highlightColumnSepForMenu)
+            groupings, groupingNames, groupingMapper, groupingColorMapper, groupColorValues, groupingItems = self.getGroupingDetails(dataID,expColumns)
+            
+            d = self.dfs[dataID]["data"]
+            data = d.join([self.dbManager.getDBInfoForFeatureListByColumnName(d.index,colName,checkShape=False).fillna("-") for colName in filterColumns ]+ [self.dbManager.getDBInfoForFeatureListByColumnName(d.index,annotationColumn,checkShape=False).fillna("-")])
+            
+            data[filterColumns] = data[filterColumns].fillna("-")
+            
+
+            groupingName, group1, group2 = grouping["main"], grouping["group1"], grouping["group2"]
+            if groupingName in groupings and group1 in groupings[groupingName] and group1 in groupings[groupingName]:
+                columnNames1 = groupings[groupingName][group1]
+                columnNames2 = groupings[groupingName][group2]
+                if grouping["withinGrouping"] != "None" and grouping["withinGrouping"] in groupings and grouping["withinGroup"] in groupings[grouping["withinGrouping"]]:
+                    withinGroupingColumnNames = groupings[grouping["withinGrouping"]][grouping["withinGroup"]]
+
+                    columnNames1 = [colName for colName in columnNames1 if colName in withinGroupingColumnNames]
+                    columnNames2 = [colName for colName in columnNames2 if colName in withinGroupingColumnNames]
+               
+            #get highlight column data 
+            highlightFeatures = OrderedDict() 
+            highlightMenuBuilder = OrderedDict() 
+            if len(highlightColumns) > 0:
+                
+                data = data.join([self.dbManager.getDBInfoForFeatureListByColumnName(d.index,colName,checkShape=False).fillna("-") for colName in highlightColumns])
+                for highlightColumn in highlightColumns:
+                    
+                    splitData = data[highlightColumn].astype("str").str.split(";").values
+                    #get unique values 
+                    flatSplitDataList = list(set(itertools.chain.from_iterable(splitData)))
+                    vs = dict([(cat if highlightColumn not in highlightColumnSepForMenu else cat.split(">")[-1],data.index[data[highlightColumn].str.contains(buildRegex([cat],splitString=";")).fillna(False)].values.tolist()) for cat in flatSplitDataList if cat not in ["-","0"]])
+                    if 'nan' in vs:
+                        del vs['nan']
+
+                    # if highlightColumn in highlightColumnSepForMenu:
+                    #     #menuBuilder = OrderedDict() 
+                    #     menuBuilder  = dict([(item.split(">")[0].strip(),{}) for item in vs.keys()])
+                    #     maxLevel = np.max([len(item.split(">")) for item in vs.keys()])
+                    #     # print(maxLevel)
+                    #     # print(menuBuilder)
+                    #     for item in vs.keys():
+                    #         splitItems = [item.strip() for item in item.split(">")]
+
+                    #         if len(splitItems) == 2:
+                    #             continue
+                    #             if isinstance(menuBuilder[splitItems[0]],dict):
+                    #                 menuBuilder[splitItems[0]] = []
+                    #             menuBuilder[splitItems[0]].append(splitItems[1])
+                            
+                    #         elif len(splitItems) == 3:
+                    #             if splitItems[1] not in menuBuilder[splitItems[0]] and isinstance(menuBuilder[splitItems[0]],dict):
+                                   
+                    #                 menuBuilder[splitItems[0]][splitItems[1]] = []
+
+                    #             menuBuilder[splitItems[0]][splitItems[1]].append(splitItems[2])
+
+                    #     print(menuBuilder)   
+                    #     highlightMenuBuilder[highlightColumn] = highlightMenuBuilder     
+                        
+                    highlightFeatures[highlightColumn] = vs 
+
+            X = data.loc[:,columnNames1]
+            Y  = data.loc[:,columnNames2]
+            T,p = ttest_ind(X,Y,nan_policy="omit",axis=1)
+            # print(p)
+            boolIdx, p_adj, _, _ = multipletests(p,alpha=0.05,method="fdr_tsbky")
+            # print(p_adj)
+            diff = pd.DataFrame(pd.Series(d.loc[:,columnNames1].mean(axis=1) - d.loc[:,columnNames2].mean(axis=1), name="x"))
+            diff["y"] = (-1)*np.log10(p)
+            diff["s"] = boolIdx
+            
+            diff = diff.join(data[filterColumns + [annotationColumn]])
+            
+            diff = diff.reset_index()
+            # print(self.dbManager.getDBInfoForFeatureListByColumnName(X.index,annotationColumn,checkShape=False).values.flatten())
+            #diff = diff.join(pd.Series(self.dbManager.getDBInfoForFeatureListByColumnName(X.index,annotationColumn,checkShape=False).values.flatten(), 
+             #               name="l"))
+            diff[annotationColumn] = diff[annotationColumn].fillna("-")
+            diff = diff.dropna(subset=["x","y"])
+            # print(diff[filterColumns[0]].unique())
+
+            maxXValue, maxYValue = diff["x"].abs().max(), diff["y"].abs().max()
+            #print(diff)
+            xLabel = "log2FC {} vs {}".format(group1,group2) if grouping["withinGrouping"] == "None" else "log2FC {} vs {} - ({}:{})".format(group1,group2,grouping["withinGrouping"],grouping["withinGroup"])
+            
+            defaultColumns = ["x","y","s","Key",annotationColumn]
+            out = {
+                "points": diff[defaultColumns + filterColumns].values.tolist(),
+                "xDomain" : [-maxXValue-maxXValue*0.1,maxXValue+maxXValue*0.1],
+                "yDomain" : [maxYValue+maxYValue*0.1,-0.005*maxYValue],
+                "xlabel"  : xLabel,
+                "ylabel"  : "-log10 p-value",
+                "filterColumns" : [(colName,len(defaultColumns)+n) for n,colName in enumerate(filterColumns)],
+                "searchIndex" : [defaultColumns.index("Key"),defaultColumns.index(annotationColumn)],
+                "pointColumnNames" : [xLabel,"-log10 p-value","Significant","Key","Label"]+ filterColumns,
+                "highlightFeatures" : highlightFeatures,
+                #"highlightMenuBuilder" : highlightMenuBuilder.copy()
+            }
+            return True, out
+                
+
+        return False, None
 
     def getDataForCard(self,dataID,featureID,filterName):
         ""
@@ -439,12 +709,7 @@ class Data(object):
         
         if groupings is None: return {}
         groupingNames = list(groupings.keys())
-        #groupingColormaps = self.getParam(dataID,"groupingCmap")
-        #colorsForGroupings = dict([(groupingName,sns.color_palette(groupingColormaps[groupingName],n_colors=len(groupings[groupingName]),desat=0.75).as_hex()) for groupingName in groupingNames if groupingName in groupingColormaps])
-      #  groupingColors = dict([(groupingName, dict([(groupName,colorsForGroupings[groupingName][n]) for n,groupName in enumerate(groupings[groupingName].keys())])) for groupingName in groupingNames])
-                
-        #get data (quantiles for boxplot)
-        
+       
         minValue, maxValue = meltedData["value"].quantile(q=[0,1]).values
         marginRange = np.sqrt(maxValue**2 - minValue**2) * 0.05
         groupedData = meltedData.groupby(by = groupingNames,sort=False) #level_X == quantile due to reset_index

@@ -1,5 +1,18 @@
 import { useLocation } from "react-router-dom"
-import { useMemo } from "react";
+import { useMemo, useState, useCallback, useEffect, useLayoutEffect, useRef  } from "react";
+import {isObject } from "lodash";
+import _ from "lodash"
+
+
+export function useToggle(initialValue = false) {
+    const [value, setValue] = useState(initialValue);
+    const toggle = useCallback(() => {
+      setValue(v => !v);
+    }, []);
+    return [value, toggle];
+  }
+
+
 export function MCGetFilterFromLocalStorage(){
     const MCFilter = JSON.parse(localStorage.getItem("mitocube-filter"))
     return MCFilter
@@ -14,6 +27,33 @@ export function getMitoCubeToken() {
     const tokenString = localStorage.getItem("mitocube-token")
     return tokenString===undefined?"":tokenString
 }
+
+
+export function saveSubmission(submissionState) {
+    if (submissionState===null) {
+        localStorage.removeItem("mitocube-submission")
+    }
+    else 
+    {
+        const overwritten = localStorage.getItem("mitocube-submission") !== null 
+        localStorage.setItem("mitocube-submission",JSON.stringify(submissionState))
+       
+        return overwritten?"Saved. A previous submission was overwritten":"Submission saved in local storage."
+    }
+}
+
+export function getSavedSubmission() {
+    return JSON.parse(localStorage.getItem("mitocube-submission"))
+
+}
+
+
+export function getFeatureLists() {
+    const featureLists = localStorage.getItem("mitocube-lists")
+   
+    return featureLists===null ||  featureLists === undefined?{"List1":["O43181"]}:featureLists
+}
+
 
 export function downloadTxtFile (txtData,fileName) {
     const element = document.createElement("a");
@@ -35,13 +75,46 @@ export function getLuma(rgbColor) {
     return luma
 }
 
-export function arrayOfObjectsToTabDel(data){
-    if (data !== undefined && data.length > 0){
+
+const euclDistance = function(p1,p2,accX,accY,minDistX,minDistY){
+    if (Math.abs(p1[accX] - p2[accX]) > minDistX) return Infinity
+    if (Math.abs(p1[accY] - p2[accY]) > minDistY) return Infinity
+    return Math.sqrt(Math.pow(p1[accX] - p2[accX], 2) + Math.pow(p1[accY] - p2[accY], 2))
+}
+
+export function findClosestMatch(p,points,accX=0,accY=1,minDistX,minDistY){
+    // console.log(p,accX,accY)
+    // console.log(points)
+    // console.log(euclDistance(p,points[0],accX,accY))
+    var distanceToPoints = _.map(points,function(v) {return euclDistance(p,v,accX,accY,minDistX,minDistY)})
+    let minIdx = distanceToPoints.indexOf(Math.min(...distanceToPoints));
+    if(distanceToPoints[minIdx]===Infinity) return undefined
+    return minIdx
+}
+
+
+export function arrayOfObjectsToTabDel(data, headers, groupingMapper){
+    
+    if (data !== undefined && Array.isArray(data) && headers.length === data[0].length) {
+       
+        const groupings = groupingMapper===undefined?undefined:Object.keys(groupingMapper).map(groupingName => {
+            const headersMappedToGroupings = headers.map(headerName => groupingMapper[groupingName][headerName])
+            return headersMappedToGroupings.join("\t")  
+        })
+        const csvDataFromArray = data.map(v => {
+            return v.join("\t")    
+            }) 
+        
+        return groupings!==undefined?[headers.join("\t"),groupings.join("\n"),csvDataFromArray.join("\n")].join("\n"):[headers.join("\t"),csvDataFromArray.join("\n")].join("\n")
+
+
+    }
+    else if (data !== undefined && data.length > 0 && isObject(data)){
         const headers = Object.keys(data[0])
         const csvData = data.map(v => {
-        const dd = headers.map(h => {return v[h]})
-        return dd.join("\t")    
-        }) 
+                const dd = headers.map(h => {return v[h]})
+                return dd.join("\t")    
+                }) 
         return [headers.join("\t"),csvData.join("\n")].join("\n")
     }
     
@@ -60,3 +133,5 @@ export function downloadSVGAsText(svgEl,name="download.svg") {
     downloadLink.click();
     document.body.removeChild(downloadLink);
   }
+
+

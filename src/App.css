@@ -135,12 +135,10 @@ button:focus {
 .topbar-fixed {
   position: fixed;
   top:0px;
-  left:40px;
+  left:0px;
   height:40px;
-  width:  100%;
-  margin-left:2px;
-  margin-right:5px;
-  padding-top:3px;
+  width: calc(100% - 43px);
+  margin-left:43px;
   background-color: white;
   justify-content: flex-start;
   flex-direction: row;
@@ -148,6 +146,22 @@ button:focus {
   align-items: flex-end;
   z-index: 5;
 }
+
+
+.topbar-fixed-dataset {
+  position: fixed;
+  top:0px;
+  left:0px;
+  height:40px;
+  width: 100vw;
+  background-color: white;
+  justify-content: flex-start;
+  flex-direction: row;
+  display: flex;
+  align-items: flex-end;
+  z-index: 5;
+}
+
 
 .leftbar-fixed {
   position: fixed;
@@ -284,7 +298,7 @@ hr {
 
 .filter-wrapper{
   font-size: 1rem;
-  margin: 1rem;
+  margin: 0.85rem;
   padding: 0.5rem;
   border-radius: 0.5rem;
   background-color: white;
@@ -297,6 +311,16 @@ hr {
   flex-direction: row;
   display: flex;
   align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+
+.filter-tag-container-col{
+  font-size: 1rem;
+  justify-content: flex-start;
+  flex-direction: column;
+  display: flex;
+  align-items: flex-start;
   flex-wrap: wrap;
 }
 
@@ -371,6 +395,20 @@ hr {
   display: flex;
   flex-direction: row;
   justify-content: flex-start; 
+}
+
+.hor-aligned-center-div{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around; 
+  
+}
+
+.hor-aligned-center-div-sapce-between{
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end; 
+  align-items: stretch;
   
 }
 
@@ -540,9 +578,114 @@ hr {
   font-size: 0.95rem;
 }
 
-
-
-
 .item-organism {
   font-weight: bold;
+}
+
+
+.dataset-selection-content {
+  position: absolute;
+  text-align: center;
+  left: 50%;
+  top: 0%;
+  font-size: 0.95rem;
+  height: 90%;
+  min-width: 700px;
+  /* -webkit-transform: translate(50%, 0%);*/
+  transform: translateX(-50%);
+}
+
+.dataset-selection-container {
+  display: flex;
+  flex-direction: column;
+  width : 100%;
+  height: 95%;
+  overflow-y: scroll;
+  align-items: flex-start;
+  justify-content: start;  
+  margin-top:0.5rem;
+}
+
+
+.dataset-selection-box {
+  font-size: 0.75rem;
+  background-color : rgba(250, 250, 250, 0.903);
+  margin-top : 0.2rem;
+  padding-top : 0.1rem;
+  padding-bottom : 0.3rem;
+  padding-left : 0.3rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  min-height: 90px;  
+  align-items: flex-start;
+  transition-duration: 0.6s;
+  transition-property: font-size;
+  border-radius: 5px;
+  position: relative;
+}
+
+.dataset-select-title {
+  
+}
+
+.dataset-selection-box:hover {
+  /* background-color: rgba(250, 250, 250, 0.349); */
+  font-size: 0.8rem;
+  transition-duration: 0.8s;
+  transition-property: font-size;
+  
+}
+
+.dataset-tag-box{
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  font-size: 0.75rem;
+}
+
+
+.dataset-container{
+  margin-top:42px;
+  overflow: scroll;
+  width: calc(100vw - 2rem);
+  margin-right: 1.0rem ;
+  margin-left: 1.0rem ;
+  height: calc(100vh - 42px); 
+  background-color: whitesmoke;
+
+}
+
+.volcano-container{
+  display: grid;
+  grid-template-columns:  repeat(auto-fit, minmax(500px, 1fr));
+  
+  /* flex-direction: row;
+  flex-flow: row wrap;
+  align-items: flex-start;
+  justify-content: space-evenly; */
+}
+
+.volcano-box{
+  width: 500px;
+  height:500px;
+  border:  solid 0.2px;
+  background-color: white;
+  margin : 0.2rem;
+  padding: 0.2rem;
+}
+
+.unselectable-text {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+  cursor: default;
+}
+.my-tall-menu .bp3-menu {
+  max-height: 500px;
+  overflow-y: auto;
 }

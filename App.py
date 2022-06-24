@@ -44,9 +44,6 @@ helpers = {
         "token" : tokenManager,
 }
 
-
-
-
 # add resources 
 for resource in mitoCubeResources:
         resourceKwargs = dict()
@@ -60,4 +57,4 @@ def build_index():
         return render_template("index.html")#
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, use_reloader = True)

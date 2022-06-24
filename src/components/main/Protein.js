@@ -131,6 +131,11 @@ export function ProteinMainView(props) {
             minimal={true} 
             intent={"primary"}
             onClick = {() => setDataSummaryDialogOpen(true)}/>
+          
+          <Button 
+            icon="list"
+            minimal={true}
+            />
         <hr/>
         {/* Open link in new tab for help */}
         <Link to="/help" target="_blank" rel="noopener noreferrer"> 

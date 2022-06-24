@@ -3,7 +3,7 @@ import _ from "lodash"
 export function MCFilterTagContainer(props) {
     
     return (
-        <div className="filter-tag-container">
+        <div className={props.direction==="row"?"filter-tag-container":"filter-tag-container-col"}>
             {props.filterItems.map(v => {
                 return(
                     <MCFilterTagButton 
@@ -22,6 +22,7 @@ MCFilterTagContainer.defaultProps = {
     filterItems : ["Filter1","Filter2"],
     inactiveItems : [],
     filterHeader : "Key",
+    direction : "row",
     handleInactiveRequest : undefined
 }
 
@@ -42,7 +43,6 @@ export function MCFilterTagButton (props) {
 MCFilterTagButton.defaultProps = {
     active : true, 
     text : "Filter1",
-    filterHeader : "Key",
     onDeselect : undefined,
     handleInactiveRequest : undefined
 }

@@ -8,8 +8,6 @@ export const MCProtectedRoute = ({
   }) => 
   
   {
-
-    console.log(isAuthenthicated)
     if (!isAuthenthicated) {
       return <Navigate to={redirectPath} replace />;
     }

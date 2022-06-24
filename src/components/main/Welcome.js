@@ -44,7 +44,7 @@ export function Welcome(props) {
                   props.setAuthenticationSate({isAuth:true,token:response.data["token"]})
               }
             else {
-                setInfoObj({isLoading:false,"infoText":"Password is incorrect."})
+                setInfoObj({isLoading:false,"infoText":"Password is incorrect or API not reached."})
 
               }
               

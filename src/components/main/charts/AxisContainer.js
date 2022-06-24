@@ -169,9 +169,6 @@ export const MCAxisHandler = (props) => {
     const [correlatedFeatures,setCorrelatedFeature] = useState({success:false,isLoading:false,correlationData:[],show:false})
     const axisKeys = _.range(props.numberAixs)
     
-    // if (props.isSummary) {
-    //     console.log(props)
-    // }
     const findCorrelatedFeatures = (dataID,featureID) => {
         
         if (Object.keys(correlatedFeatures.correlationData).length > 0){
@@ -189,7 +186,7 @@ export const MCAxisHandler = (props) => {
             axios.post('/api/features/cards/data/correlation',
                 {"dataID" : dataID, "featureIDs":[featureID], "token" : props.token},
                 {headers : {'Content-Type': 'application/json'}}).then(response => {
-                    console.log(response.data)
+                    
                     if ("error" in response.data & response.data["error"] === "Token is not valid.") {
                         props.resetAuthStatus()
                         return 
