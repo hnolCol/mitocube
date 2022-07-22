@@ -6,12 +6,75 @@ import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router";
 import { MCSpinner } from "../../spinner/MCSpinner";
 import { GridRows, GridColumns } from '@visx/grid';
-import { useToggle, arrayOfObjectsToTabDel, downloadSVGAsText, downloadTxtFile, findClosestMatch } from "../../utils/Misc";
+import { useToggle, arrayOfObjectsToTabDel, downloadSVGAsText, downloadTxtFile, findClosestMatch, saveFeatureList } from "../../utils/Misc";
 import { Text } from "@visx/text";
 import _ from "lodash";
-import { Button, InputGroup, Menu, MenuItem } from "@blueprintjs/core";
+import { Button, ButtonGroup, Dialog, FileInput, InputGroup, Menu, MenuItem } from "@blueprintjs/core";
 import { MCGroupingSelection } from "./MCDataset";
 import { Popover2, Popover2InteractionKind } from "@blueprintjs/popover2";
+
+function MCCreateList(props) {
+
+    const [loading,setLoading] = useState(false)
+    const [list,setList] = useState(undefined)
+    const [fileName, setFileName] = useState(undefined)
+    const [listName, setListName] = useState("")
+
+    const handleTextInput = (e) => {
+        setLoading(true)
+        const newFiles = e.target.files;
+        const fileNameToLoad = newFiles[0].name;
+        const extension = fileNameToLoad.split(".").pop();
+        const isSupported = ["txt"].includes(extension);
+        
+        if (isSupported){
+            const reader = new FileReader()
+                reader.onload = (e) => {
+                const newList = e.target.result.split("\n")
+                setList(newList)
+                setLoading(false)
+                }
+            reader.readAsText(newFiles[0])
+            setFileName(fileNameToLoad)
+            
+            }
+            
+        
+        }
+
+    const saveList = (e) => {
+        setLoading(true)
+        if (listName !== "" && _.isArray(list) && list.length > 0) {
+            saveFeatureList(listName,list)
+        }
+        props.onClose(false)
+    }
+        
+    return(
+        <div style={{marginRight:"1rem"}}>
+            <div>
+            <p>Load txt file containg Gene names or Uniprot IDs</p>
+                <FileInput buttonText="..." onInputChange={handleTextInput} text={fileName}/>
+            </div>
+            {list!==undefined&&_.isArray(list)?
+            <div>
+                <InputGroup placeholder="List name.." value={listName} onChange={e => setListName(e.target.value)}/>
+                <p>{`List loaded. ${list.length} features detected.`}</p>
+
+                </div>:null}
+            <ButtonGroup>
+            <Button 
+                text="Save" 
+                loading={loading} 
+                intent={list!==undefined&&_.isArray(list)?"success":"none"}
+                onClick = {saveList}
+                />
+            <Button text="Close" onClick={e => props.onClose(false)}/>
+            </ButtonGroup>
+            
+        </div>
+    )
+}
 
 
 export function MCVolcanoGrid(props) {
@@ -34,7 +97,7 @@ export function MCVolcanoGrid(props) {
 
     const [crossPoint, setCrossPoint] = useState(undefined)
     const [mouseOverPlot, setMouseOverPlot] = useState(undefined)
-    
+    const [createList, setCreateList] = useState(false)
 
     const handleCrossPoint = (pp) => {
         // handle point ot cross reference
@@ -47,22 +110,25 @@ export function MCVolcanoGrid(props) {
 
     return (
         <div>
+        <Dialog isOpen={createList} title = {"Create list from file."} onClose={e => setCreateList(false)} children={<MCCreateList onClose = {setCreateList} />}/>
         <Button icon = "add" onClick={addVolcanoWindow} small={true} minimal={true} intent="primary"/>
         <Button icon = "airplane" onClick={toggleTransfer}intent={transferPoints?"success":"none"} small={true} minimal={true}/>
-        {Array.isArray(savedFeatureLists) && savedFeatureLists.length > 0?
+        {/* {Array.isArray(savedFeatureLists) && savedFeatureLists.length > 0? */}
             <Popover2 content={
                 <Menu>
                     <MenuItem text="Annotate list" icon="heatmap">
-                        {savedFeatureLists.map(v => <MenuItem key =  {v} text={v} onClick={e => handleActiveList(v)} icon={v === activeListName?"tick":"none"}/>)}
+                        {savedFeatureLists.map(v => <MenuItem key =  {v} text={v} onClick={e => handleActiveList(activeList!==v?v:undefined)} icon={v === activeListName?"tick":"none"}/>)}
+                        <MenuItem text = "Hide annotations" icon="reset"/>
                     </MenuItem>
+                    <MenuItem text = "Create list from file" icon = "add-column-right" onClick={e => setCreateList(true)}/>
+                   
                 </Menu>
                 }>
                 
                 <Button icon = "menu" intent={"danger"} small={true} minimal={true}/>
             
             </Popover2>
-                :
-            null}
+               
 
             <div className = "volcano-container">
                 {_.range(volcanoWindows.length+1).map((v,i) => {
@@ -271,7 +337,7 @@ export function MCVolcano(props) {
     const labelsToShow = _.intersection(labels,pointsToShow)
     const highlightPointIsValid = highlightPoint !==undefined && highlightPoint[0]!==undefined
     const transferPoint = mouseOverPlot===undefined?false:mouseOverPlot !== svgID && transferPoints
-    const activeListPoints = activeList.length === 0?[]:pointsToShow.filter(p => activeList.includes(p[3]))
+    const activeListPoints = activeList.length === 0?[]:pointsToShow.filter(p => activeList.includes(p[3])  ||  activeList.includes(p[4]))
 
     
     const handleMouseDown = (e) => {
@@ -629,8 +695,8 @@ export function MCVolcano(props) {
                         key={`active-list-pp${i}`} 
                         cx={xscale(p[0])} 
                         cy={yscale(p[1])} 
-                        r = {defaultRadius} 
-                        fill={"green"}  //p[2]?p[0]>0?"#ea563c":"#7894a2":defaultCircleFill
+                        r = {defaultRadius+3} 
+                        fill={"darkorange"}  //p[2]?p[0]>0?"#ea563c":"#7894a2":defaultCircleFill
                         opacity={1}
                         {...circleProps}/>
             )
@@ -683,7 +749,7 @@ export function MCVolcano(props) {
                 width={width-margin.left-margin.right} 
                 height={height-margin.top-margin.bottom} 
                 fill="transparent"
-          
+                opacity={0}
                 onMouseLeave={e => setMouseOverPlot(undefined)} 
                 onMouseEnter={e => setMouseOverPlot(svgID)}/> 
 

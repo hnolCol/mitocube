@@ -13,60 +13,183 @@ import { scaleLinear } from "@visx/scale";
 
 import { Text } from "@visx/text";
 import { Popover2 } from "@blueprintjs/popover2";
-import { Menu, MenuItem } from "@blueprintjs/core";
+import { Menu, MenuItem, Button, NumericInput } from "@blueprintjs/core";
 import { downloadTxtFile, arrayOfObjectsToTabDel, downloadSVGAsText } from "../../utils/Misc";
 import { useParams } from "react-router";
+import { MCCombobox } from "../../utils/components/MCCombobox";
+const legendTextProps = {textAnchor:"start",
+verticalAnchor:"middle",
+fontSize:9,
+fill:"#262626"
+}
+
+function MCClusterANOVASelection(props) {
+
+    const {groupingNames, setHeatmapANOVASettings } = props 
+    const [anovaType,setANOVAType] = useState("1-way ANOVA")
+    const [groupingSelection, setGroupingSelection] = useState({pvalue:0.001})
+    const oneWayANOVA = anovaType === "1-way ANOVA"
+
+    const saveGroupingSelection = (groupingKey,groupingValue) => {
+        setGroupingSelection(
+            prevValues => {
+              return { ...prevValues,[groupingKey]:groupingValue}}) 
+    }
+
+    const submitANOVAsettings = (e) => {
+        const groupingSettings = groupingSelection
+        groupingSettings["anovaType"] = anovaType
+        setHeatmapANOVASettings(groupingSelection)
+    }
+    
+    
+    return (
+        <div style={{transform:"translateX(50%)",width:"50%"}}>
+            <h3>ANOVA Selection</h3>
+
+                <div className="hor-aligned-div" >
+                    <div style={{paddingRight:"0.5rem",paddingTop:"2px"}}>
+                        <p>Analysis of variance:</p>
+                    </div>
+                <MCCombobox  
+                    items = {["1-way ANOVA","2-way ANOVA"]} placeholder={anovaType} callback={setANOVAType}
+                    buttonProps ={{minimal : false,
+                                    small : true,
+                                    intent : "primary"
+                                    }}/>
+                                    
+                </div>
+                <div className="hor-aligned-div" >
+                    <div style={{paddingRight:"0.5rem",paddingTop:"2px"}}>
+                        <p>Grouping 1:</p>
+                    </div>
+                <MCCombobox  
+                    items = {props.groupingNames}
+                    placeholder = {groupingSelection.grouping1}
+                    callbackKey = "grouping1"
+                    callback = {saveGroupingSelection}
+                    buttonProps ={{minimal : false,
+                                    small : true,
+                                    intent : "none"
+                                    }}/>
+                                    
+                    
+                </div>
+
+                <div className="hor-aligned-div" >
+                    <div style={{paddingRight:"0.5rem",paddingTop:"2px"}}>
+                        <p>Grouping 2:</p>
+                    </div>
+                <MCCombobox  
+                    items = {props.groupingNames}
+                    placeholder = {groupingSelection.grouping2}
+                    callbackKey = "grouping2"
+                    callback = {saveGroupingSelection}
+                    buttonProps ={{minimal : false,
+                                    small : true,
+                                    intent : "none",
+                                    disabled : oneWayANOVA
+                                    }}/>
+                </div>
+
+                <div className="hor-aligned-div" >
+                    <div style={{paddingRight:"0.5rem",paddingTop:"2px"}}>
+                        <p>Significance:</p>
+                    </div>
+                <MCCombobox  
+                    items = {oneWayANOVA?["Grouping p-value"]:_.concat(_.map(groupingNames, v=> `p-value ${v}`),["p-value Interaction"])}
+                    callbackKey = "pvalueType"
+                    placeholder = {oneWayANOVA?"Grouping p-value":groupingSelection.pvalueType===undefined?"Select p-value":groupingSelection.pvalueType}
+                    callback = {saveGroupingSelection}
+                    buttonProps ={{minimal : false,
+                                    small : true,
+                                    intent : "none",
+                                    disabled : oneWayANOVA
+                                    }}/>
+                                    
+                <NumericInput 
+                    min={1e-10} 
+                    max={0.5} 
+                    value={groupingSelection.pvalue} 
+                    onValueChange = {value => saveGroupingSelection("pvalue",value)} 
+                    placeholder={"p-value cutoff"} 
+                    stepSize={0.000001} 
+                    minorStepSize={0.000001}/>
+                </div>
+
+                <Button text = "Show heatmap" small={true}  minimal={false} intent={"primary"} onClick={submitANOVAsettings}/>
+
+                
+
+        </div>
+    ) 
+}
+
+MCClusterANOVASelection.defaultProps = {
+    groupingNames : ["A","B"]
+
+}
+
 
 export function MCHeatmapWrapper(props) {
     const params = useParams()
-    const {token, responseData, saveHeatmapData, setClusterIndex} = props 
+
+    const {token, responseData, saveHeatmapData, setClusterIndex, groupingNames, setHeatmapANOVASettings} = props 
     const {dataID} = params
     //const [responseData,setData] = useState({isLoading:false,data:{}}) 
     
-
+    //console.log(responseData)
    
     useEffect(() => {
-        
+       
+
         if (Object.keys(responseData.data).length !== 0) return 
-        saveHeatmapData({isLoading:true,data:{},msg:""})
-        axios.get('/api/data/heatmap', {params:{dataID:dataID,token:token}}).then(response => {
+        if (responseData.anovaDetails===undefined  ||  Object.keys(responseData.anovaDetails).length === 0) return 
+        saveHeatmapData(prevValues => {
+            return { ...prevValues,"isLoading":true}
+          })
+
+        axios.get('/api/data/heatmap', {params:{dataID:dataID,token:token,anovaDetails:responseData.anovaDetails}}).then(response => {
             
             if ("success" in response.data && response.data["success"]) {
                 if (response.data.params === undefined) {
-                    saveHeatmapData({isLoading:false,data:undefined,msg:"Loaded"})
+
+                    saveHeatmapData(prevValues => {
+                        return { ...prevValues,"isLoading":false,"data":undefined,"msg":"Received data were undefined."}
+                      })
                     return
                 }
-                saveHeatmapData({isLoading:false,data:response.data.params,msg:"Loaded"})
+                saveHeatmapData(prevValues => {
+                    return { ...prevValues,"isLoading":false,"data":response.data.params,"msg":"Loaded."}
+                  })
                 }
             else if ("error" in response.data){
-                saveHeatmapData(
-                    {
-                        isLoading:false,
-                        data:{},
-                        msg:response.data["error"]
-                    }
-                )
+                saveHeatmapData(prevValues => {
+                    return { ...prevValues,"isLoading":false,"data":{},"msg":response.data["error"]}
+                  })
             }
-            
             }
         )
-      }, []);
+      }, [responseData.anovaDetails,token]);
 
-   
-    
+
     
     return(
         <div>
-            
+                
                 {
+                    responseData.anovaDetails===undefined || Object.keys(responseData.anovaDetails).length === 0  ? 
+                        <MCClusterANOVASelection groupingNames = {groupingNames} setHeatmapANOVASettings = {setHeatmapANOVASettings}/>
+                        :
+
                     responseData.data === undefined?null:responseData.isLoading?
                             <MCSpinner/>:
-                        Object.keys(responseData.data).length > 0?
+                                Object.keys(responseData.data).length > 0?
                             <div>
                                 <p >
-                                {responseData.data.heatmap.values.length} features were found to meet the significance cutoff. 
-                                Click on the cluster to explore the features.
-                                Holding shift when selecting allows to combine features of multiple clusters.
+                                {`${responseData.data.heatmap.values.length} features were found to meet the significance cutoff ${responseData.anovaDetails.anovaType} (p-value < ${responseData.anovaDetails.pvalue})
+                                in grouping ${responseData.anovaDetails.grouping1} Click on the cluster to explore the features.
+                                Holding shift when selecting allows to combine features of multiple clusters.`}
                                 </p>
                     <div style={{display:"flex",flexDirection:"row"}}>
                             {<MCClusterOverview 
@@ -104,12 +227,17 @@ export function MCHeatmapWrapper(props) {
                                     clusterColors = {responseData.data.clusterView.clusterColors}
                                     dataID = {responseData.data.heatmap.dataID}
                                     nExtraColumns = {responseData.data.heatmap.nExtraColumns}
+                                    setHeatmapANOVASettings = {setHeatmapANOVASettings}
                                    />}
                     </div>
                     </div>:
-                        <p style={{fontSize:"0.75rem"}}>
-                                The API returned an error: {responseData.msg}.
-                    </p>}
+                        <div style={{marginTop:"2rem"}}>
+                        <p style={{fontSize:"0.95rem"}}>
+                                    The API returned an error: {responseData.msg}.
+                        </p>
+                        <Button text = "Return to group selection" small={true} minimal={true} intent="primary" onClick={e => setHeatmapANOVASettings({},true)}/>
+                        </div>
+                     }
         </div>
     )
 }
@@ -164,8 +292,25 @@ const svgHeatID = "heat-svg"
 const svgGroupingID = "grouping-svg"
 
 export function MCScaledHeatmap(props) {
-    const {binHeight, nColumns,margin,values,colorPalette,colorPaletteValues,groupColorValues,groupingNames,clusterIndexToShow,clusterIndex,clusterColors,columnNames,groupingMapper,dataID,nExtraColumns} = props
-    
+    const {binHeight, 
+            nColumns,
+            margin,
+            values,
+            colorPalette,
+            colorPaletteValues,
+            groupColorValues,
+            groupingNames,
+            groupingItems,
+            clusterIndexToShow,
+            clusterIndex,
+            clusterColors,
+            columnNames,
+            groupingMapper,
+            dataID,
+            nExtraColumns,
+            setHeatmapANOVASettings,
+            groupingColorMapper} = props
+        
     
     
     const numberRows = values.length
@@ -178,30 +323,14 @@ export function MCScaledHeatmap(props) {
             domain:colorPaletteValues
         })
    
+    const marginForLegend = 30
    
 
 
     return(
 
         <div style={{height:"800px",marginRight:margin.right, marginLeft:margin.left, marginTop:margin.top, marginBottom:margin.bottom}}>
-            {/* <Table2 
-                numRows={nRows+groupings.length}
-                forceRerenderOnSelectionChange={false}
-                defaultRowHeight = {binHeight}
-                enableRowHeader = {true}
-                columnWidths = {_.concat(Array(numberColumns).fill(binHeight),[undefined])}
-                enableColumnResizing={false}
-                enableRowResizing = {false}     
-                rowHeaderCellRenderer={rowHeaderRenderer}  
-                numFrozenRows = {groupings.length} 
-                
-                 
-                >
-                    {_.range(numberColumns+1).map((headerName,index) => {
-                        return(<Column key = {`${index}`} name = {numberColumns===index?"Name":""} cellRenderer = {cellRenderer}/>)
-                    })}
-                        
-                </Table2> */}
+
             <div style={{height:"30px"}}>
                 <Popover2 content={
                     <Menu large={false}>
@@ -214,7 +343,8 @@ export function MCScaledHeatmap(props) {
                             
                         <MenuItem text="Save heatmap (svg)" icon={"heat-grid"} disabled={!clusterSelected} onClick={() => {
                                 downloadSVGAsText(document.getElementById(`${svgHeatID}`),`MitoCube(${dataID}-${clusterIndexToShow}).svg`)}}/>
-                            
+
+                        <MenuItem text="Reset" icon={"reset"} onClick={e => setHeatmapANOVASettings({},true)} intent="danger"/>
                         
                     </Menu>}>
                 <MCMenuIcon size={20}/>
@@ -223,21 +353,72 @@ export function MCScaledHeatmap(props) {
             <div>
             <svg 
                 width = {numberColumns*binHeight+80} 
-                height = {binHeight*groupingNames.length+15+marginForLabel} 
+                height = {binHeight*groupingNames.length+15+marginForLabel+marginForLegend} 
                 id = {svgGroupingID} 
-                viewBox = {`0 0 ${numberColumns*binHeight+80} ${binHeight*groupingNames.length+15+marginForLabel}`}>
+                viewBox = {`0 0 ${numberColumns*binHeight+80} ${binHeight*groupingNames.length+15+marginForLabel+marginForLegend}`}>
             <g>
+                    
+                {<g>
+                    {colorPalette.map((hexColor,i) => {
+                        const xtext = margin.left + i * 35 + 12
+                        return(
+                            <g key={hexColor}>
+                                <rect x = {margin.left + i * 35 } 
+                                    y = {2} height={10} width={10} fill = {hexColor}
+                                    stroke="black" strokeWidth={0.2}/>
+                                <Text 
+                                
+                                    x = {xtext} 
+                                    y = {7} 
+                                    {...legendTextProps}
+                                    >
+                                        {Math.round(colorPaletteValues[i]*10 + Number.EPSILON) / 10}
+                                </Text>
+                            </g>
+                        )
+                    })}
+                    <Text x = 
+                        {margin.left + (colorPalette.length-1) * 35 + 30} 
+                        y = {7} 
+                        {...legendTextProps}>Z-Score</Text>
+                </g>}
+                {Object.keys(groupingItems).map((groupingName , ii) =>
+                    
+                    {
+                        const yLegend = margin.top + 12 * ii + 10 + 2
+                        const legendItems = groupingItems[groupingName]
+                        return(
+                        legendItems.map((t,n) => {
+                            const bgColor = groupingColorMapper[groupingName][t]
+                            return(
+                                <g key = {t}>
+                                <rect x = {0+63*n+margin.left} y = {yLegend-10/2} width={10} height={10} fill={bgColor} stroke="black" strokeWidth={0.2}/>
+                                <Text x = {0+63*n+15+margin.left} y = {yLegend} {...legendTextProps}>
+                                    {t}
+                                </Text>
+                                
+                                </g>
+                            )
+
+                        }))
+                    })}
+
+                        <Text 
+                                x = {numberColumns*binHeight-10} 
+                                y={0} 
+                                fontSize = {10} 
+                                textAnchor={"end"}
+                                verticalAnchor={"start"}>
+                                    {clusterSelected?`n=${filteredValues.length} / ${values.length} in ${clusterIndexToShow.length} cluster ${clusterIndexToShow}`:"Select cluster."}
+                    </Text>
+
+
                     {groupingNames.map((groupingName,groupingIndex) => {
                         return(
 
                             <g key={`${groupingName}`}>
-                            <Text 
-                                x = {0} 
-                                y={0} 
-                                fontSize = {10} 
-                                verticalAnchor={"start"}>
-                                    {clusterSelected?`n=${filteredValues.length} / ${values.length} in ${clusterIndexToShow.length} cluster ${clusterIndexToShow}`:"Select cluster."}
-                            </Text>
+                            
+
                             {_.range(nColumns).map(columnIndex => {
                                 const bgColor = groupColorValues[groupingName][columnIndex]
                                 // groupingColorMapper[groupingNames[groupIndex]][groupItem]
@@ -245,7 +426,7 @@ export function MCScaledHeatmap(props) {
                                     <rect 
                                             key={`heat-rect-group-${columnIndex}-${groupingName}-${groupingIndex}`}
                                             x = {columnIndex*binHeight+binHeight+5} 
-                                            y={groupingIndex*binHeight+15} 
+                                            y={groupingIndex*binHeight+15+marginForLegend} 
                                             width={binHeight} 
                                             height = {binHeight} 
                                             fill = {bgColor} 
@@ -255,7 +436,7 @@ export function MCScaledHeatmap(props) {
                             })}
                             <Text  
                                     x = {(nColumns+1)*binHeight+binHeight/4+5} 
-                                    y={groupingIndex*binHeight+binHeight/2+15} 
+                                    y={groupingIndex*binHeight+binHeight/2+15+marginForLegend} 
                                     fontSize={10} 
                                     textAnchor={"start"} 
                                     verticalAnchor={"middle"}>
@@ -267,7 +448,7 @@ export function MCScaledHeatmap(props) {
 
                     })}
 
-                <Text x={binHeight/2} y={binHeight*groupingNames.length+15+marginForLabel} angle={-90} fontSize={10} verticalAnchor="middle">Cluster</Text>
+                <Text x={binHeight/2} y={binHeight*groupingNames.length+15+marginForLabel+marginForLegend} angle={-90} fontSize={10} verticalAnchor="middle">Cluster</Text>
                 
                 {nExtraColumns>0?_.range(nExtraColumns).map(iiExtra => {
                         const x = 0+(nColumns+1+iiExtra)*binHeight+8
@@ -276,16 +457,16 @@ export function MCScaledHeatmap(props) {
                             <g key={`${iiExtra}-extraText`}>
                             <Text 
                                 x = {x} 
-                                y = {binHeight*groupingNames.length+15+(iiExtra)*10+4}
+                                y = {binHeight*groupingNames.length+15+(iiExtra)*10+4+marginForLegend}
                                 verticalAnchor="start" fontSize={9}>
-                                    {columnNames[nColumns+4+iiExtra]}
+                                    {columnNames[nColumns+3+iiExtra]}
                             </Text>
                             {iiExtra!==nExtraColumns-1?
                                 <line 
                                     x1={x+binHeight/2} 
                                     x2={x+binHeight/2}  
-                                    y1={y+9}  
-                                    y2={binHeight*groupingNames.length+15+marginForLabel} 
+                                    y1={y+9+marginForLegend}  
+                                    y2={binHeight*groupingNames.length+15+marginForLabel+marginForLegend} 
                                     stroke ="black"/>
                                 :
                             null}
@@ -299,7 +480,7 @@ export function MCScaledHeatmap(props) {
             <div style={{overflowY:"scroll",height:"600px"}}> 
             
             {clusterIndexToShow!==undefined && clusterIndexToShow.length > 0?        
-            <svg width = {numberColumns*binHeight+120} id = {svgHeatID} height = {binHeight*numberRows} viewBox = {`0 0 ${numberColumns*binHeight+120} ${binHeight*numberRows}`}>
+            <svg width = {numberColumns*binHeight+130} id = {svgHeatID} height = {binHeight*numberRows} viewBox = {`0 0 ${numberColumns*binHeight+120} ${binHeight*numberRows}`}>
                 <g>
                     
                     {
@@ -346,7 +527,7 @@ export function MCScaledHeatmap(props) {
                                         y={rowIndex*binHeight} 
                                         width={binHeight} 
                                         height = {binHeight} 
-                                        fill = {rowData[nColumns+(4+iiExtra)]!=="-"?"#bf3525":"#efefef"}
+                                        fill = {rowData[nColumns+(3+iiExtra)]!=="-"?"#bf3525":"#efefef"}
                                         stroke="black" 
                                         strokeWidth={0.4}/>)})}
                             </g>
@@ -367,7 +548,7 @@ export function MCScaledHeatmap(props) {
 
 MCScaledHeatmap.defaultProps = {
     groupings : ["Genotype","Treatment"],
-    binHeight : 15,
+    binHeight : 12,
     margin : {left: 5, top: 10, right: 50, bottom:5},
     
     colorPalette : [],

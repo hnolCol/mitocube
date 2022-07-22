@@ -5,12 +5,11 @@ import { Text } from '@visx/text';
 const icon = {
     hidden: { pathLength: 0, opacity:0.1, },
     visible: {
-      pathLength: 1,
-      opacity: 1,
-      
-      transition: {
-        pathLength: { delay : 0, type: "linear", duration: 2.5, bounce: 0, repeat: Infinity,repeatType: "mirror"},
-        opacity: { delay : 0, type: "spring", duration: 2.5, bounce: 0.1, repeat: Infinity,repeatType: "mirror"},
+        pathLength: 1,
+        opacity: 1,
+        transition: {
+          pathLength: { delay : 0, type: "linear", duration: 2.5, bounce: 0, repeat: Infinity,repeatType: "mirror"},
+          opacity: { delay : 0, type: "spring", duration: 2.5, bounce: 0.1, repeat: Infinity,repeatType: "mirror"},
       }
     }
   }

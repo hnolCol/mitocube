@@ -92,7 +92,9 @@ class DatasetsHeatmap(Resource):
         if token == "None" or not self.token.isValid(token):
              return {"error":"Token is not valid.","success":False}
         dataID = request.args.get('dataID', default="None", type=str)
-        succes, params = self.data.getHeatmapData(dataID)
+        anovaDetails = json.loads(request.args.get("anovaDetails",default="{}",type=str))
+        
+        succes, params = self.data.getHeatmapData(dataID,anovaDetails)
         #print(succes)
         if succes:
             return jsonify({"success":succes,"params":params})
@@ -113,7 +115,7 @@ class DatasetsVolcano(Resource):
         if token == "None" or not self.token.isValid(token):
              return {"error":"Token is not valid.","success":False}
         dataID = request.args.get('dataID', default="None", type=str)
-        grouping = json.loads(request.args.get('grouping',default="None",type=str))
+        grouping = json.loads(request.args.get('grouping',default="{}",type=str))
 
         succes, params = self.data.getVolcanoData(dataID,grouping)
         if succes:

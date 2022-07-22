@@ -18,12 +18,11 @@ import { MCDatasetMainView } from './components/main/Dataset';
 import { getMitoCubeToken } from './components/utils/Misc';
 
 import axios from 'axios';
-import { MCDataSummary } from './components/dialogs/data/DataSummary';
 import { MCDatasetSelection } from './components/main/dataset-view/MCDatasetSelection';
-import { MCHeatmapWrapper } from './components/main/dataset-view/MCScaledHeatmap';
-import { MCVolcano, MCVolcanoWrapper } from './components/main/dataset-view/MCVolcano';
 import { MCSampleSubmission } from './components/submission/MCSampleSubmission';
-
+import { MCAdminLogin } from './components/main/admin/Login';
+import { getMitoCubeAdminToken } from './components/utils/Misc';
+import { MCSumissionView } from './components/submission/MCSubmissionView';
 
 export function MCHelpText(props) {
   return(
@@ -59,6 +58,7 @@ MCHelpText.defaultProps = {
 function App() {
 
   const [isAuthenthicated, setAuthenticationState] = useState({isAuth:false,token:null})
+  const [isAdminAuthenthicated, setAdminAuthenticationState] = useState({isAuth:false,token:null,superAdmin:false})
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -70,11 +70,32 @@ function App() {
           {token:tokenString}, 
           {headers : {'Content-Type': 'application/json'}}).then(response => {
             if (response.status === 200 & response.data) {
-              setAuthenticationState({isAuth:true,token:tokenString})
-              navigate(location)
+                setAuthenticationState({isAuth:true,token:tokenString})
+                navigate(location)
             }
             else {
               setAuthenticationState({isAuth:false,token:null})
+            }
+      })
+  },[]);
+
+
+  useEffect(() => {
+    
+    const tokenString = getMitoCubeAdminToken()
+    if (tokenString === undefined) setAdminAuthenticationState({isAuth:false,token:"",superAdmin:false})
+   
+
+    axios.post('/api/token/admin/valid',
+          {token:tokenString}, 
+          {headers : {'Content-Type': 'application/json'}}).then(response => {
+            if (response.status === 200 && response.data.success) {
+                setAdminAuthenticationState({isAuth:response.data.valid,token:tokenString,superAdmin:response.data.superAdmin})
+            }
+            else {
+              //setAuthenticationState({isAuth:false,token:null})
+              setAdminAuthenticationState({isAuth:false,token:"",superAdmin:false})
+
             }
       })
   },[]);
@@ -89,35 +110,23 @@ function App() {
             <MCProtectedRoute isAuthenthicated={isAuthenthicated.isAuth}>
               <MCDatasetMainView token={isAuthenthicated.token}/>
             </MCProtectedRoute>}> 
-          {/* <Route  exact path="/dataset/:dataID/volcano" element={
-            <MCProtectedRoute isAuthenthicated={isAuthenthicated.isAuth}>
-              <div><MCVolcanoWrapper/></div>
-            </MCProtectedRoute>} />  */}
-          {/* <Route  exact path="/dataset/:dataID/heatmap" element={
-            <MCProtectedRoute isAuthenthicated={isAuthenthicated.isAuth}>
-              <div>
-                <MCHeatmapWrapper/>
-                </div>
-            </MCProtectedRoute>} />  */}
 
           <Route  exact path="/dataset/:dataID/table" element={
             <MCProtectedRoute isAuthenthicated={isAuthenthicated.isAuth}>
               <div>Table View</div>
             </MCProtectedRoute>} /> 
           </Route>
-
         
 
         <Route path="/dataset" element={
               <MCProtectedRoute isAuthenthicated={isAuthenthicated.isAuth}>
-                <MCDatasetSelection token={isAuthenthicated.token}/>
+                <MCDatasetSelection token={isAuthenthicated.token} setAuthenticationSate={setAuthenticationState}/>
               </MCProtectedRoute>} />
 
         <Route path="/protein" element={
             <MCProtectedRoute isAuthenthicated={isAuthenthicated.isAuth}>
               <ProteinMainView token={isAuthenthicated.token} setAuthenticationSate={setAuthenticationState}/>
             </MCProtectedRoute>
-        
               } />
 
         <Route path="/submission" element={
@@ -125,6 +134,45 @@ function App() {
             <MCSampleSubmission token={isAuthenthicated.token}/>
           </MCProtectedRoute>
         }/>
+
+      <Route path="/admin" element={
+          <MCProtectedRoute isAuthenthicated={isAuthenthicated.isAuth}>
+            <MCAdminLogin 
+                    isAuthenthicated={isAuthenthicated.isAuth} 
+                    token={isAuthenthicated.token}
+                    setAuthenticationSate={setAuthenticationState}
+                    isAdminAuthenthicated = {isAdminAuthenthicated.isAuth}
+                    setAdminAuthenticationState = {setAdminAuthenticationState}/>
+           
+          </MCProtectedRoute>
+        }/>
+
+      <Route path="/admin/performance" element = {
+        <MCProtectedRoute isAuthenthicated={isAdminAuthenthicated.isAuth}>
+            <div>
+              <h3>performance</h3>
+            </div>
+        </MCProtectedRoute>
+      }
+      />
+
+      <Route path="/admin/submission" element = {
+        <MCProtectedRoute isAuthenthicated={true}>
+            <div>
+              <h3>Submissions</h3>
+              <MCSumissionView />
+            </div>
+        </MCProtectedRoute>
+      }
+      />
+      <Route path="/admin/settings" element = {
+        <MCProtectedRoute isAuthenthicated={isAdminAuthenthicated.isAuth}>
+            <div>
+              <h3>Settings</h3>
+            </div>
+        </MCProtectedRoute>
+      }
+      />
 
           
         <Route path="/help" element={<MCHelpMainView/>}> 
@@ -141,6 +189,7 @@ function App() {
             }
           
         </Route>
+
         <Route path="*" element = {<div>Page not found. Return to <Link to="/">main page.</Link></div>}/>
 
       </Routes>

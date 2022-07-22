@@ -658,6 +658,32 @@ hr {
 
 }
 
+.navbar-link {
+  margin: 0.1rem;
+  margin-left: 3rem;
+  margin-top:0.7rem;
+  font-size:1rem
+}
+
+
+.admin-nav-container{
+  margin-top: 2rem;
+  display: grid;
+  justify-content: center;
+  align-items: center;
+  grid-template-columns:  repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.admin-nav-box{
+  min-width: 150px;
+  height : 30px;
+  margin: 2rem;
+}
+.admin-nav-box:hover{
+  background-color: white;
+
+}
+
 .volcano-container{
   display: grid;
   grid-template-columns:  repeat(auto-fit, minmax(500px, 1fr));
@@ -685,7 +711,67 @@ hr {
   user-select: none;
   cursor: default;
 }
-.my-tall-menu .bp3-menu {
+.my-tall-menu .bp4-menu {
   max-height: 500px;
   overflow-y: auto;
+}
+
+
+
+.submission-button-container{
+  width:auto;
+  height:auto;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-evenly;
+  align-items: center;
+  padding-right: 1rem;
+}
+
+
+.mitomap-extra-view {
+
+  position: absolute;
+  right: 0vw;
+  top: 0vh;
+  height: minmax(50px,50vh);
+  max-height: 75vh;
+  width: 20vw;
+  background-color: white;
+  margin-top: calc(40px + 0.5rem);
+  padding-left: 0.5rem;
+  margin-right: 0.5rem;
+  padding-right:0.5rem;
+  overflow-x: hidden;
+
+}
+
+.mitomap-item-container{
+  height : minmax(50px,50vh);
+  overflow-y: scroll;
+  overflow-x: hidden;
+}
+
+.mitomap-item-sig{
+  background-color: #9db58a;
+  padding : 0.3rem;
+  margin: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  border-radius: 0.5rem;
+ 
+ 
+}
+.mitomap-item{
+  background-color: #efefef;
+  padding : 0.3rem;
+  margin: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  border-radius: 0.5rem;
 }

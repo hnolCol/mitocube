@@ -8,15 +8,16 @@ from flask_restful import Resource, Api
 #import internal helpers/resources 
 from backend.resources.resources import mitoCubeResources
 
-
 from backend.helper.Data import Data, DBFeatures
 from backend.helper.Token import Token
 from backend.helper.FeatureFinder import FeatureFinder
+from backend.helper.Email import EmailHelper
+from backend.helper.Admin import AdminUsers
 #external package imports
 
 import os
 
-
+from decouple import config
 
 #internal imports
 # set the project root directory as the static folder
@@ -26,9 +27,9 @@ app = Flask(__name__,
             )
 
 api = Api(app)
-
-#defin improtant paths
+#define improtant paths
 pathToTokens = os.path.join(app.root_path,"backend","data","dynamic","tokens.json")
+pathToUsers = os.path.join(app.root_path,"backend","data","dynamic","users.json")
 pathToData = os.path.join(app.root_path,"backend","data","static","datasets")
 pathToDB = os.path.join(app.root_path,"backend","data","static","dbs","uniprot")
 pathToAPIConfig = os.path.join(app.root_path,"backend","config","docs")
@@ -36,12 +37,24 @@ pathToAPIConfig = os.path.join(app.root_path,"backend","config","docs")
 tokenManager = Token(pathToTokens)
 dbManager = DBFeatures(pathToDB=pathToDB)
 dataManger = Data(pathToData,pathToAPIConfig,dbManager)
+adminUserManager = AdminUsers(pathToUsers)
+##update email settings
+emailSettings = dataManger.getConfigParam("email-sever-settings")
+for k,v in emailSettings.items():
+        if v in [0,1]:
+                app.config[k] = v == 1
+        else:
+                app.config[k] = v
+app.config["MAIL_PASSWORD"] = config("email-pw")
 
+##put helpers in dict for easy init
 helpers = {
         "data" :  dataManger,
         "featureFinder" : FeatureFinder(data = dataManger, DB = dbManager),
         "db" : dbManager,
         "token" : tokenManager,
+        "email" : EmailHelper(app),
+        "user" : adminUserManager
 }
 
 # add resources 

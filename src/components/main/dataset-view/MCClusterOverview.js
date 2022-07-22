@@ -6,6 +6,7 @@ import { Text } from "@visx/text";
 
 
 
+
 function MCMinimalClusterView(props) {
 
     const {margin,width,height,vs,clusterIndex,mouseOver,mouseOverText,mouseOverColor,selected,colorScale, groupingNames, hoverColorAndGroups} = props
@@ -114,6 +115,10 @@ MCMinimalClusterView.defaultProps = {
 
     margin : {left:5,bottom:5,right:10,top:15}
 }
+
+
+
+
 
 
 export function MCClusterOverview(props) {

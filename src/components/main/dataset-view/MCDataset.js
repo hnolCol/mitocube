@@ -13,6 +13,7 @@ import _, { isFunction } from "lodash";
 import { Button, H4, H5, Menu, MenuDivider, MenuItem } from "@blueprintjs/core";
 import { useToggle } from "../../utils/Misc";
 import { getFeatureLists } from "../../utils/Misc";
+import { MCMitoMap } from "./mitomap/MitoMap";
 
 
 
@@ -24,7 +25,7 @@ export function MCDataset(props) {
     const [volcanoWindows,setVolcanoWindows] = useState([])
     const [volcanoData, setVolcanoData] =useState([])
     const [activeListName, setActiveList] =useState([])
-    const [heatmapData, setHeatmapData] = useState({isLoading:true,data:{},msg:"",clusterIndex : undefined})
+    const [heatmapData, setHeatmapData] = useState({isLoading:true,data:{},msg:"",clusterIndex : undefined, anovaDetails: {}})
     const [transferPoints, toggleTransfer] = useToggle(true)
     const [searchParams, setSearchParams] = useSearchParams();
     const plotType = searchParams.get("type")
@@ -48,6 +49,22 @@ export function MCDataset(props) {
         setHeatmapData(prevValues => {
             return { ...prevValues,"clusterIndex": clusterIndex}
           })
+    }
+
+    
+    const setHeatmapANOVASettings = (anovaDetails,reset=false) => {
+        if (reset) {
+            setHeatmapData(prevValues => {
+                return { ...prevValues,"anovaDetails": undefined,"data":{}}
+              })
+        }
+
+        else {
+
+            setHeatmapData(prevValues => {
+                return { ...prevValues,"anovaDetails": anovaDetails,"data":{}}
+              })
+        }
         }
 
     const handleVolcanoData = (data) => {
@@ -69,55 +86,62 @@ export function MCDataset(props) {
             {dataDetails.dataExist?
                 <div style={{fontSize:"0.75rem",outline:"none",marginTop:"40px"}}>
                     <div className="topbar-fixed-dataset">
+                    
                     <div className="hor-aligned-center-div-sapce-between">
-                    {/* //#6e5b7b */}
+
                         <div style={{color:"#2F5597",marginLeft:"2rem"}}> 
-                        <h3 >{dataDetails.details["shortDescription"]}</h3>
+                            <h3 >{dataDetails.details["shortDescription"]}</h3>
                         </div>
                         
-                        <div style={{margin: "0.1rem",marginLeft:"3rem",marginTop:"0.7rem",fontSize:"1rem"}}>
+                        <div className="navbar-link">
                             <Link style={{textDecoration:"none", color:plotType==="volcano"?"#2F5597":"grey", fontWeight:"light"}} to = {`/dataset/${props.dataID}?type=volcano`}>Volcano</Link>
                         </div>
-                        <div style={{margin: "0.1rem", marginLeft:"3rem",marginTop:"0.7rem",fontSize:"1rem"}}>
+
+                        <div className="navbar-link">
                             <Link style={{textDecoration:"none", color:plotType==="heatmap"?"#2F5597":"grey", fontWeight:"light"}} to = {`/dataset/${props.dataID}?type=heatmap`}>Heatmap</Link>
+                        </div>
+                        <div className="navbar-link">
+                            <Link style={{textDecoration:"none", color:plotType==="mitomap"?"#2F5597":"grey", fontWeight:"light"}} to = {`/dataset/${props.dataID}?type=mitomap`}>MitoMap</Link>
+                        </div>
+                        <div className="navbar-link">
+                            <Link style={{textDecoration:"none", color:"grey", fontWeight:"light"}} to = {`/dataset/`}>Datasets</Link>
                         </div>
                     
                     
                     </div>
                     </div>
 
-                    {/* <MCFilterTagContainer filterItems = {dataDetails.filterNames} direction="column"/> */}
-
-                    {/* <div>
-                    <p>Choose type of visualization to explore data. The significance cutoff (q-value) can be set individually. </p>
-                    <p>Your recent list of searched proteins will be avaialable for annotation.</p>
-                    </div> */}
-                    
-                    
-                    {/* <Link to = {`/dataset/${props.dataID}?type=table`}>Table</Link> */}
-                    {/* <MCVolcano /> */}
-                    {/* <MCSelectableTable/>
-                    <MCHeatmapFilter /> */}
                     <div className="dataset-container">
                     {plotType==="heatmap"?
                     
-                        <MCHeatmapWrapper token = {props.token} responseData = {heatmapData} saveHeatmapData = {setHeatmapData} setClusterIndex = {setClusterIndex}/>:plotType==="volcano"?
-                        <MCVolcanoGrid 
-                            token = {props.token}
-                            dataID = {props.dataID} 
-                            volcanoWindows = {volcanoWindows}
-                            setVolcanoWindows = {setVolcanoWindows}
-                            volcanoData = {volcanoData} 
-                            setVolcanoData = {handleVolcanoData}
+                        <MCHeatmapWrapper 
+                            token = {props.token} 
+                            responseData = {heatmapData} 
                             groupingNames={dataDetails.details.groupingNames} 
-                            groupItems={dataDetails.details.groupItems}
-                            transferPoints = {transferPoints}
-                            toggleTransfer = {toggleTransfer}
-                            handleActiveList  = {handleActiveList}
-                            activeListName = {activeListName}
-                            activeList = {activeListName!==undefined && Object.keys(featureLists).includes(activeListName)?featureLists[activeListName]:[]}
-                            savedFeatureLists = {Object.keys(featureLists)}
-                            />:null}
+                            setHeatmapANOVASettings = {setHeatmapANOVASettings}
+                            saveHeatmapData = {setHeatmapData} 
+                            setClusterIndex = {setClusterIndex}/>
+                        :plotType==="volcano"?
+                            <MCVolcanoGrid 
+                                token = {props.token}
+                                dataID = {props.dataID} 
+                                volcanoWindows = {volcanoWindows}
+                                setVolcanoWindows = {setVolcanoWindows}
+                                volcanoData = {volcanoData} 
+                                setVolcanoData = {handleVolcanoData}
+                                groupingNames={dataDetails.details.groupingNames} 
+                                groupItems={dataDetails.details.groupItems}
+                                transferPoints = {transferPoints}
+                                toggleTransfer = {toggleTransfer}
+                                handleActiveList  = {handleActiveList}
+                                activeListName = {activeListName}
+                                activeList = {activeListName!==undefined && Object.keys(featureLists).includes(activeListName)?featureLists[activeListName]:[]}
+                                savedFeatureLists = {Object.keys(featureLists)}
+                                />
+                        :plotType==="mitomap"?
+                        <div><MCMitoMap 
+                            token = {props.token}
+                            dataID = {props.dataID} /></div>:null}
                     </div>
                 </div>:
                 

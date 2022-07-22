@@ -32,18 +32,37 @@ class Token(object):
     def updateTokens(self):
         ""
 
+    def __createToken(self,N, isAdminToken = False, validHours = 48, emailValidated = False):
+        ""
+        t1 = datetime.now()
+        t2 = t1 + timedelta(hours=validHours)
+        tokenString = getRandomString(N)
+        validateCode = "None" if not isAdminToken else getRandomString(10)
+        t = {
+            "token" : tokenString,
+            "isAdminToken" : isAdminToken,
+            "validTill" : t2,
+            "validated" : emailValidated,
+            "validationCode" : validateCode
+            }
+        return  tokenString,validateCode,t
+
+    def createAdminToken(self):
+        ""
+        #create admin token, quires validated by email
+        tokenString, validateCode, t = self.__createToken(N = 120, isAdminToken = True, validHours = 48, emailValidated = False)
+        
+        self.tokens[tokenString] = t
+        self.__saveTokens()
+        return tokenString, validateCode
 
     def createToken(self):
         ""
-        t1 = datetime.now()
-        t2 = t1 + timedelta(hours=48)
-        tokenString = getRandomString(40)
-        t = {
-            "token" : tokenString,
-            "validTill" : t2
-            }
+        #create token, that does not have to be validated.
+        tokenString, _, t = self.__createToken(N = 40,isAdminToken = False, validHours = 48,emailValidated = True)
         self.tokens[tokenString] = t
         self.__saveTokens()
+
         return tokenString
 
     def isValid(self,tokenID):
@@ -55,5 +74,35 @@ class Token(object):
                 return True
         return False
 
+    def isAdminValid(self,tokenID):
+        ""
+        self.__readTokens()
+        if tokenID in self.tokens:
+            token = self.tokens[tokenID]
+            if token["validated"]:
+                return True
+        return False
 
+    def isAdminToken(self,adminToken):
+        ""
+        if adminToken in self.tokens and self.tokens[adminToken]["isAdminToken"]:
+            return True
+        return False
 
+    def isAdminTokenValidated(self,adminToken):
+        ""
+        return adminToken in self.tokens and self.isAdminToken(adminToken) and self.tokens[adminToken]["validated"]
+
+    def validateToken(self,adminTokenID,validationCode):
+        ""
+        if self.isAdminToken(adminTokenID) and not self.isAdminTokenValidated(adminTokenID):
+            if self.tokens[adminTokenID]["validationCode"] == validationCode:
+                self.tokens[adminTokenID]["validated"] = True
+                self.__saveTokens()
+                return True, "Token validated. You can visit this site for 48 hours until you have to login again."
+            else:
+                return False, "Validation code wrong"
+        elif self.isAdminTokenValidated():
+            return True,"Token already validated"
+
+        return False, "Token not valid."

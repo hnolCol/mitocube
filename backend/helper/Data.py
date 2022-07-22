@@ -2,6 +2,7 @@
 
 
 from ast import Or
+from tkinter.tix import Tree
 from typing import OrderedDict
 import matplotlib
 import pandas as pd 
@@ -20,7 +21,7 @@ from scipy.stats import f_oneway,ttest_ind
 import fastcluster
 import itertools
 from statsmodels.stats.multitest import multipletests
-
+from .stats import TwoWAyANOVA
 from .Misc import buildRegex
 
 
@@ -352,8 +353,6 @@ class Data(object):
             expColumns = self.getExpressionColumns(dataID)
             data = self.dfs[dataID]["data"].loc[boolIdx]
             data.loc[:,"idx"] = data.index
-           # print(data)
-            #print(expColumns)
             meltedData = data.melt(value_vars=expColumns, id_vars = ["idx"])
             
             if addGroupings:
@@ -466,36 +465,151 @@ class Data(object):
 
         return groupings, groupingNames, groupingMapper, groupingColorMapper, groupColorValues, groupingItems
 
-    def getHeatmapData(self,dataID,anovaCutoff = 0.0001):
+
+    def getMitoMapData(self,dataID,anovaDetails={"pvalue":0.001}):
         ""
         if dataID in self.dfs:
+            X = self.dfs[dataID]["data"]
+            mitoColumns = ["Functional MitoCoP classification","MitoCarta3.0_MitoPathways"]
+            mitoPaths = self.dbManager.getDBInfoForFeatureListByColumnName(X.index,mitoColumns[-1],checkShape=False).replace("0",np.nan).dropna()
+            mitoGeneNames = self.dbManager.getDBInfoForFeatureListByColumnName(X.index,"Gene names  (primary )",checkShape=False).dropna()
             expColumns = self.getExpressionColumns(dataID)
-            annotationColumn = self.getAPIParam("annotation-colum")
-            extraColumns = self.getAPIParam("extra-colums-in-dataset-heatmaps")
             groupings, groupingNames, groupingMapper, groupingColorMapper, groupColorValues, groupingItems = self.getGroupingDetails(dataID,expColumns)
-            
-            X = self.dfs[dataID]["data"].dropna(subset=expColumns)
-            #print(X.index.size)
-            results = pd.DataFrame(index = X.index)
+
+            X  = X.loc[mitoPaths.index]
             groupingName = groupingNames[0]
+            results = pd.DataFrame(index = X.index)
             testGroupData = [X[columnNames].values for columnNames in groupings[groupingName].values()]
             F,p = f_oneway(*testGroupData,axis=1)
             oneWayANOVAColumnName = "p-1WANOVA({})".format(groupingName)
             results[oneWayANOVAColumnName] = p
-            boolIdx = results.index[results[oneWayANOVAColumnName] < anovaCutoff]
+            boolIdx = results.index[results[oneWayANOVAColumnName] <  0.001]
 
+            print(results)
+
+            pathwayIDMatch = dict()
+            pathwaySigs = []
+            for idx, mPs in mitoPaths.items():
+                ps = mPs.split(";")
+                for p in ps:
+                    if p in pathwayIDMatch:
+                        pathwayIDMatch[p].append(idx)
+                    else:
+                        pathwayIDMatch[p] = [idx]
+            
+            for ps, idxs in pathwayIDMatch.items():
+
+                sigIdx = boolIdx.intersection(idxs)
+                N = len(idxs)
+                N_sig = sigIdx.size
+
+                if N_sig > 0:
+                   
+                    pathwaySigs.append( 
+                            {
+                            "name" : ps, 
+                            "N" : N, 
+                            "N_sig":N_sig,
+                            "frac" : N_sig/N
+                            })
+
+            pathwaySigs_o = sorted(pathwaySigs, key=lambda d: d['frac'], reverse=True)
+            rr = {}
+            secondLevelRR = {}
+            for ps in pathwaySigs_o:
+                topPath = ps["name"].split(" > ")[0]
+                ps["name"] = ps["name"].replace(topPath+" > ","")
+
+                if " > " not in ps["name"]:
+                    if topPath not in rr:
+                        rr[topPath] = [ps]
+                    else:
+                        rr[topPath].append(ps)
+                else:
+                    if topPath not in secondLevelRR:
+                        secondLevelRR[topPath] = {}
+                    pps = ps["name"].split(" > ")
+                    if pps[0] not in secondLevelRR[topPath]:
+                        secondLevelRR[topPath][pps[0]] = []
+                    ps["name"] = pps[-1]
+                    secondLevelRR[topPath][pps[0]].append(ps)
+
+            pathwayIDMatches = OrderedDict() 
+            for pathwayName, idxs in pathwayIDMatch.items():
+                geneNames = mitoGeneNames.loc[idxs]
+                pathwayIDMatches[pathwayName] = sorted([{"name" : geneNames.iloc[n], "idx":idx, "sig" : idx in boolIdx.values} for n,idx in enumerate(idxs)], key=lambda d: d["sig"], reverse=True)
+
+
+            return True, {"pathwayIDMatch":pathwayIDMatches,"pathwaySignificantIDs":rr,"secondPathwaySignificantIDs":secondLevelRR}
+
+        return False, "DataID not found."
+
+    def getHeatmapData(self,dataID,anovaDetails={"pvalue":0.0001}):
+        ""
+        if dataID in self.dfs:
+
+            if "pvalue" not in anovaDetails:
+                return False, "No p-value cutoff found."
+            if "anovaType" not in anovaDetails:
+                return False, "No anovaType found."
+            if "grouping1" not in anovaDetails:
+                return False, "Grouping 1 not found"
+
+            anovaType = anovaDetails["anovaType"]
+            anovaCutoff = anovaDetails["pvalue"]
+            grouping1 = anovaDetails["grouping1"]
+            #print(anovaType,anovaDetails)
+            
+
+            expColumns = self.getExpressionColumns(dataID)
+            annotationColumn = self.getAPIParam("annotation-colum")
+            extraColumns = self.getAPIParam("extra-colums-in-dataset-heatmaps")
+            groupings, groupingNames, groupingMapper, groupingColorMapper, groupColorValues, groupingItems = self.getGroupingDetails(dataID,expColumns)
+
+            if grouping1 not in groupingNames:
+                return False, "Grouping 1 not found in the dataset."
+    
+            X = self.dfs[dataID]["data"].dropna(subset=expColumns)
+        
+            if anovaType == "1-way ANOVA":
+                
+                results = pd.DataFrame(index = X.index)
+                testGroupData = [X[columnNames].values for columnNames in groupings[grouping1].values()]
+                F,p = f_oneway(*testGroupData,axis=1)
+                oneWayANOVAColumnName = "p-1WANOVA({})".format(grouping1)
+                results[oneWayANOVAColumnName] = p
+                boolIdx = results.index[results[oneWayANOVAColumnName] < anovaCutoff]
+                selectionpvalues = [pd.Series(results.loc[X.index,oneWayANOVAColumnName].values, name=oneWayANOVAColumnName, index=X.index).loc[boolIdx].reset_index()]
+                pvalueNames = [oneWayANOVAColumnName]
+                
+            elif anovaType == "2-way ANOVA":
+                if grouping2 not in groupingNames:
+                    return False, "Grouping 2 not found in the dataset."
+                if "pvalueType" not in anovaDetails:
+                    return False, "Please select the p-value cutoff type (e.g. factor or interaction)"
+                if "grouping2" not in anovaDetails:
+                    return False, "Grouping2 not defined. Please select."
+                grouping2 = anovaDetails["grouping2"]
+                cutoffPValueColumn = anovaDetails["pvalueType"]
+                anovaGrouping = OrderedDict([(k,v) for k,v in groupings.items() if k in [grouping1,grouping2]])
+                if len(anovaGrouping)!= 2:
+                    return False, "Groupings filtering resulted in less than two groupings. Name changed?"
+                anovaCalc = TwoWAyANOVA(X,anovaGrouping,expColumns)
+                p = anovaCalc.caulculate()
+                boolIdx = p.index[p.loc[:,cutoffPValueColumn] < anovaCutoff]
+                pvalueNames = p.columns.values.tolist()
+                selectionpvalues = [p.loc[boolIdx].reset_index()]            
             if not np.any(boolIdx):
-                return False, "Signficance cutoff resulted in an empty data frame (e.g. no signficiantly different proteins)."
+                    return False, "Signficance cutoff resulted in an empty data frame (e.g. no signficiantly different proteins)."
 
             X = X.loc[boolIdx]
-           
             values = X.loc[:,expColumns].values   
             values = zscore(values,axis=1,nan_policy="omit")
             maxValue = np.nanmax(np.abs(values.flatten()))
            # print(values)
             colorPalette = sns.color_palette("RdBu_r",n_colors=5).as_hex()
             colorValues = np.linspace(-maxValue,maxValue,num=5).flatten().tolist()
-            rowLinkage = fastcluster.linkage(values, method ="complete", metric = "euclidean")   
+            rowLinkage = fastcluster.linkage(values, method = "complete", metric = "euclidean")   
             maxD = 0.75*max(rowLinkage[:,2])
             Z_row = sch.dendrogram(rowLinkage, orientation='left', color_threshold= maxD, 
                                     leaf_rotation=90, ax = None, no_plot=True)
@@ -508,21 +622,17 @@ class Data(object):
                 pd.Series(X.index,name="idx"),
                 pd.Series(self.dbManager.getDBInfoForFeatureListByColumnName(X.index,annotationColumn).values.flatten(), 
                                 name="annotationColumn").fillna("-"),
-                pd.Series(results.loc[X.index,oneWayANOVAColumnName].values, name=oneWayANOVAColumnName)
-                                ] + [
+                                ]  + 
+                                [
                 pd.Series(self.dbManager.getDBInfoForFeatureListByColumnName(X.index,colName).values.flatten(),
-                        name = colName).fillna("-") for colName in extraColumns])
-            columnNamesForExport = expColumns+["idx","clusterIndex","annotationColumn",oneWayANOVAColumnName]+extraColumns
-            #print(vvs)
-
-            #print([pd.Series(self.dbManager.getDBInfoForFeatureListByColumnName(X.index,colName).values.flatten(),
-             #                   name = colName).fillna("-") for colName in extraColumns])
-           # print([pd.Series(self.dbManager.getDBInfoForFeatureListByColumnName(X.index,colName).unique(),
-           #                     name = colName).fillna("-") for colName in extraColumns])
+                        name = colName).fillna("-") for colName in extraColumns] + selectionpvalues)
+            
+            columnNamesForExport = expColumns+["idx","clusterIndex","annotationColumn"]+extraColumns+pvalueNames
+            
             vvs = vvs.iloc[Z_row['leaves']]
             values = vvs.loc[:,columnNamesForExport]
             
-            columnsForClusterMedian = [colName for colName in columnNamesForExport if colName != oneWayANOVAColumnName]
+            columnsForClusterMedian = [colName for colName in columnNamesForExport if colName not in pvalueNames]
 
             nClusters = np.unique(clusters).size
            

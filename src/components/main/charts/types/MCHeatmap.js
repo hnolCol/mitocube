@@ -65,7 +65,6 @@ export function MCHeatmap (props) {
             </g>:null}
             {marginForGroupingLegend>marginBetweenGroupsAndHeat && renderHeatmap?Object.keys(groupingLegend).map((groupingName,ig) => {
                 const groupingColor = groupingLegend[groupingName]
-                
                 const groupNames = Object.keys(groupingColor)
                 const legendY = margin.top + binHeight * ig
                 const widthPerLegendItem = (heatmapWidth) / groupNames.length

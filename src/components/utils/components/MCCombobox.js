@@ -21,7 +21,6 @@ export function MCCombobox(props) {
     }
 
     const onItemSelection = (item) => {
-        console.log(callback,callbackKey)
         if (isFunction(callback) && callbackKey ===undefined) callback(item)
 
         else if (isFunction(callback) && callbackKey !==undefined) callback(callbackKey,item)

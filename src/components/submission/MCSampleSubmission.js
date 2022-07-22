@@ -1,19 +1,33 @@
 import { useState, useEffect } from "react"
 
 import axios from "axios";
-import { Alert, Button, ButtonGroup, Code, EditableText, InputGroup, NumericInput } from "@blueprintjs/core";
+import { Alert, Button, ButtonGroup, Code, EditableText, InputGroup, NumericInput, Position } from "@blueprintjs/core";
 import { MCCombobox } from "../utils/components/MCCombobox";
-import { saveSubmission, getSavedSubmission } from "../utils/Misc";
+import { saveSubmission, getSavedSubmission, extractNamePrefix } from "../utils/Misc";
 import _, { isObject } from "lodash";
 import { MCGroupingTable } from "./MCGroupingTable";
+import { DateInput2 } from "@blueprintjs/datetime2";
 
 
-const initDetails = {
-        id : undefined,
-        time : undefined
+const initAlert = {
+    isOpen:false,
+    children:null,
+    icon:"notifications",
+    intent:"danger"
 }
-const initAlert = {isOpen:false,children:null,icon:"notifications"}
-const initSubmission = {"id":undefined,"time":undefined,"details":{},"groupingTable":{columnNames:["Run"],data:[]}}
+const initSubmission = {
+    id:undefined,
+    time:undefined,
+    details:{},
+    groupingTable:{columnNames:["Run","Replicate"],
+    data:[],
+    rerender : 0} // rerender - sets random number to inititate rendereing of table once data change but the shape does not.
+}
+
+
+function buildRunName (time,researcher,nrows,index) {
+    return `${time}_${extractNamePrefix(researcher)}_000_${(nrows+index+1).toString().padStart(2,"0")}`
+}
 
 export function MCSampleSubmission (props) {
 
@@ -21,6 +35,7 @@ export function MCSampleSubmission (props) {
     const [submission, setSubmission] = useState(initSubmission)
     const [details, setDetails] = useState([])
     const [alertDetails, setAlertDetails] = useState(initAlert)
+    
     //console.log(props)
 
     useEffect(() => {
@@ -35,7 +50,7 @@ export function MCSampleSubmission (props) {
         axios.get('/api/data/submission/id',{params:{token:props.token}}).then(response => {
                // console.log(response)
                 if (response.status === 200 & response.data["success"]){
-                    // setsubmissionID(prevValues => {
+                    // setsubmissionID(Values => {prev
                     //             return { ...prevValues,"id":response.data["id"],"time":response.data["time"]}})
                     
                 
@@ -48,17 +63,17 @@ export function MCSampleSubmission (props) {
 
     
     const saveSubmissionValue = (detailName,value,minValue = undefined) => {
-        console.log(value,minValue)
+     
         if (minValue !==undefined && value < minValue) value = ""
         let subDetails = submission.details
         subDetails[detailName] = value
+
         if (detailName === "n_samples"){
             let groupingTable = submission.groupingTable
             if (groupingTable.data.length < value){
                 const addNRows = value - groupingTable.data.length
-                let newwData = _.concat(groupingTable.data,_.range(addNRows).map((v,ii) => {return({Run:`${submission.time}_HeNo_000_${(groupingTable.data.length+ii+1).toString().padStart(2,"0")}`})}))
-                console.log(newwData)
-                groupingTable.data = newwData
+                let newwData = _.concat(groupingTable.data,_.range(addNRows).map((v,ii) => {return({Run:buildRunName(submission.time,submission.details["Researcher"],groupingTable.data.length,ii)})}))
+                groupingTable.data = newwData 
                 setSubmission(prevValues => {
                     return { ...prevValues, "details":subDetails,"groupingTable":groupingTable}})
             }
@@ -69,12 +84,18 @@ export function MCSampleSubmission (props) {
                     return { ...prevValues, "details":subDetails,"groupingTable":groupingTable}})
             }
         }
-
-        else if (detailName === "n_groupings"){
-            console.log(detailName,value)
-            console.log(submission.groupingTable)
+        else if (detailName === "Researcher"){
             let groupingTable = submission.groupingTable
-            groupingTable.columnNames = _.concat(["Run"],_.range(value).map(v => `Grouping ${v+1}`))
+            _.range(0,groupingTable.data.length).forEach((v,ii) => groupingTable.data[v]["Run"] = buildRunName(submission.time,submission.details["Researcher"],0,ii))
+
+            setSubmission(prevValues => {
+                return { ...prevValues, "details":subDetails,"groupingTable":groupingTable}})
+            
+        }
+        else if (detailName === "n_groupings"){
+
+            let groupingTable = submission.groupingTable
+            groupingTable.columnNames = _.concat(["Run","Replicate"],_.range(value).map(v => `Grouping ${v+1}`))
             setSubmission(prevValues => {
                 return { ...prevValues, "details":subDetails,"groupingTable":groupingTable}})
         }
@@ -90,7 +111,7 @@ export function MCSampleSubmission (props) {
     const resetForm = () => {
 
         setSubmission(prevValues => {
-            return { ...prevValues, "details":{}}})
+            return { ...prevValues, "details":{}, "groupingTable":initSubmission["groupingTable"]}})
         saveSubmission(null)
     }
 
@@ -102,46 +123,101 @@ export function MCSampleSubmission (props) {
     const handleDataEditing = (value,rowIndex,columnIndex) => {
        
         let tableData = submission.groupingTable
-        tableData.data[rowIndex][tableData.columnNames[columnIndex]] = value
+        if (_.isArray(rowIndex)){
+            rowIndex.forEach(v => tableData.data[v][tableData.columnNames[columnIndex]] = value)
+        }
+        else {
+            tableData.data[rowIndex][tableData.columnNames[columnIndex]] = value
+        }
+        
        // console.log(value,rowIndex,columnIndex)
+        setSubmission(prevValues => {
+            return { ...prevValues, "groupingTable":tableData,"rerender":Math.random()}})
+    }
+
+    const handleColumnNameEditing = (value,columnIndex) => {
+        let tableData = submission.groupingTable
+        var columnNames = tableData.columnNames
+        columnNames[columnIndex]  = value 
+        tableData.columnNames = columnNames
         setSubmission(prevValues => {
             return { ...prevValues, "groupingTable":tableData}})
     }
 
     const submitExperiment = () => {
         const [ok,msg] = checkDetailInput(submission,details)
-        console.log(ok,msg)
-        if (!ok){
+        
+        if (false && !ok){
             setAlertDetails({isOpen:true,children:<div>{msg}</div>,icon:"issue"})
+        }
+        else {
+            const jsonData = JSON.stringify({token:props.token,submission:submission})
+            axios.post('/api/data/submission/details',
+                jsonData, {headers: {
+                // Overwrite Axios's automatically set Content-Type
+                'Content-Type': 'application/json'
+                }}, 
+            ).then(response => {
+                
+                    if (!response.data.success) {
+                        setAlertDetails(prevValues => {
+                            return { ...prevValues, "isOpen":true,"children":<div>{response.data.msg}</div>,"icon":"issue"}})
+                    }
+                    else {
+                        setAlertDetails(prevValues => {
+                            return { ...prevValues, "isOpen":true,"children":<div>Submission complete. You will receive a confirmation email.</div>,"icon":"tick","intent":"success"}})
+                    }
+                }
+                )
         }
     }
 
     const closeAlert = (e) => {
         setAlertDetails(initAlert)
     }
-   // console.log(submission)
+
+    const handleTemplateInput = (columnNames,dataTable,nReplicates,nSamples) => {
+        // handle templete input (e.g. loaded from a txt file)
+        
+        let tableData = {columnNames:columnNames,data:dataTable}
+        let subDetails = submission.details
+        subDetails["n_samples"] = nSamples
+        subDetails["n_replicates"] = nReplicates
+
+        //update
+        setSubmission(prevValues => {
+            return { ...prevValues, "groupingTable":tableData}})  
+    }
+ 
+
 
     return(
 
         <div style={{fontSize:"0.80rem","width":"70%",transform:"translateX(20%)"}}>
-            <Alert {...alertDetails} canOutsideClickCancel = {true} intent = {"danger"} onClose = {closeAlert}/>
+            <Alert {...alertDetails} canOutsideClickCancel = {true} onClose = {closeAlert}/>
             <div>
                 <h2>Sample submission</h2>
                 <h3>{submission.id}</h3> 
                 <Code>{submission.time}</Code>
                 <p>Please fill out all fields below regarding your proteomics sample submisison.</p>
             </div>
+
             <MCSubmissionDetails 
                 token = {props.token} 
                 submission = {submission.details} 
+                date = {submission.time}
                 saveSubmissionValue = {saveSubmissionValue}
                 details = {details} 
                 setDetails = {setDetails}/>
             <div>
             <MCGroupingTable 
                     data = {submission.groupingTable.data} 
+                    rerender = {submission.rerender}
                     columnNames = {submission.groupingTable.columnNames}
-                    handleDataEditing = {handleDataEditing}/>
+                    numReplicates = {submission.details["n_replicates"]!==undefined?submission.details["n_replicates"]:1}
+                    handleDataEditing = {handleDataEditing}
+                    handleTemplateInput = {handleTemplateInput}
+                    handleColumnNameEditing  = {handleColumnNameEditing }/>
                     <p>{submission.groupingTable.data.length===0?"Adjust number of samples to assign groupings.":"0000 is a placeholder for the facility project id and will be assigned after acceptance of your project. Measured raw files will be named as shown here."}</p>
             </div>
             <ButtonGroup minimal={false}>
@@ -177,9 +253,9 @@ function checkDetailInput(submission,details) {
 
 
 function MCSubmissionDetails (props) {
-    const {submission,saveSubmissionValue, details, setDetails} = props
+    const {submission,saveSubmissionValue, details, setDetails, date} = props
     
-    
+   
     
     useEffect(() => {
         axios.get('/api/data/submission/details',{params:{token:props.token}}).then(response => {
@@ -193,9 +269,6 @@ function MCSubmissionDetails (props) {
       }, []);
 
 
-    
-    //console.log(submission)
-
     return(
 
         <div style={{display:"flex",flexDirection:"column",justifyItems:"center",justifyContent:"center"}}>
@@ -206,6 +279,12 @@ function MCSubmissionDetails (props) {
                         v["value"] = submission[v.name]!==undefined?submission[v.name]:""
                         return (
                             <MCNumericInput key = {v.name} detailName = {v.name} cb = {saveSubmissionValue} {...v}/>
+                        )
+                    }
+                    else if (v.field === "date-input"){
+                       
+                        return(
+                            <MCDateInput key = {v.name} detailName = {v.name} initValue = {date}/>
                         )
                     }
                     else if (v.field === "text-input") {
@@ -234,6 +313,26 @@ function MCSubmissionDetails (props) {
     )
 }
 
+
+function MCDateInput(props) {
+    const {q,field, detailName, cb, initValue, ...rest} = props 
+    const [dateValue, setDateValue] = useState()
+
+    const valueToShow = dateValue === undefined && initValue !== undefined && initValue.length === 8? `${initValue.substring(0,4)}-${initValue.substring(4,6)}-${initValue.substring(6)}` :dateValue
+
+    return(
+        <div style={{width:"100%",minHeight:"2.5rem",maxHeight:"2.5rem",paddingTop:"0.5rem"}}>
+        <DateInput2 
+                                parseDate={str => str.split(" ")[0].replace("-","").replace("-","")}
+                                onChange = {date => setDateValue(date)}
+                                placeholder="YYYYMMDD" 
+                                formatDate={date => `${date.getFullYear()}-${date.getMonth()+1>9?"":"0"}${date.getMonth()+1}-${date.getDate()+1>9?"":"0"}${date.getDate()}`} 
+                                closeOnSelection={true} 
+                                fill={true}
+                                value = {valueToShow}/>
+        </div>
+    )
+}
 
 function MCComboInput(props) {
     const {q,field, detailName, cb, ...rest} = props 
