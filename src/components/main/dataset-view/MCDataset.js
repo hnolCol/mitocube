@@ -103,9 +103,14 @@ export function MCDataset(props) {
                         <div className="navbar-link">
                             <Link style={{textDecoration:"none", color:plotType==="mitomap"?"#2F5597":"grey", fontWeight:"light"}} to = {`/dataset/${props.dataID}?type=mitomap`}>MitoMap</Link>
                         </div>
+                        
+                        <div className="navbar-link">
+                            <Link style={{textDecoration:"none", color:"grey", fontWeight:"light"}} to = {`/`}>Home</Link>
+                        </div>
                         <div className="navbar-link">
                             <Link style={{textDecoration:"none", color:"grey", fontWeight:"light"}} to = {`/dataset/`}>Datasets</Link>
                         </div>
+                        
                     
                     
                     </div>

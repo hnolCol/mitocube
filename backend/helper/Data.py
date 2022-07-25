@@ -582,13 +582,16 @@ class Data(object):
                 pvalueNames = [oneWayANOVAColumnName]
                 
             elif anovaType == "2-way ANOVA":
+                if grouping2 not in anovaDetails:
+                    return False, "2nd Grouping for ANOVA not provided."
+                grouping2 = anovaDetails["grouping2"]
                 if grouping2 not in groupingNames:
                     return False, "Grouping 2 not found in the dataset."
                 if "pvalueType" not in anovaDetails:
                     return False, "Please select the p-value cutoff type (e.g. factor or interaction)"
                 if "grouping2" not in anovaDetails:
                     return False, "Grouping2 not defined. Please select."
-                grouping2 = anovaDetails["grouping2"]
+                
                 cutoffPValueColumn = anovaDetails["pvalueType"]
                 anovaGrouping = OrderedDict([(k,v) for k,v in groupings.items() if k in [grouping1,grouping2]])
                 if len(anovaGrouping)!= 2:
