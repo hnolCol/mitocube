@@ -582,7 +582,7 @@ class Data(object):
                 pvalueNames = [oneWayANOVAColumnName]
                 
             elif anovaType == "2-way ANOVA":
-                if grouping2 not in anovaDetails:
+                if "grouping2" not in anovaDetails:
                     return False, "2nd Grouping for ANOVA not provided."
                 grouping2 = anovaDetails["grouping2"]
                 if grouping2 not in groupingNames:
