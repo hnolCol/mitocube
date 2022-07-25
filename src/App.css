@@ -737,41 +737,50 @@ hr {
   top: 0vh;
   height: minmax(50px,50vh);
   max-height: 75vh;
-  width: 20vw;
+  width: 25vw;
   background-color: white;
   margin-top: calc(40px + 0.5rem);
   padding-left: 0.5rem;
   margin-right: 0.5rem;
-  padding-right:0.5rem;
+  padding-right:0.2rem;
   overflow-x: hidden;
+  overflow-y: hidden;
 
 }
 
 .mitomap-item-container{
-  height : minmax(50px,50vh);
+  height : minmax(50px,60vh);
+  max-height: 60vh;
+  margin-top: 1rem;
   overflow-y: scroll;
   overflow-x: hidden;
 }
 
 .mitomap-item-sig{
   background-color: #9db58a;
-  padding : 0.3rem;
-  margin: 0.5rem;
+  padding : 0.2rem;
+  margin: 0.4rem;
+  height:2.2rem;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  border-radius: 0.5rem;
+  border-radius: 0.4rem;
+  font-size: 0.9rem;
+  cursor: default;
  
  
 }
 .mitomap-item{
   background-color: #efefef;
-  padding : 0.3rem;
-  margin: 0.5rem;
+  padding : 0.2rem;
+  margin: 0.4rem;
   display: flex;
+  height : 1.5rem;
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  border-radius: 0.5rem;
+  border-radius: 0.3rem;
+  font-size: 0.9rem;
+  cursor: default;
 }

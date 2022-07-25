@@ -3,6 +3,7 @@ import { Text } from "@visx/text";
 import axios from "axios";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { MCCSVDownload } from "../../../utils/components/MCCSVDownload";
 import { MCAnimatedPercentage } from "../../../utils/components/MCSVGUtils";
 import { MCDoubleMembrane, MCPathwayItems, MCSVGBackgroundGradient } from "./utils";
 
@@ -16,7 +17,7 @@ export function MCMitoMap(props) {
     useEffect(() => {
        
         axios.get('/api/data/mitomap', {params:{dataID:dataID,token:token,}}).then(response => {
-            console.log(response.data.data)
+            //console.log(response.data.data)
                 setMitomap({
                         main:response.data.data.pathwaySignificantIDs,
                         second:response.data.data.secondPathwaySignificantIDs,
@@ -45,17 +46,17 @@ export function MCMitoMap(props) {
             {pathwayDetails.items.length!==0?
                     <div className="mitomap-extra-view">
                         <div style={{position:"relative"}}>
-                                <div style={{position:"absolute",right:0,top:0}}>
+                                <div style={{position:"absolute",right:0,top:0,display:"flex",maxHeight:"30px"}}>
+                                <MCCSVDownload data = {pathwayDetails.items} fileName = {`MitoMap(${dataID}-${pathwayDetails.title}).csv`} primary={false} buttonMargin={false}/>
                                 <Button text="" onClick={e => setPathwayDetails({title:undefined,items:[]})} minimal={true} icon="cross" />
                                 </div>
-                            <div style={{paddingRight:"0.95rem"}}>
+                            <div style={{paddingRight:"3.2rem"}}>
                             <p>{pathwayDetails.title}</p>
                             </div>
                             <div className="mitomap-item-container">
                             {pathwayDetails.items.map(v => 
                                 <motion.div whileHover={{scale:1.05}} key={v.name} className={v.sig?"mitomap-item-sig":"mitomap-item"}>
-                                    <p>{v.name}{` (${v.idx})`}</p>
-                                    
+                                    {v.name}{` (${v.idx})`}
                                 </motion.div>)}
 
                             
@@ -75,7 +76,6 @@ export function MCMitoMap(props) {
                     <h4>{topPath}</h4>
                     {mitopathway.map(pathwayData => {
                         const {frac, name, N, N_sig} = pathwayData
-                        console.log(pathwayData)
                         return(
                             <MCAnimatedPercentage key={name} perc = {frac} extraText = {`${N_sig}/${N}`} metricName = {name} clicked = {pathwayDetails.metricName === name} fontSizeMetric={9} width={95} height={110} handleClick = {handleClickOnPathway}/>
                         )
