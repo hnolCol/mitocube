@@ -1,10 +1,9 @@
 
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { MCIcon } from "../icon/MitoCubeIcon"
 import { MCSpinner } from "../spinner/MCSpinner";
 import { MCProteinSearchIcon, MCDatasetSearchIcon } from "../icon/MCMainIcons";
-import { InputGroup, Button, ControlGroup } from "@blueprintjs/core";
+import { InputGroup, Button } from "@blueprintjs/core";
 import axios from "axios";
 
 

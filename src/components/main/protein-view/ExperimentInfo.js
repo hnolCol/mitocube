@@ -1,10 +1,9 @@
-import { Drawer, Icon } from "@blueprintjs/core"
+import { Drawer } from "@blueprintjs/core"
 import axios from "axios"
 import _ from "lodash"
 import { useState, useEffect, } from "react"
 import { MCCSVDownload } from "../../utils/components/MCCSVDownload"
 import { MCSpinner } from "../../spinner/MCSpinner"
-import CsvDownload from "react-json-to-csv";
 
 export function MCExpInfoDrawer(props) {
     

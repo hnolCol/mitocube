@@ -11,7 +11,7 @@ import { MCProteinLayout } from "./protein-view/Layout"
 import { MCDataFilter } from "../dialogs/filter/DataFilter"
 import { MCDialog } from "../dialogs/MCDialog"
 import { MCDataTableDialog } from "../dialogs/MCDataTableDialog";
-import { MCGetFilterFromLocalStorage, QueryParam } from "../utils/Misc";
+import { MCGetFilterFromLocalStorage } from "../utils/Misc";
 import { MCSpinner } from "../spinner/MCSpinner"
 import { MCExpInfoDrawer } from "./protein-view/ExperimentInfo"
 import { MCSettings } from "../dialogs/setting/MCSettings"

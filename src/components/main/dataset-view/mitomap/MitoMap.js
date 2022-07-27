@@ -6,27 +6,67 @@ import { useEffect, useState } from "react";
 import { MCCSVDownload } from "../../../utils/components/MCCSVDownload";
 import { MCAnimatedPercentage } from "../../../utils/components/MCSVGUtils";
 import { MCDoubleMembrane, MCPathwayItems, MCSVGBackgroundGradient } from "./utils";
-
-
+import {MCClusterANOVASelection} from "../MCScaledHeatmap";
+import { MCSpinner } from "../../../spinner/MCSpinner";
+import { MCMinimalBoxplot } from "../../charts/types/MCMinimalBoxplot";
+import {MCSVGFrame} from "../../charts/AxisContainer"
+import _ from "lodash";
 export function MCMitoMap(props) {
 
-    const {token, dataID} = props
-    const [mitomapPathways, setMitomap] = useState({main:{},second:{},pathwayIDMatch:{}})
-    const [pathwayDetails, setPathwayDetails] = useState({title:undefined,items:[],metricName:""})
+    const {token, dataID,groupingNames, mitoMapData, setMitoMapData, setMitoMapANOVADetails} = props
+    //const [mitomapPathways, setMitomap] = useState({main:{},second:{},pathwayIDMatch:{}})
+    //const [pathwayDetails, setPathwayDetails] = useState({title:undefined,items:[],metricName:""})
+    const mitomapPathways = mitoMapData.mitomapPathways
+    const pathwayDetails = mitoMapData.selectedPathway
+    console.log(mitoMapData)
+    console.log(pathwayDetails)
 
     useEffect(() => {
-       
-        axios.get('/api/data/mitomap', {params:{dataID:dataID,token:token,}}).then(response => {
-            //console.log(response.data.data)
-                setMitomap({
-                        main:response.data.data.pathwaySignificantIDs,
-                        second:response.data.data.secondPathwaySignificantIDs,
-                        pathwayIDMatch : response.data.data.pathwayIDMatch
-                    })
-           
+
+        if (Object.keys(mitoMapData.mitomapPathways).length !== 0) return 
+
+        if (mitoMapData.anovaDetails===undefined  ||  Object.keys(mitoMapData.anovaDetails).length === 0) return 
+        
+        setMitoMapData(prevValues => {
+            return { ...prevValues,"isLoading":true}
+          })
+
+        axios.get('/api/data/mitomap', {params:{dataID:dataID,token:token,anovaDetails:mitoMapData.anovaDetails}}).then(response => {
+            console.log(response.data.data)
+            if (response.status === 200 && Object.keys(response.data).includes("success") && response.data["success"]) {
+                const data = {
+                    main:response.data.data.pathwaySignificantIDs,
+                    second:response.data.data.secondPathwaySignificantIDs,
+                    pathwayIDMatch : response.data.data.pathwayIDMatch,
+                    pathwayIntensities  :  response.data.data.pathwayIntensities
+                }
+                setMitoMapData(prevValues => {
+                    return { ...prevValues,"mitomapPathways":data,"isLoading":false,"msg":`${response.data.data.numberProteins} of the MitoCarta 3.0 were detected.`}
+                  })
+            }
+            else if (response.data === undefined) {
+                setMitoMapData(prevValues => {
+                    return { ...prevValues,"mitomapPathways":{},"isLoading":false,"msg":"API did not return any data. Please contact the website admin."}
+                  })
+            }
+            else {
+                setMitoMapData(prevValues => {
+                    return { ...prevValues,"mitomapPathways":{},"isLoading":false,"msg":response.data["error"]}
+                  })
+
+            }
             }
         )
-      }, [token,dataID]);
+      }, [token,dataID, mitoMapData.anovaDetails]);
+
+
+    const resetPathwayDetaisls = (e) =>{
+
+        setMitoMapData(prevValues => {
+            return { ...prevValues,"selectedPathway":undefined}
+          })
+        
+    }
 
     const handleClickOnPathway = (metricName) => {
 
@@ -35,20 +75,30 @@ export function MCMitoMap(props) {
         if (matchedPathways.length > 0){
             const pathwayName = matchedPathways[0]
             const pathwayItems = mitomapPathways.pathwayIDMatch[pathwayName]
-            setPathwayDetails({title:pathwayName,items:pathwayItems,metricName:metricName})
+            const pathwayDetails = {title:pathwayName,items:pathwayItems,metricName:metricName}
+            setMitoMapData(prevValues => {
+                return { ...prevValues,"selectedPathway":pathwayDetails}
+              })
         }
         
     }
-
+    
     return(
-        <div style={{paddingLeft:"3rem",paddingTop:"2rem"}}>
+        <div>
+            {mitoMapData.anovaDetails===undefined || Object.keys(mitoMapData.anovaDetails).length === 0  ? 
+            
+            <MCClusterANOVASelection buttonText="Show MitoMap" groupingNames={groupingNames} setANOVASettings={setMitoMapANOVADetails}/>:
 
-            {pathwayDetails.items.length!==0?
+        mitoMapData.isLoading ? <MCSpinner />:
+        
+        <div style={{paddingLeft:"3rem",paddingTop:"2rem"}}>
+           
+            {pathwayDetails!==undefined && pathwayDetails.items.length!==0?
                     <div className="mitomap-extra-view">
                         <div style={{position:"relative"}}>
                                 <div style={{position:"absolute",right:0,top:0,display:"flex",maxHeight:"30px"}}>
                                 <MCCSVDownload data = {pathwayDetails.items} fileName = {`MitoMap(${dataID}-${pathwayDetails.title}).csv`} primary={false} buttonMargin={false}/>
-                                <Button text="" onClick={e => setPathwayDetails({title:undefined,items:[]})} minimal={true} icon="cross" />
+                                <Button text="" onClick={resetPathwayDetaisls} minimal={true} icon="cross" />
                                 </div>
                             <div style={{paddingRight:"3.2rem"}}>
                             <p>{pathwayDetails.title}</p>
@@ -62,22 +112,31 @@ export function MCMitoMap(props) {
                             
                             </div>
                         </div>
+                        <div className="mitomap-extra-chart">
+                        {console.log(mitomapPathways.pathwayIntensities[pathwayDetails.title])}
+                        {mitomapPathways.pathwayIntensities[pathwayDetails.title]!==undefined?<MCSVGFrame {...mitomapPathways.pathwayIntensities[pathwayDetails.title]}/>:null}
+                        </div>
                     </div>
                     :
                 null}
-
-            <p>Overview of regulations of the MitoCarta pathways. The value presents the percentage of proteins of the pathway that was found to be significantly changed. A value of 100 indicates that all proteins are significantly changed of the specific pathway. In the future you will be able to select the circles to view the underyling proteins and direction.</p>
+            <h4>Overview of regulations of the MitoCarta pathways.</h4>
+            <p>{` 
+                The value presents the percentage of proteins of the pathway that was found to be significantly changed. A value of 100 indicates that all proteins are significantly
+                changed of the specific pathway. In the future you will be able to select the circles to view the underyling proteins and direction.`}</p>
+            <p>{mitoMapData.anovaDetails["anovaType"] === "1-way ANOVA"?`One way ANOVA based on ${mitoMapData.anovaDetails["grouping1"]} (p-value < ${mitoMapData.anovaDetails["pvalue"]})`:`Two way anova based on ${mitoMapData.anovaDetails["grouping1"]} and ${mitoMapData.anovaDetails["grouping2"]} (p-value < ${mitoMapData.anovaDetails["pvalue"]})`}</p>
+            <p>{mitoMapData.msg}</p>
             {
+            mitomapPathways.main !==undefined && _.isObject(mitomapPathways) ? 
             Object.keys(mitomapPathways.main).map(topPath => {
                 const mitopathway = mitomapPathways.main[topPath]
                 
                 return(
-                    <div style={{coloar:"red"}}>
+                    <div key={topPath}>
                     <h4>{topPath}</h4>
                     {mitopathway.map(pathwayData => {
                         const {frac, name, N, N_sig} = pathwayData
                         return(
-                            <MCAnimatedPercentage key={name} perc = {frac} extraText = {`${N_sig}/${N}`} metricName = {name} clicked = {pathwayDetails.metricName === name} fontSizeMetric={9} width={95} height={110} handleClick = {handleClickOnPathway}/>
+                            <MCAnimatedPercentage key={name} perc = {frac} extraText = {`${N_sig}/${N}`} metricName = {name} clicked = {pathwayDetails!==undefined  && pathwayDetails.metricName === name} fontSizeMetric={9} width={95} height={110} handleClick = {handleClickOnPathway}/>
                         )
                     })}
 
@@ -93,7 +152,7 @@ export function MCMitoMap(props) {
                                     return(
                                         <MCAnimatedPercentage wd
                                             key={name} 
-                                            clicked = {pathwayDetails.metricName === name}
+                                            clicked = {pathwayDetails!==undefined && pathwayDetails.metricName === name}
                                             extraText = {`${N_sig}/${N}`}
                                             perc = {frac} 
                                             metricName = {name} 
@@ -112,7 +171,8 @@ export function MCMitoMap(props) {
                     </div>
                 )
             })
-        }
+        : null}
+        </div>}
         </div>
     )
 }

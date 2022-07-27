@@ -1,9 +1,9 @@
 import React from "react";
 import { useState } from "react";
-import { Column, Table, Cell, TableLoadingOption, RegionCardinality, SelectionModes, Regions, Table2, ColumnHeaderCell, RowHeaderCell, } from "@blueprintjs/table";
-import {Checkbox, MenuItem, Menu, Button,Icon, IconSize} from "@blueprintjs/core"
+import { Column, Cell, SelectionModes,Table2, ColumnHeaderCell, RowHeaderCell} from "@blueprintjs/table";
+import {Checkbox } from "@blueprintjs/core"
 
-import { SketchPicker, BlockPicker, ChromePicker } from 'react-color'
+import { ChromePicker } from 'react-color'
 import _ from "lodash"
 
 function selectedRegionTransform(e) {

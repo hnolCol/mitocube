@@ -1,5 +1,5 @@
 import { MCDataset } from "./dataset-view/MCDataset"
-import { useParams, Outlet } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 export function MCDatasetMainView(props) {
     const params = useParams();
@@ -7,7 +7,7 @@ export function MCDatasetMainView(props) {
     return(
         <div>
             <MCDataset dataID={params.dataID} token={props.token}/>
-            {/* <Outlet/> */}
+            
         </div>
     )
 }

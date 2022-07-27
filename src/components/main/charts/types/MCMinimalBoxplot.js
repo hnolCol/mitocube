@@ -4,6 +4,7 @@ import { localPoint } from '@visx/event';
 import { Text } from '@visx/text';
 import { scaleLinear } from '@visx/scale';
 import { getLuma } from '../../../utils/Misc';
+import _ from 'lodash';
 
 
 const legendTextProps = {textAnchor:"start",
@@ -114,7 +115,7 @@ export function MCMinimalBoxplot(props) {
     const [highlightDetails, setHighlightDetails] = useState(undefined)
     const {x,y,width,height,minValue,maxValue,values, featureNames, title, legend, legendTitle, vertical, highlightPoint} = props
    
-    const legendItems = Object.keys(legend)
+    const legendItems = _.isObject(legend) ? Object.keys(legend) : []
     const marginForLegend = legendItems.length > 0?20:0
     const marginLeft = 5
     const marginRight =  props.vertical?30:50 
@@ -197,7 +198,7 @@ export function MCMinimalBoxplot(props) {
             
             {/* plot legend */}
             {
-            marginForLegend > 0 && Object.keys(legend).length < 20?
+            marginForLegend > 0 && _.isObject(legend) && Object.keys(legend).length < 20?
                 <g> 
                     <Text 
                         x = {x+marginLeft} 

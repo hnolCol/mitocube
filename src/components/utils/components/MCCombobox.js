@@ -1,7 +1,6 @@
 import { Button, MenuItem } from "@blueprintjs/core";
-import { Select } from "@blueprintjs/select";
+import { Select2 } from "@blueprintjs/select";
 import { isFunction } from "lodash";
-import { useState } from "react";
 
 export function MCCombobox(props) {
     const {items,callback, placeholder, callbackKey, disabled, buttonProps, selectFill} = props
@@ -30,7 +29,7 @@ export function MCCombobox(props) {
     
 
     return(
-        <Select
+        <Select2
             fill={selectFill}
             items = {items}
             filterable ={false}
@@ -41,7 +40,7 @@ export function MCCombobox(props) {
 
             <Button text={placeholder} disabled={disabled} {...buttonProps} fill={selectFill}/> 
 
-        </Select>
+        </Select2>
     )
 }
 

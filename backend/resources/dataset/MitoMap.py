@@ -20,8 +20,8 @@ class DatasetsMitoMap(Resource):
         if token == "None" or not self.token.isValid(token):
             return {"success":False,"error":"Token is not valid."}
         dataID = request.args.get('dataID', default="None", type=str)
-
-        success, details = self.data.getMitoMapData(dataID)
+        anovaDetails = json.loads(request.args.get("anovaDetails",default="{}",type=str))
+        success, details = self.data.getMitoMapData(dataID,anovaDetails)
         if not success:
             return jsonify({"success":success,"error":details})
         else:

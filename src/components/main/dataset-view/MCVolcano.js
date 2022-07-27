@@ -3,7 +3,6 @@ import { scaleLinear } from "@visx/scale"
 import { localPoint } from '@visx/event';
 import axios from "axios";
 import { useEffect, useState, useRef } from "react";
-import { useParams } from "react-router";
 import { MCSpinner } from "../../spinner/MCSpinner";
 import { GridRows, GridColumns } from '@visx/grid';
 import { useToggle, arrayOfObjectsToTabDel, downloadSVGAsText, downloadTxtFile, findClosestMatch, saveFeatureList } from "../../utils/Misc";

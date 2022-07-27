@@ -412,6 +412,13 @@ hr {
   
 }
 
+.hor-aligned-out  {
+  display: flex;
+  width: 100vw;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
 .axis-container{
   padding: 0.2rem;
 }
@@ -735,8 +742,9 @@ hr {
   position: absolute;
   right: 0vw;
   top: 0vh;
-  height: minmax(50px,50vh);
-  max-height: 75vh;
+  /* height: 75vh; */
+  height : minmax(30vw,50vh);
+  /* max-height: 50vh; */
   width: 25vw;
   background-color: white;
   margin-top: calc(40px + 0.5rem);
@@ -749,18 +757,21 @@ hr {
 }
 
 .mitomap-item-container{
-  height : minmax(50px,60vh);
-  max-height: 60vh;
+  height : minmax(50px,40vh);
+  max-height: 40vh;
   margin-top: 1rem;
   overflow-y: scroll;
   overflow-x: hidden;
 }
-
+.mitomap-extra-chart {
+  margin-top: 1rem;
+  height: 25vw; 
+}
 .mitomap-item-sig{
   background-color: #9db58a;
-  padding : 0.2rem;
+  padding : 0.1rem;
   margin: 0.4rem;
-  height:2.2rem;
+  height:2rem;
   display: flex;
   align-items: center;
   justify-content: center;

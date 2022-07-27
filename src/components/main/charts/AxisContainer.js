@@ -75,7 +75,7 @@ function MCHeatmapFrame(props){
 
 // console.log(getWidthAndStartForAxis(5,3,400,500))
 
-function MCSVGFrame(props){
+export function MCSVGFrame(props){
     const svgRef = useRef(null);
     const numberAxes = Object.keys(props.graphType).length
     

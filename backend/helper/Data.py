@@ -345,13 +345,17 @@ class Data(object):
             else:
                 return False, "api-config misses param 'experiment-procedure-params"
 
-    def getDataForFeatures(self,dataID,featureIDs,addGroupings=True):
+    def getDataForFeatures(self,dataID,featureIDs,addGroupings=True, zscore_transform = False):
         ""
         if dataID in self.dfs:
             boolIdx = self.dfs[dataID]["data"].index.isin(featureIDs)
             expColumns = self.getExpressionColumns(dataID)
             data = self.dfs[dataID]["data"].loc[boolIdx]
             data.loc[:,"idx"] = data.index
+            if zscore_transform:
+
+                data[expColumns] =  zscore(data[expColumns].values,axis=1,nan_policy="omit")
+
             meltedData = data.melt(value_vars=expColumns, id_vars = ["idx"])
             
             if addGroupings:
@@ -468,6 +472,10 @@ class Data(object):
     def getMitoMapData(self,dataID,anovaDetails={"pvalue":0.001}):
         ""
         if dataID in self.dfs:
+            okay, msg = self._checkOneWayANOVADetails(anovaDetails)
+            if not okay:
+                return False, msg
+
             X = self.dfs[dataID]["data"]
             mitoColumns = ["Functional MitoCoP classification","MitoCarta3.0_MitoPathways"]
             mitoPaths = self.dbManager.getDBInfoForFeatureListByColumnName(X.index,mitoColumns[-1],checkShape=False).replace("0",np.nan).dropna()
@@ -476,15 +484,28 @@ class Data(object):
             groupings, groupingNames, groupingMapper, groupingColorMapper, groupColorValues, groupingItems = self.getGroupingDetails(dataID,expColumns)
 
             X  = X.loc[mitoPaths.index]
-            groupingName = groupingNames[0]
-            results = pd.DataFrame(index = X.index)
-            testGroupData = [X[columnNames].values for columnNames in groupings[groupingName].values()]
-            F,p = f_oneway(*testGroupData,axis=1)
-            oneWayANOVAColumnName = "p-1WANOVA({})".format(groupingName)
-            results[oneWayANOVAColumnName] = p
-            boolIdx = results.index[results[oneWayANOVAColumnName] <  0.001]
+          
+            anovaType, anovaCutoff, grouping1 = self._getOneWayANOVASignificanceHits(anovaDetails)
+            
+            if grouping1 not in groupingNames:
+                return False, "Grouping 1 not found in the dataset."
 
-            print(results)
+            X = self.dfs[dataID]["data"].dropna(subset=expColumns)
+
+            if anovaType == "1-way ANOVA":
+                boolIdx, selectionpvalues, pvalueNames = self._performOneWayANOVA(X,groupings,grouping1,anovaCutoff)
+                
+            elif anovaType == "2-way ANOVA":
+                ok, ds = self._checkTwoWayANOVADetails(anovaDetails,groupingNames)
+                if not okay:
+                    return False, ds
+                else:
+                    grouping2 = ds
+                
+                boolIdx, selectionpvalues, pvalueNames = self._performTwoWayANOVA(X,expColumns,anovaDetails,groupings,grouping1,grouping2,anovaCutoff)
+            if not np.any(boolIdx):
+                return False, "No significant hits found."
+
 
             pathwayIDMatch = dict()
             pathwaySigs = []
@@ -502,6 +523,10 @@ class Data(object):
                 N = len(idxs)
                 N_sig = sigIdx.size
 
+                XX = X.loc[sigIdx,expColumns]
+
+
+
                 if N_sig > 0:
                    
                     pathwaySigs.append( 
@@ -510,6 +535,7 @@ class Data(object):
                             "N" : N, 
                             "N_sig":N_sig,
                             "frac" : N_sig/N
+                            #"boxplotData" : boxplotData
                             })
 
             pathwaySigs_o = sorted(pathwaySigs, key=lambda d: d['frac'], reverse=True)
@@ -534,73 +560,200 @@ class Data(object):
                     secondLevelRR[topPath][pps[0]].append(ps)
 
             pathwayIDMatches = OrderedDict() 
+            pathwayIntensities = OrderedDict() 
             for pathwayName, idxs in pathwayIDMatch.items():
                 geneNames = mitoGeneNames.loc[idxs]
+                #print(self.getDataForCard(dataID,idxs[0],{})["chart"])
+                boxplotData = self._getBoxplotDataForMultipleFeatures(dataID,idxs,title=pathwayName)
+                pathwayIntensities[pathwayName] = boxplotData#self.getDataForCard(dataID,idxs[0],{})["chart"]
+                #print(boxplotData)
+                # pathwayIntensities[pathwayName] = {
+                #     "graphData" : {
+                #         1 : {
+                #             "values" : [
+                #                     {"q25":4,"m":6,"q75":9,"min":3,"max":11},
+                #                     {"q25":4,"m":6,"q75":9,"min":3,"max":11},
+                #                     {"q25":4,"m":8,"q75":9,"min":3,"max":11}],
+                #             "minValue" : 1,
+                #             "maxValue" : 15,
+                #             "featureNames" : [""],
+                #             "vertical" : False,
+                #             "title" : "",
+                #             "legendTitle": groupingNames[0],
+                #             "legendData" : groupingColorMapper[groupingNames[0]]
+                            
+                #         }
+                        
+                #     },
+                #     "graphType" : {1:"boxplot"}
+                #}
                 pathwayIDMatches[pathwayName] = sorted([{"name" : geneNames.iloc[n], "idx":idx, "sig" : idx in boolIdx.values} for n,idx in enumerate(idxs)], key=lambda d: d["sig"], reverse=True)
 
 
-            return True, {"pathwayIDMatch":pathwayIDMatches,"pathwaySignificantIDs":rr,"secondPathwaySignificantIDs":secondLevelRR}
+            
+           
+
+            return True, {
+                    "pathwayIDMatch":pathwayIDMatches,
+                    "pathwaySignificantIDs":rr,
+                    "secondPathwaySignificantIDs":secondLevelRR,
+                    "pathwayIntensities" : pathwayIntensities,
+                    "numberProteins":mitoPaths.index.size}
 
         return False, "DataID not found."
+
+    
+    def _getBoxplotDataForMultipleFeatures(self,dataID,featureIDs,title=""):
+        ""
+        meltedData = self.getDataForFeatures(dataID,featureIDs,zscore_transform=True)
+        
+        groupingColorMapper = self.getGroupingColorMapper(dataID)
+        groupings = self.getParam(dataID,"groupings") 
+        
+        if groupings is None: return {}
+        groupingNames = list(groupings.keys())
+       
+        minValue, maxValue = meltedData["value"].quantile(q=[0,1]).values
+        marginRange = np.sqrt((maxValue- minValue)**2) * 0.05
+
+        
+        groupedData = meltedData.groupby(by = groupingNames,sort=False) #level_X == quantile due to reset_index
+        boxplotData = groupedData.quantile(q=[0,0.25,0.5,0.75,1]).reset_index() 
+        quantileColumnName = "level_{}".format(len(groupingNames)) # get name for quantile
+        boxplotData[quantileColumnName] = boxplotData[quantileColumnName].replace([0,0.25,0.5,0.75,1],["min","q25","m","q75","max"])
+
+        v, legendTitle, legendData, tickLabel = self._getDataForBoxplot(boxplotData,groupedData,groupings,groupingNames,groupingColorMapper,quantileColumnName)
+
+        #print(v)
+
+        chartData = {"graphType":{"1":"boxplot"},
+                        "graphData":{
+                            "1":{
+                                "minValue" : minValue - marginRange,
+                                "maxValue" : maxValue + marginRange,
+                                "values" : v,
+                                "title" : "",
+                                "featureNames" : tickLabel,
+                                "legend" : legendData,
+                                "legendTitle" : "Significant feautres z-score normalized"
+                            }
+                            }, 
+                        
+            }
+
+        return chartData 
+
+
+    def _checkOneWayANOVADetails(self, anovaDetails):
+        ""
+        if "pvalue" not in anovaDetails:
+                return False, "No p-value cutoff found."
+        if "anovaType" not in anovaDetails:
+                return False, "No anovaType found."
+        if "grouping1" not in anovaDetails:
+                return False, "Grouping 1 not found"
+        return True, ""
+
+    def _checkTwoWayANOVADetails(self, anovaDetails, groupingNames):
+        ""
+        if "grouping2" not in anovaDetails:
+                    return False, "2nd Grouping for ANOVA not provided."
+        grouping2 = anovaDetails["grouping2"]
+        if grouping2 == anovaDetails["grouping1"]:
+            return False, "Grouping1 equals Grouping2"
+        if grouping2 not in groupingNames:
+            return False, "Grouping 2 not found in the dataset."
+        if "pvalueType" not in anovaDetails:
+            return False, "Please select the p-value cutoff type (e.g. factor or interaction)"
+        if "grouping2" not in anovaDetails:
+            return False, "Grouping2 not defined. Please select."
+
+        return True, grouping2
+
+    def _getOneWayANOVASignificanceHits(self,anovaDetails):
+        ""
+        anovaType = anovaDetails["anovaType"]
+        anovaCutoff = anovaDetails["pvalue"]
+        grouping1 = anovaDetails["grouping1"]
+        
+        return anovaType, anovaCutoff, grouping1
+
+    def _performOneWayANOVA(self,X,groupings,grouping1,anovaCutoff):
+        ""
+        results = pd.DataFrame(index = X.index)
+        testGroupData = [X[columnNames].values for columnNames in groupings[grouping1].values()]
+        F,p = f_oneway(*testGroupData,axis=1)
+        oneWayANOVAColumnName = "p-1WANOVA({})".format(grouping1)
+        results[oneWayANOVAColumnName] = p
+        boolIdx = results.index[results[oneWayANOVAColumnName] < anovaCutoff]
+        selectionpvalues = [pd.Series(results.loc[X.index,oneWayANOVAColumnName].values, name=oneWayANOVAColumnName, index=X.index).loc[boolIdx].reset_index()]
+        pvalueNames = [oneWayANOVAColumnName]
+
+        return boolIdx, selectionpvalues, pvalueNames
+
+    def _performTwoWayANOVA(self,X,expColumns,anovaDetails,groupings,grouping1,grouping2,anovaCutoff):
+        ""
+        cutoffPValueColumn = anovaDetails["pvalueType"]
+        anovaGrouping = OrderedDict([(k,v) for k,v in groupings.items() if k in [grouping1,grouping2]])
+        if len(anovaGrouping)!= 2:
+            return False, "Groupings filtering resulted in less than two groupings. Name changed?"
+        anovaCalc = TwoWAyANOVA(X,anovaGrouping,expColumns)
+        p = anovaCalc.caulculate()
+        boolIdx = p.index[p.loc[:,cutoffPValueColumn] < anovaCutoff]
+        pvalueNames = p.columns.values.tolist()
+        selectionpvalues = [p.loc[boolIdx].reset_index()]       
+
+        return boolIdx,selectionpvalues,pvalueNames
 
     def getHeatmapData(self,dataID,anovaDetails={"pvalue":0.0001}):
         ""
         if dataID in self.dfs:
 
-            if "pvalue" not in anovaDetails:
-                return False, "No p-value cutoff found."
-            if "anovaType" not in anovaDetails:
-                return False, "No anovaType found."
-            if "grouping1" not in anovaDetails:
-                return False, "Grouping 1 not found"
-
-            anovaType = anovaDetails["anovaType"]
-            anovaCutoff = anovaDetails["pvalue"]
-            grouping1 = anovaDetails["grouping1"]
-            #print(anovaType,anovaDetails)
-            
+            okay, msg = self._checkOneWayANOVADetails(anovaDetails)
+            if not okay:
+                return False, msg
 
             expColumns = self.getExpressionColumns(dataID)
             annotationColumn = self.getAPIParam("annotation-colum")
             extraColumns = self.getAPIParam("extra-colums-in-dataset-heatmaps")
             groupings, groupingNames, groupingMapper, groupingColorMapper, groupColorValues, groupingItems = self.getGroupingDetails(dataID,expColumns)
 
+            anovaType, anovaCutoff, grouping1 = self._getOneWayANOVASignificanceHits(anovaDetails)
+            
             if grouping1 not in groupingNames:
                 return False, "Grouping 1 not found in the dataset."
-    
+
             X = self.dfs[dataID]["data"].dropna(subset=expColumns)
-        
+
             if anovaType == "1-way ANOVA":
-                
-                results = pd.DataFrame(index = X.index)
-                testGroupData = [X[columnNames].values for columnNames in groupings[grouping1].values()]
-                F,p = f_oneway(*testGroupData,axis=1)
-                oneWayANOVAColumnName = "p-1WANOVA({})".format(grouping1)
-                results[oneWayANOVAColumnName] = p
-                boolIdx = results.index[results[oneWayANOVAColumnName] < anovaCutoff]
-                selectionpvalues = [pd.Series(results.loc[X.index,oneWayANOVAColumnName].values, name=oneWayANOVAColumnName, index=X.index).loc[boolIdx].reset_index()]
-                pvalueNames = [oneWayANOVAColumnName]
+                boolIdx, selectionpvalues, pvalueNames = self._performOneWayANOVA(X,groupings,grouping1,anovaCutoff)
+                # results = pd.DataFrame(index = X.index)
+                # testGroupData = [X[columnNames].values for columnNames in groupings[grouping1].values()]
+                # F,p = f_oneway(*testGroupData,axis=1)
+                # oneWayANOVAColumnName = "p-1WANOVA({})".format(grouping1)
+                # results[oneWayANOVAColumnName] = p
+                # boolIdx = results.index[results[oneWayANOVAColumnName] < anovaCutoff]
+                # selectionpvalues = [pd.Series(results.loc[X.index,oneWayANOVAColumnName].values, name=oneWayANOVAColumnName, index=X.index).loc[boolIdx].reset_index()]
+                # pvalueNames = [oneWayANOVAColumnName]
                 
             elif anovaType == "2-way ANOVA":
-                if "grouping2" not in anovaDetails:
-                    return False, "2nd Grouping for ANOVA not provided."
-                grouping2 = anovaDetails["grouping2"]
-                if grouping2 not in groupingNames:
-                    return False, "Grouping 2 not found in the dataset."
-                if "pvalueType" not in anovaDetails:
-                    return False, "Please select the p-value cutoff type (e.g. factor or interaction)"
-                if "grouping2" not in anovaDetails:
-                    return False, "Grouping2 not defined. Please select."
+                ok, ds = self._checkTwoWayANOVADetails(anovaDetails,groupingNames)
+                if not okay:
+                    return False, ds
+                else:
+                    grouping2 = ds
                 
-                cutoffPValueColumn = anovaDetails["pvalueType"]
-                anovaGrouping = OrderedDict([(k,v) for k,v in groupings.items() if k in [grouping1,grouping2]])
-                if len(anovaGrouping)!= 2:
-                    return False, "Groupings filtering resulted in less than two groupings. Name changed?"
-                anovaCalc = TwoWAyANOVA(X,anovaGrouping,expColumns)
-                p = anovaCalc.caulculate()
-                boolIdx = p.index[p.loc[:,cutoffPValueColumn] < anovaCutoff]
-                pvalueNames = p.columns.values.tolist()
-                selectionpvalues = [p.loc[boolIdx].reset_index()]            
+                boolIdx, selectionpvalues, pvalueNames = self._performTwoWayANOVA(X,expColumns,anovaDetails,groupings,grouping1,grouping2,anovaCutoff)
+                # cutoffPValueColumn = anovaDetails["pvalueType"]
+                # anovaGrouping = OrderedDict([(k,v) for k,v in groupings.items() if k in [grouping1,grouping2]])
+                # if len(anovaGrouping)!= 2:
+                #     return False, "Groupings filtering resulted in less than two groupings. Name changed?"
+                # anovaCalc = TwoWAyANOVA(X,anovaGrouping,expColumns)
+                # p = anovaCalc.caulculate()
+                # boolIdx = p.index[p.loc[:,cutoffPValueColumn] < anovaCutoff]
+                # pvalueNames = p.columns.values.tolist()
+                # selectionpvalues = [p.loc[boolIdx].reset_index()]       
+
             if not np.any(boolIdx):
                     return False, "Signficance cutoff resulted in an empty data frame (e.g. no signficiantly different proteins)."
 
@@ -743,31 +896,6 @@ class Data(object):
                     if 'nan' in vs:
                         del vs['nan']
 
-                    # if highlightColumn in highlightColumnSepForMenu:
-                    #     #menuBuilder = OrderedDict() 
-                    #     menuBuilder  = dict([(item.split(">")[0].strip(),{}) for item in vs.keys()])
-                    #     maxLevel = np.max([len(item.split(">")) for item in vs.keys()])
-                    #     # print(maxLevel)
-                    #     # print(menuBuilder)
-                    #     for item in vs.keys():
-                    #         splitItems = [item.strip() for item in item.split(">")]
-
-                    #         if len(splitItems) == 2:
-                    #             continue
-                    #             if isinstance(menuBuilder[splitItems[0]],dict):
-                    #                 menuBuilder[splitItems[0]] = []
-                    #             menuBuilder[splitItems[0]].append(splitItems[1])
-                            
-                    #         elif len(splitItems) == 3:
-                    #             if splitItems[1] not in menuBuilder[splitItems[0]] and isinstance(menuBuilder[splitItems[0]],dict):
-                                   
-                    #                 menuBuilder[splitItems[0]][splitItems[1]] = []
-
-                    #             menuBuilder[splitItems[0]][splitItems[1]].append(splitItems[2])
-
-                    #     print(menuBuilder)   
-                    #     highlightMenuBuilder[highlightColumn] = highlightMenuBuilder     
-                        
                     highlightFeatures[highlightColumn] = vs 
 
             X = data.loc[:,columnNames1]
@@ -812,28 +940,9 @@ class Data(object):
 
         return False, None
 
-    def getDataForCard(self,dataID,featureID,filterName):
+
+    def _getDataForBoxplot(self,boxplotData,groupedData,groupings,groupingNames,groupingColorMapper,quantileColumnName):
         ""
-        meltedData = self.getDataForFeatures(dataID = dataID, featureIDs=[featureID])
-       # groupingMapper = self.getGroupingMapper(dataID)
-        groupingColorMapper = self.getGroupingColorMapper(dataID)
-        groupings = self.getParam(dataID,"groupings") 
-        
-        if groupings is None: return {}
-        groupingNames = list(groupings.keys())
-       
-        minValue, maxValue = meltedData["value"].quantile(q=[0,1]).values
-        marginRange = np.sqrt(maxValue**2 - minValue**2) * 0.05
-        groupedData = meltedData.groupby(by = groupingNames,sort=False) #level_X == quantile due to reset_index
-        boxplotData = groupedData.quantile(q=[0,0.25,0.5,0.75,1]).reset_index() 
-        quantileColumnName = "level_{}".format(len(groupingNames)) # get name for quantile
-        boxplotData[quantileColumnName] = boxplotData[ quantileColumnName].replace([0,0.25,0.5,0.75,1],["min","q25","m","q75","max"])
-        try:
-            statsData = anova(meltedData,dv="value",between=groupingNames)
-            statsData.columns = [pingouinColumn[colName] if colName in pingouinColumn else colName for colName in statsData.columns]
-        # ´handle data extraction depending on the number of groupings
-        except:
-            statsData = pd.DataFrame(["ANOVA could not be calculated."], columns=["Error"])
         v = []
         if len(groupingNames) == 1:
             tickLabel = [""]
@@ -847,7 +956,7 @@ class Data(object):
             legendTitle = groupingNames[0]
             legendData = groupingColorMapper[legendTitle]
             v = [v]
-            #return {"success":True,"download":meltedData.to_json(orient="records"),"chart":chartData,"statsData":statsData.to_json(orient="records")}
+
         elif len(groupingNames) == 2:
             tickLabel = [group for group in groupings[groupingNames[0]].keys()]
             #calculate statistics
@@ -868,6 +977,67 @@ class Data(object):
                 v.append(vi)
             legendTitle = groupingNames[1]
             legendData = groupingColorMapper[legendTitle]
+        
+        return v, legendTitle, legendData, tickLabel
+
+    def getDataForCard(self,dataID,featureID,filterName):
+        ""
+        meltedData = self.getDataForFeatures(dataID = dataID, featureIDs=[featureID])
+       # groupingMapper = self.getGroupingMapper(dataID)
+        groupingColorMapper = self.getGroupingColorMapper(dataID)
+        groupings = self.getParam(dataID,"groupings") 
+        
+        if groupings is None: return {}
+        groupingNames = list(groupings.keys())
+       
+        minValue, maxValue = meltedData["value"].quantile(q=[0,1]).values
+        marginRange = np.sqrt(maxValue**2 - minValue**2) * 0.05
+        groupedData = meltedData.groupby(by = groupingNames,sort=False) #level_X == quantile due to reset_index
+        boxplotData = groupedData.quantile(q=[0,0.25,0.5,0.75,1]).reset_index() 
+        quantileColumnName = "level_{}".format(len(groupingNames)) # get name for quantile
+        boxplotData[quantileColumnName] = boxplotData[quantileColumnName].replace([0,0.25,0.5,0.75,1],["min","q25","m","q75","max"])
+        try:
+            statsData = anova(meltedData,dv="value",between=groupingNames)
+            statsData.columns = [pingouinColumn[colName] if colName in pingouinColumn else colName for colName in statsData.columns]
+        # ´handle data extraction depending on the number of groupings
+        except:
+            statsData = pd.DataFrame(["ANOVA could not be calculated."], columns=["Error"])
+
+        v, legendTitle, legendData, tickLabel = self._getDataForBoxplot(boxplotData,groupedData,groupings,groupingNames,groupingColorMapper,quantileColumnName)
+        # v = []
+        # if len(groupingNames) == 1:
+        #     tickLabel = [""]
+        #     for groupName,groupData in boxplotData.groupby(groupingNames,sort=False):
+        #         groupData.loc[:,"value"] = groupData["value"].replace({np.nan: None})
+        #         N = groupedData.get_group(groupName).dropna(subset=["value"]).index.size
+        #         vv = dict([(idx,value) for idx,value in groupData.loc[:,[quantileColumnName,"value"]].values])
+        #         vv["fillColor"] = groupingColorMapper[groupingNames[0]][groupName]
+        #         vv["n"] = N
+        #         v.append(vv)
+        #     legendTitle = groupingNames[0]
+        #     legendData = groupingColorMapper[legendTitle]
+        #     v = [v]
+        #     #return {"success":True,"download":meltedData.to_json(orient="records"),"chart":chartData,"statsData":statsData.to_json(orient="records")}
+        # elif len(groupingNames) == 2:
+        #     tickLabel = [group for group in groupings[groupingNames[0]].keys()]
+        #     #calculate statistics
+
+        #     groupedBoxData = boxplotData.groupby(groupingNames,sort=False)
+        #     for groupName1 in groupings[groupingNames[0]].keys():
+        #         vi = []
+        #         for groupName2 in groupings[groupingNames[1]].keys():
+                    
+        #             groupData = groupedBoxData.get_group((groupName1,groupName2))
+        #             N = groupedData.get_group((groupName1,groupName2)).dropna(subset=["value"]).index.size
+        #             groupData.loc[:,"value"] = groupData["value"].replace({np.nan: None})
+
+        #             vv = dict([(idx,value) for idx,value in groupData.loc[:,[quantileColumnName,"value"]].values])
+        #             vv["fillColor"] = groupingColorMapper[groupingNames[1]][groupName2]
+        #             vv["n"] = N  
+        #             vi.append(vv)
+        #         v.append(vi)
+        #     legendTitle = groupingNames[1]
+        #     legendData = groupingColorMapper[legendTitle]
                     
                # if len(groupings) == 1:
                 

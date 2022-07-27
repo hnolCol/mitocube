@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 import { MCClusterOverview } from "./MCClusterOverview";
 
-import _, { filter } from "lodash";
+import _  from "lodash";
 import { Column, Cell, Table2} from "@blueprintjs/table";
 import { MCSpinner } from "../../spinner/MCSpinner";
 import { MCMenuIcon } from "../protein-view/Layout";
@@ -23,12 +23,12 @@ fontSize:9,
 fill:"#262626"
 }
 
-function MCClusterANOVASelection(props) {
+export function MCClusterANOVASelection(props) {
 
-    const {groupingNames, setHeatmapANOVASettings } = props 
+    const {groupingNames, setANOVASettings, buttonText } = props 
     const [anovaType,setANOVAType] = useState("1-way ANOVA")
     const [groupingSelection, setGroupingSelection] = useState({pvalue:0.001})
-    const oneWayANOVA = anovaType === "1-way ANOVA"
+    const oneWayANOVA = anovaType === "1-way ANOVA" || groupingNames.length === 1
 
     const saveGroupingSelection = (groupingKey,groupingValue) => {
         setGroupingSelection(
@@ -39,7 +39,7 @@ function MCClusterANOVASelection(props) {
     const submitANOVAsettings = (e) => {
         const groupingSettings = groupingSelection
         groupingSettings["anovaType"] = anovaType
-        setHeatmapANOVASettings(groupingSelection)
+        setANOVASettings(groupingSelection)
     }
     
     
@@ -52,7 +52,7 @@ function MCClusterANOVASelection(props) {
                         <p>Analysis of variance:</p>
                     </div>
                 <MCCombobox  
-                    items = {["1-way ANOVA","2-way ANOVA"]} placeholder={anovaType} callback={setANOVAType}
+                    items = {groupingNames.length === 1?["1-way ANOVA"]:["1-way ANOVA","2-way ANOVA"]} placeholder={anovaType} callback={setANOVAType}
                     buttonProps ={{minimal : false,
                                     small : true,
                                     intent : "primary"
@@ -64,7 +64,7 @@ function MCClusterANOVASelection(props) {
                         <p>Grouping 1:</p>
                     </div>
                 <MCCombobox  
-                    items = {props.groupingNames}
+                    items = {groupingNames}
                     placeholder = {groupingSelection.grouping1}
                     callbackKey = "grouping1"
                     callback = {saveGroupingSelection}
@@ -81,7 +81,7 @@ function MCClusterANOVASelection(props) {
                         <p>Grouping 2:</p>
                     </div>
                 <MCCombobox  
-                    items = {props.groupingNames}
+                    items = {groupingNames}
                     placeholder = {groupingSelection.grouping2}
                     callbackKey = "grouping2"
                     callback = {saveGroupingSelection}
@@ -108,7 +108,7 @@ function MCClusterANOVASelection(props) {
                                     }}/>
                                     
                 <NumericInput 
-                    min={1e-10} 
+                    min={1e-12} 
                     max={0.5} 
                     value={groupingSelection.pvalue} 
                     onValueChange = {value => saveGroupingSelection("pvalue",value)} 
@@ -117,7 +117,7 @@ function MCClusterANOVASelection(props) {
                     minorStepSize={0.000001}/>
                 </div>
 
-                <Button text = "Show heatmap" small={true}  minimal={false} intent={"primary"} onClick={submitANOVAsettings}/>
+                <Button text = {buttonText} small={true}  minimal={false} intent={"primary"} onClick={submitANOVAsettings}/>
 
                 
 
@@ -126,7 +126,8 @@ function MCClusterANOVASelection(props) {
 }
 
 MCClusterANOVASelection.defaultProps = {
-    groupingNames : ["A","B"]
+    groupingNames : ["A","B"],
+    buttonText : "Show Heatmap"
 
 }
 
@@ -172,14 +173,13 @@ export function MCHeatmapWrapper(props) {
         )
       }, [responseData.anovaDetails,token]);
 
-
     
     return(
         <div>
                 
                 {
                     responseData.anovaDetails===undefined || Object.keys(responseData.anovaDetails).length === 0  ? 
-                        <MCClusterANOVASelection groupingNames = {groupingNames} setHeatmapANOVASettings = {setHeatmapANOVASettings}/>
+                        <MCClusterANOVASelection groupingNames = {groupingNames} setANOVASettings = {setHeatmapANOVASettings}/>
                         :
 
                     responseData.data === undefined?null:responseData.isLoading?
@@ -188,7 +188,7 @@ export function MCHeatmapWrapper(props) {
                             <div>
                                 <p >
                                 {`${responseData.data.heatmap.values.length} features were found to meet the significance cutoff ${responseData.anovaDetails.anovaType} (p-value < ${responseData.anovaDetails.pvalue})
-                                in grouping ${responseData.anovaDetails.grouping1} Click on the cluster to explore the features.
+                                in grouping ${responseData.anovaDetails.grouping1}. Click on the cluster to explore the features.
                                 Holding shift when selecting allows to combine features of multiple clusters.`}
                                 </p>
                     <div style={{display:"flex",flexDirection:"row"}}>

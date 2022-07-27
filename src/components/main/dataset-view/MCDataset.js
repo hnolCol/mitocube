@@ -2,15 +2,12 @@
 
 import axios from "axios";
 import { useEffect, useState } from "react";
-import { MCFilterTagContainer } from "../../utils/components/MCFilterTagButton";
 import { Link, useSearchParams } from "react-router-dom";
-import { MCSelectableTable } from "./MCTableView";
 import { MCHeatmapWrapper} from "./MCScaledHeatmap";
-import { MCHeatmapFilter } from "./MCFIlter";
-import { MCVolcano, MCVolcanoLoader, MCVolcanoCollection, MCVolcanoGrid } from "./MCVolcano";
+import { MCVolcanoGrid } from "./MCVolcano";
 import { MCCombobox } from "../../utils/components/MCCombobox";
 import _, { isFunction } from "lodash";
-import { Button, H4, H5, Menu, MenuDivider, MenuItem } from "@blueprintjs/core";
+import { Button, H4, Icon } from "@blueprintjs/core";
 import { useToggle } from "../../utils/Misc";
 import { getFeatureLists } from "../../utils/Misc";
 import { MCMitoMap } from "./mitomap/MitoMap";
@@ -26,6 +23,7 @@ export function MCDataset(props) {
     const [volcanoData, setVolcanoData] =useState([])
     const [activeListName, setActiveList] =useState([])
     const [heatmapData, setHeatmapData] = useState({isLoading:true,data:{},msg:"",clusterIndex : undefined, anovaDetails: {}})
+    const [mitoMapData, setMitoMapData] = useState({isLoading:true,mitomapPathways:{},msg:"",selectedPathway : undefined, anovaDetails: {}})
     const [transferPoints, toggleTransfer] = useToggle(true)
     const [searchParams, setSearchParams] = useSearchParams();
     const plotType = searchParams.get("type")
@@ -51,6 +49,21 @@ export function MCDataset(props) {
           })
     }
 
+
+    const  setMitoMapANOVADetails = (anovaDetails,reset=false)=> {
+        if (reset) {
+            setMitoMapData(prevValues => {
+                return { ...prevValues,"anovaDetails": undefined,"data":{}}
+              })
+        }
+
+        else {
+
+            setMitoMapData(prevValues => {
+                return { ...prevValues,"anovaDetails": anovaDetails,"data":{}}
+              })
+        }
+        }
     
     const setHeatmapANOVASettings = (anovaDetails,reset=false) => {
         if (reset) {
@@ -86,33 +99,35 @@ export function MCDataset(props) {
             {dataDetails.dataExist?
                 <div style={{fontSize:"0.75rem",outline:"none",marginTop:"40px"}}>
                     <div className="topbar-fixed-dataset">
-                    
-                    <div className="hor-aligned-center-div-sapce-between">
+                    <div className="hor-aligned-out">
+                        <div className="hor-aligned-center-div-sapce-between">
 
-                        <div style={{color:"#2F5597",marginLeft:"2rem"}}> 
-                            <h3 >{dataDetails.details["shortDescription"]}</h3>
-                        </div>
-                        
-                        <div className="navbar-link">
-                            <Link style={{textDecoration:"none", color:plotType==="volcano"?"#2F5597":"grey", fontWeight:"light"}} to = {`/dataset/${props.dataID}?type=volcano`}>Volcano</Link>
-                        </div>
+                            <div style={{color:"#2F5597",marginLeft:"2rem"}}> 
+                                <h3 >{dataDetails.details["shortDescription"]}</h3>
+                            </div>
+                            
+                            <div className="navbar-link">
+                                <Link style={{textDecoration:"none", color:plotType==="volcano"?"#2F5597":"grey", fontWeight:"light"}} to = {`/dataset/${props.dataID}?type=volcano`}>Volcano</Link>
+                            </div>
 
-                        <div className="navbar-link">
-                            <Link style={{textDecoration:"none", color:plotType==="heatmap"?"#2F5597":"grey", fontWeight:"light"}} to = {`/dataset/${props.dataID}?type=heatmap`}>Heatmap</Link>
+                            <div className="navbar-link">
+                                <Link style={{textDecoration:"none", color:plotType==="heatmap"?"#2F5597":"grey", fontWeight:"light"}} to = {`/dataset/${props.dataID}?type=heatmap`}>Heatmap</Link>
+                            </div>
+                            <div className="navbar-link">
+                                <Link style={{textDecoration:"none", color:plotType==="mitomap"?"#2F5597":"grey", fontWeight:"light"}} to = {`/dataset/${props.dataID}?type=mitomap`}>MitoMap</Link>
+                            </div>
+                            
+                            </div>
+
+                        <div className="hor-aligned-center-div-sapce-between">
+                            <div className="navbar-link">
+                                <Link style={{textDecoration:"none", color:"grey", fontWeight:"light"}} to = {`/dataset/`}><Icon icon="database"/></Link>
+                            </div>
+                            <div className="navbar-link">
+                                <Link style={{textDecoration:"none", color:"grey", fontWeight:"light"}} to = {`/`}><Icon icon="home"/></Link>
+                            </div>
+
                         </div>
-                        <div className="navbar-link">
-                            <Link style={{textDecoration:"none", color:plotType==="mitomap"?"#2F5597":"grey", fontWeight:"light"}} to = {`/dataset/${props.dataID}?type=mitomap`}>MitoMap</Link>
-                        </div>
-                        
-                        <div className="navbar-link">
-                            <Link style={{textDecoration:"none", color:"grey", fontWeight:"light"}} to = {`/`}>Home</Link>
-                        </div>
-                        <div className="navbar-link">
-                            <Link style={{textDecoration:"none", color:"grey", fontWeight:"light"}} to = {`/dataset/`}>Datasets</Link>
-                        </div>
-                        
-                    
-                    
                     </div>
                     </div>
 
@@ -144,9 +159,15 @@ export function MCDataset(props) {
                                 savedFeatureLists = {Object.keys(featureLists)}
                                 />
                         :plotType==="mitomap"?
-                        <div><MCMitoMap 
-                            token = {props.token}
-                            dataID = {props.dataID} /></div>:null}
+                        <div>
+                            <MCMitoMap 
+                                token = {props.token}
+                                dataID = {props.dataID} 
+                                mitoMapData = {mitoMapData}
+                                setMitoMapData = {setMitoMapData}
+                                groupingNames={dataDetails.details.groupingNames} 
+                                setMitoMapANOVADetails = {setMitoMapANOVADetails}
+                                /></div>:null}
                     </div>
                 </div>:
                 
