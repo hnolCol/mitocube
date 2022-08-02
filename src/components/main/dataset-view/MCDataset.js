@@ -23,7 +23,7 @@ export function MCDataset(props) {
     const [volcanoData, setVolcanoData] =useState([])
     const [activeListName, setActiveList] =useState([])
     const [heatmapData, setHeatmapData] = useState({isLoading:true,data:{},msg:"",clusterIndex : undefined, anovaDetails: {}})
-    const [mitoMapData, setMitoMapData] = useState({isLoading:true,mitomapPathways:{},msg:"",selectedPathway : undefined, anovaDetails: {}})
+    const [mitoMapData, setMitoMapData] = useState({isLoading:true,mitomapPathways:{},msg:"",selectedPathway : undefined, anovaDetails: {}, showNames:false})
     const [transferPoints, toggleTransfer] = useToggle(true)
     const [searchParams, setSearchParams] = useSearchParams();
     const plotType = searchParams.get("type")

@@ -113,9 +113,10 @@ export function MCMinimalBoxplot(props) {
     const [mousePoint,changeMousePoint] = useState(undefined)
     const [highlightColor, changeHighlightColor] = useState(undefined)
     const [highlightDetails, setHighlightDetails] = useState(undefined)
-    const {x,y,width,height,minValue,maxValue,values, featureNames, title, legend, legendTitle, vertical, highlightPoint} = props
+    const {x,y,width,height,minValue,maxValue,values, featureNames, title, legend, legendTitle, vertical, highlightPoint, legendItems} = props
    
-    const legendItems = _.isObject(legend) ? Object.keys(legend) : []
+    //const legendItems = _.isObject(legend) ? Object.keys(legend) : []
+   
     const marginForLegend = legendItems.length > 0?20:0
     const marginLeft = 5
     const marginRight =  props.vertical?30:50 
@@ -132,7 +133,7 @@ export function MCMinimalBoxplot(props) {
         range : vertical?[rangeMin, rangeMax]:[rangeMax,rangeMin],
     })
     
-    const widthPerLegendItem = (width-marginLeft-marginRight) / legendItems.length
+    const widthPerLegendItem = legendItems.length === 0 ? 4 :(width-marginLeft-marginRight) / legendItems.length
     const legendBoxWidth = 15
     const legendY = y+15
   
@@ -198,7 +199,7 @@ export function MCMinimalBoxplot(props) {
             
             {/* plot legend */}
             {
-            marginForLegend > 0 && _.isObject(legend) && Object.keys(legend).length < 20?
+            marginForLegend > 0 && _.isObject(legend) && legendItems.length < 20?
                 <g> 
                     <Text 
                         x = {x+marginLeft} 
@@ -211,7 +212,7 @@ export function MCMinimalBoxplot(props) {
                         >
                             {legendTitle}
                     </Text>
-                    {Object.keys(legend).map((k,i) => {
+                    {legendItems.map((k,i) => {
                        
                         const legendItemStart = x+marginLeft + widthPerLegendItem * i 
                         return(

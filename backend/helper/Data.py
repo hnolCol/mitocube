@@ -239,9 +239,9 @@ class Data(object):
             groupings = self.getParam(dataID,"groupings") 
             groupingNames = list(groupings.keys())
             groupingColormaps = self.getParam(dataID,"groupingCmap")
-            colorsForGroupings = dict([(groupingName,sns.color_palette(groupingColormaps[groupingName],
+            colorsForGroupings = OrderedDict([(groupingName,sns.color_palette(groupingColormaps[groupingName],
                                             n_colors=len(groupings[groupingName]),desat=0.75).as_hex()) for groupingName in groupingNames if groupingName in groupingColormaps])
-            groupingColorMapper = dict([(groupingName, dict([(groupName,colorsForGroupings[groupingName][n]) for n,groupName in enumerate(groupings[groupingName].keys())])) for groupingName in groupingNames])
+            groupingColorMapper = OrderedDict([(groupingName, OrderedDict([(groupName,colorsForGroupings[groupingName][n]) for n,groupName in enumerate(groupings[groupingName].keys())])) for groupingName in groupingNames])
             
             
             return groupingColorMapper
@@ -608,6 +608,7 @@ class Data(object):
         meltedData = self.getDataForFeatures(dataID,featureIDs,zscore_transform=True)
         
         groupingColorMapper = self.getGroupingColorMapper(dataID)
+        print(groupingColorMapper)
         groupings = self.getParam(dataID,"groupings") 
         
         if groupings is None: return {}
@@ -622,8 +623,9 @@ class Data(object):
         quantileColumnName = "level_{}".format(len(groupingNames)) # get name for quantile
         boxplotData[quantileColumnName] = boxplotData[quantileColumnName].replace([0,0.25,0.5,0.75,1],["min","q25","m","q75","max"])
 
-        v, legendTitle, legendData, tickLabel = self._getDataForBoxplot(boxplotData,groupedData,groupings,groupingNames,groupingColorMapper,quantileColumnName)
-
+        v, legendTitle, legendData, tickLabel, legendItems = self._getDataForBoxplot(boxplotData,groupedData,groupings,groupingNames,groupingColorMapper,quantileColumnName)
+        print(legendData)
+        
         #print(v)
 
         chartData = {"graphType":{"1":"boxplot"},
@@ -635,11 +637,14 @@ class Data(object):
                                 "title" : "",
                                 "featureNames" : tickLabel,
                                 "legend" : legendData,
-                                "legendTitle" : "Significant feautres z-score normalized"
+                                "legendTitle" : legendTitle,
+                                "legendItems" : legendItems
                             }
                             }, 
                         
             }
+
+        print(chartData)
 
         return chartData 
 
@@ -949,12 +954,11 @@ class Data(object):
             for groupName,groupData in boxplotData.groupby(groupingNames,sort=False):
                 groupData.loc[:,"value"] = groupData["value"].replace({np.nan: None})
                 N = groupedData.get_group(groupName).dropna(subset=["value"]).index.size
-                vv = dict([(idx,value) for idx,value in groupData.loc[:,[quantileColumnName,"value"]].values])
+                vv = OrderedDict([(idx,value) for idx,value in groupData.loc[:,[quantileColumnName,"value"]].values])
                 vv["fillColor"] = groupingColorMapper[groupingNames[0]][groupName]
                 vv["n"] = N
                 v.append(vv)
             legendTitle = groupingNames[0]
-            legendData = groupingColorMapper[legendTitle]
             v = [v]
 
         elif len(groupingNames) == 2:
@@ -970,15 +974,17 @@ class Data(object):
                     N = groupedData.get_group((groupName1,groupName2)).dropna(subset=["value"]).index.size
                     groupData.loc[:,"value"] = groupData["value"].replace({np.nan: None})
 
-                    vv = dict([(idx,value) for idx,value in groupData.loc[:,[quantileColumnName,"value"]].values])
+                    vv = OrderedDict([(idx,value) for idx,value in groupData.loc[:,[quantileColumnName,"value"]].values])
                     vv["fillColor"] = groupingColorMapper[groupingNames[1]][groupName2]
                     vv["n"] = N  
                     vi.append(vv)
                 v.append(vi)
             legendTitle = groupingNames[1]
-            legendData = groupingColorMapper[legendTitle]
-        
-        return v, legendTitle, legendData, tickLabel
+
+        legendData = groupingColorMapper[legendTitle]
+        legendItems = list(legendData.keys())
+
+        return v, legendTitle, legendData, tickLabel, legendItems
 
     def getDataForCard(self,dataID,featureID,filterName):
         ""
@@ -1003,7 +1009,7 @@ class Data(object):
         except:
             statsData = pd.DataFrame(["ANOVA could not be calculated."], columns=["Error"])
 
-        v, legendTitle, legendData, tickLabel = self._getDataForBoxplot(boxplotData,groupedData,groupings,groupingNames,groupingColorMapper,quantileColumnName)
+        v, legendTitle, legendData, tickLabel, legendItems = self._getDataForBoxplot(boxplotData,groupedData,groupings,groupingNames,groupingColorMapper,quantileColumnName)
         # v = []
         # if len(groupingNames) == 1:
         #     tickLabel = [""]
@@ -1053,7 +1059,8 @@ class Data(object):
                                 "title" : "",
                                 "featureNames" : tickLabel,
                                 "legend" : legendData,
-                                "legendTitle" : legendTitle
+                                "legendTitle" : legendTitle,
+                                "legendItems" : legendItems
                             }
                             }, 
                         

@@ -129,7 +129,8 @@ class FeatureFinder(object):
                                     "highlightPoint" : [[summaryInformation[featureID]["expression"]["median"]]],
                                     "legend" : {},
                                     "vertical" : False,
-                                    "hoverboxOff" : True
+                                    "hoverboxOff" : True,
+                                    "legendItems" : []
                                 },
                                 }, 
                             

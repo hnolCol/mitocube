@@ -1,4 +1,4 @@
-import { Button } from "@blueprintjs/core";
+import { Button, Switch } from "@blueprintjs/core";
 import { Text } from "@visx/text";
 import axios from "axios";
 import { motion } from "framer-motion";
@@ -14,12 +14,12 @@ import _ from "lodash";
 export function MCMitoMap(props) {
 
     const {token, dataID,groupingNames, mitoMapData, setMitoMapData, setMitoMapANOVADetails} = props
+    
     //const [mitomapPathways, setMitomap] = useState({main:{},second:{},pathwayIDMatch:{}})
     //const [pathwayDetails, setPathwayDetails] = useState({title:undefined,items:[],metricName:""})
     const mitomapPathways = mitoMapData.mitomapPathways
     const pathwayDetails = mitoMapData.selectedPathway
-    console.log(mitoMapData)
-    console.log(pathwayDetails)
+   
 
     useEffect(() => {
 
@@ -59,6 +59,13 @@ export function MCMitoMap(props) {
         )
       }, [token,dataID, mitoMapData.anovaDetails]);
 
+    const togglePathwayNames = (e) => {
+        console.log("toggle")
+        setMitoMapData(prevValues => {
+            return { ...prevValues,"showNames":!prevValues.showNames}
+          })
+    }
+
 
     const resetPathwayDetaisls = (e) =>{
 
@@ -85,94 +92,113 @@ export function MCMitoMap(props) {
     
     return(
         <div>
-            {mitoMapData.anovaDetails===undefined || Object.keys(mitoMapData.anovaDetails).length === 0  ? 
+            
+        {mitoMapData.anovaDetails===undefined || Object.keys(mitoMapData.anovaDetails).length === 0  ? 
             
             <MCClusterANOVASelection buttonText="Show MitoMap" groupingNames={groupingNames} setANOVASettings={setMitoMapANOVADetails}/>:
 
-        mitoMapData.isLoading ? <MCSpinner />:
+            mitoMapData.isLoading ? <MCSpinner />:
         
-        <div style={{paddingLeft:"3rem",paddingTop:"2rem"}}>
-           
-            {pathwayDetails!==undefined && pathwayDetails.items.length!==0?
-                    <div className="mitomap-extra-view">
-                        <div style={{position:"relative"}}>
-                                <div style={{position:"absolute",right:0,top:0,display:"flex",maxHeight:"30px"}}>
-                                <MCCSVDownload data = {pathwayDetails.items} fileName = {`MitoMap(${dataID}-${pathwayDetails.title}).csv`} primary={false} buttonMargin={false}/>
-                                <Button text="" onClick={resetPathwayDetaisls} minimal={true} icon="cross" />
-                                </div>
-                            <div style={{paddingRight:"3.2rem"}}>
-                            <p>{pathwayDetails.title}</p>
-                            </div>
-                            <div className="mitomap-item-container">
-                            {pathwayDetails.items.map(v => 
-                                <motion.div whileHover={{scale:1.05}} key={v.name} className={v.sig?"mitomap-item-sig":"mitomap-item"}>
-                                    {v.name}{` (${v.idx})`}
-                                </motion.div>)}
-
-                            
-                            </div>
-                        </div>
-                        <div className="mitomap-extra-chart">
-                        {console.log(mitomapPathways.pathwayIntensities[pathwayDetails.title])}
-                        {mitomapPathways.pathwayIntensities[pathwayDetails.title]!==undefined?<MCSVGFrame {...mitomapPathways.pathwayIntensities[pathwayDetails.title]}/>:null}
-                        </div>
-                    </div>
-                    :
-                null}
-            <h4>Overview of regulations of the MitoCarta pathways.</h4>
-            <p>{` 
-                The value presents the percentage of proteins of the pathway that was found to be significantly changed. A value of 100 indicates that all proteins are significantly
-                changed of the specific pathway. In the future you will be able to select the circles to view the underyling proteins and direction.`}</p>
-            <p>{mitoMapData.anovaDetails["anovaType"] === "1-way ANOVA"?`One way ANOVA based on ${mitoMapData.anovaDetails["grouping1"]} (p-value < ${mitoMapData.anovaDetails["pvalue"]})`:`Two way anova based on ${mitoMapData.anovaDetails["grouping1"]} and ${mitoMapData.anovaDetails["grouping2"]} (p-value < ${mitoMapData.anovaDetails["pvalue"]})`}</p>
-            <p>{mitoMapData.msg}</p>
-            {
-            mitomapPathways.main !==undefined && _.isObject(mitomapPathways) ? 
-            Object.keys(mitomapPathways.main).map(topPath => {
-                const mitopathway = mitomapPathways.main[topPath]
+                <div style={{paddingLeft:"3rem",paddingTop:"2rem",height:"100vh",overflowY:"hidden"}}>
                 
-                return(
-                    <div key={topPath}>
-                    <h4>{topPath}</h4>
-                    {mitopathway.map(pathwayData => {
-                        const {frac, name, N, N_sig} = pathwayData
-                        return(
-                            <MCAnimatedPercentage key={name} perc = {frac} extraText = {`${N_sig}/${N}`} metricName = {name} clicked = {pathwayDetails!==undefined  && pathwayDetails.metricName === name} fontSizeMetric={9} width={95} height={110} handleClick = {handleClickOnPathway}/>
-                        )
-                    })}
+                    {pathwayDetails!==undefined && pathwayDetails.items.length!==0?
+                            <div className="mitomap-extra-view">
+                                <div style={{position:"relative"}}>
+                                        <div style={{position:"absolute",right:0,top:0,display:"flex",maxHeight:"30px"}}>
+                                        <MCCSVDownload data = {pathwayDetails.items} fileName = {`MitoMap(${dataID}-${pathwayDetails.title}).csv`} primary={false} buttonMargin={false}/>
+                                        <Button text="" onClick={resetPathwayDetaisls} minimal={true} icon="cross" />
+                                        </div>
+                                    <div style={{paddingRight:"3.2rem"}}>
+                                    <p>{pathwayDetails.title}</p>
+                                    </div>
+                                    <div className="mitomap-item-container">
+                                    {pathwayDetails.items.map(v => 
+                                        <motion.div whileHover={{scale:1.05}} key={v.name} className={v.sig?"mitomap-item-sig":"mitomap-item"}>
+                                            {v.name}{` (${v.idx})`}
+                                        </motion.div>)}
 
-                    {
-                        topPath in mitomapPathways.second?
-                        Object.keys(mitomapPathways.second[topPath]).map(secondHeaderData => {
-                           
-                            return(
-                                <div style={{paddingLeft:"100px"}} key={secondHeaderData}>
-                                    <p>{secondHeaderData}</p>
-                                {mitomapPathways.second[topPath][secondHeaderData].map(pathwayData => {
-                                    const {frac, name, N, N_sig} = pathwayData
-                                    return(
-                                        <MCAnimatedPercentage wd
-                                            key={name} 
-                                            clicked = {pathwayDetails!==undefined && pathwayDetails.metricName === name}
-                                            extraText = {`${N_sig}/${N}`}
-                                            perc = {frac} 
-                                            metricName = {name} 
-                                            fontSizeMetric={9} 
-                                            width={95} 
-                                            height={110} 
-                                            handleClick = {handleClickOnPathway}/>
-                                    )
-                                })}
+                                    
+                                    </div>
                                 </div>
-                            )
-                        })
-                        :null
-                    }
+                                <div className="mitomap-extra-chart">
+                                {mitomapPathways.pathwayIntensities[pathwayDetails.title]!==undefined?<MCSVGFrame {...mitomapPathways.pathwayIntensities[pathwayDetails.title]}/>:null}
+                                </div>
+                            </div>
+                            :
+                        null}
+                    <div style={{heigth:"20vh"}}>
+                        <h4>Overview of regulations of the MitoCarta pathways.</h4>
+                        <p>{` 
+                            The value presents the percentage of proteins of the pathway that was found to be significantly changed. A value of 100 indicates that all proteins are significantly
+                            changed of the specific pathway. In the future you will be able to select the circles to view the underyling proteins and direction.`}</p>
+                        <p>{mitoMapData.anovaDetails["anovaType"] === "1-way ANOVA"?`One way ANOVA based on ${mitoMapData.anovaDetails["grouping1"]} (p-value < ${mitoMapData.anovaDetails["pvalue"]})`:`Two way anova based on ${mitoMapData.anovaDetails["grouping1"]} and ${mitoMapData.anovaDetails["grouping2"]} (p-value < ${mitoMapData.anovaDetails["pvalue"]})`}</p>
+                        <p>{mitoMapData.msg}</p>
 
+                        <Switch 
+                            checked = {mitoMapData.showNames} 
+                            label="Show pathway names" 
+                            onChange={togglePathwayNames}/>
                     </div>
-                )
-            })
-        : null}
-        </div>}
+                    <div style={{overflowY:"scroll",height:"80vh"}}>
+                    {
+                    mitomapPathways.main !==undefined && _.isObject(mitomapPathways) ? 
+                    Object.keys(mitomapPathways.main).map(topPath => {
+                        const mitopathway = mitomapPathways.main[topPath]
+                        
+                        return(
+
+                            <div key={topPath}>
+                            <h4>{topPath}</h4>
+                            {mitopathway.map(pathwayData => {
+                                const {frac, name, N, N_sig} = pathwayData
+                                return(
+                                    <MCAnimatedPercentage 
+                                        key={name} 
+                                        perc = {frac} 
+                                        extraText = {`${N_sig}/${N}`} 
+                                        metricName = {name} 
+                                        clicked = {(pathwayDetails!==undefined && pathwayDetails.metricName === name) || mitoMapData.showNames } 
+                                        fontSizeMetric={9} 
+                                        width={95} 
+                                        height={110} 
+                                        handleClick = {handleClickOnPathway}/>
+                                )
+                            })}
+
+                            {
+                                topPath in mitomapPathways.second?
+                                Object.keys(mitomapPathways.second[topPath]).map(secondHeaderData => {
+                                
+                                    return(
+                                        <div style={{paddingLeft:"100px"}} key={secondHeaderData}>
+                                            <p>{secondHeaderData}</p>
+                                        {mitomapPathways.second[topPath][secondHeaderData].map(pathwayData => {
+                                            const {frac, name, N, N_sig} = pathwayData
+                                            return(
+                                                <MCAnimatedPercentage wd
+                                                    key={name} 
+                                                    clicked = {(pathwayDetails!==undefined && pathwayDetails.metricName === name) || mitoMapData.showNames }
+                                                    extraText = {`${N_sig}/${N}`}
+                                                    perc = {frac} 
+                                                    metricName = {name} 
+                                                    fontSizeMetric={9} 
+                                                    width={95} 
+                                                    height={110} 
+                                                    handleClick = {handleClickOnPathway}/>
+                                            )
+                                        })}
+                                        </div>
+                                    )
+                                })
+                                :null
+                            }
+
+                            </div>
+                        )
+                    })
+                : null}
+                </div>
+                </div>}
         </div>
     )
 }
