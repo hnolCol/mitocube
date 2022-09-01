@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { MCSpinner } from "../spinner/MCSpinner";
-import { MCProteinSearchIcon, MCDatasetSearchIcon } from "../icon/MCMainIcons";
+import { MCProteinSearchIcon, MCDatasetSearchIcon, MCSubmissionIcon, MCAdministrationIcon } from "../icon/MCMainIcons";
 import { InputGroup, Button } from "@blueprintjs/core";
 import axios from "axios";
 
@@ -69,7 +69,8 @@ export function Welcome(props) {
 
               <Link to="/protein"><MCProteinSearchIcon/></Link>
               <Link to="/dataset"><MCDatasetSearchIcon/></Link>
-              
+              <Link to="/submission"><MCSubmissionIcon /></Link>
+              <Link to="/admin"><MCAdministrationIcon/></Link>
             </div>
           :
           <div>

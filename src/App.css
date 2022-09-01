@@ -404,6 +404,13 @@ hr {
   
 }
 
+.hor-aligned-center-div-between{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between; 
+  
+}
+
 .hor-aligned-center-div-sapce-between{
   display: flex;
   flex-direction: row;
@@ -651,6 +658,7 @@ hr {
   flex-wrap: wrap;
   justify-content: flex-start;
   font-size: 0.75rem;
+  padding-top: 0.4rem;
 }
 
 
@@ -794,4 +802,59 @@ hr {
   border-radius: 0.3rem;
   font-size: 0.9rem;
   cursor: default;
+}
+
+
+.submission-admin-view{
+  font-size: 0.75rem;
+  min-width : calc(100vw - 4rem);
+  background-color:transparent;
+  padding: 4rem;
+  margin: 1rem;
+  height : calc(100vh - 2rem);
+  
+}
+
+.progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 15px;
+  width : 180px;
+  background: #aabbc2;
+  transform-origin: 0%;
+}
+
+.submission-container {
+  font-size: 0.75rem;
+  background-color :#fafafa;
+  margin-top : 0.2rem;
+  padding-top : 0.1rem;
+  padding-bottom : 0.3rem;
+  padding-left : 0.5rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  width: 100%;
+  flex-direction: row;
+  justify-content: space-between;
+  border-radius: 5px;
+
+}
+.submission-box {
+  font-size: 0.75rem;
+  background-color :#fafafa;
+  display: flex;
+  flex-direction: column;
+  min-height: 90px;  
+  align-items: flex-start;
+  border-radius: 5px;
+  position: relative;
+}
+
+.submission-details-item-container {
+
+  max-height :  calc(100vh - 2rem - 145px);
+  overflow-y: scroll;
+  padding-bottom: 4rem;
 }

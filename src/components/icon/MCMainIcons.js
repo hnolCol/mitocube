@@ -25,7 +25,7 @@ export const MCProteinSearchIcon = (props) => {
                     <g >
                 
                 
-                <path style={{fill:"transparent",stroke:"#000000",strokeWidth:0.3,strokeMiterlimit:10}} d="M98.6,88.3H15.7c-2.1,0-3.7-1.7-3.7-3.7V15.4
+                <path style={{fill:"#F6F6F6",stroke:"#000000",strokeWidth:0.3,strokeMiterlimit:10}} d="M98.6,88.3H15.7c-2.1,0-3.7-1.7-3.7-3.7V15.4
                         c0-2.1,1.7-3.7,3.7-3.7h82.9c2.1,0,3.7,1.7,3.7,3.7v69.2C102.3,86.6,100.7,88.3,98.6,88.3z"/>
                  
                 
@@ -108,3 +108,109 @@ export const MCDatasetSearchIcon = (props) => {
         </div>
     )
 }
+
+
+
+export const MCSubmissionIcon = (props) => {
+    const [mouseIn, setMouseIn] = useState(false)
+
+
+    const opacityValue = mouseIn?0.35:0.85
+    return(
+        <div style={{width:"100%"}}>
+                <motion.svg
+                    width={"200px"}
+                    viewBox={"0 0 114 100"}
+                    xmlns="http://www.w3.org/2000/svg"
+                    xmlnsXlink="http://www.w3.org/1999/xlink"
+                    onMouseEnter={e => setMouseIn(true)} onMouseLeave = {e => setMouseIn(false)}
+                >
+                <path style={{fill:"#F6F6F6",stroke:"#000000",strokeWidth:0.3,strokeMiterlimit:10}} d="M98.6,88.3H15.7c-2.1,0-3.7-1.7-3.7-3.7V15.4
+                        c0-2.1,1.7-3.7,3.7-3.7h82.9c2.1,0,3.7,1.7,3.7,3.7v69.2C102.3,86.6,100.7,88.3,98.6,88.3z"/>
+                <g style={{transform:"translate(5px,8px)"}}>
+                    <path style={{fill:"#267886"}} d="M27.3,34.8c0,0-2.1,1.6-3.1,0.6c-0.7-0.7-1.9-1-2.9,0c-0.9,0.9-2.6,0.4-2.9,0c-1-1-1.7-0.6-1.7-0.6
+                        v11.9c0,0,0,0.2,0,0.3c0,2.2,2.4,3.9,5.4,3.9s5.4-1.7,5.4-3.9c0-0.1,0-0.3,0-0.3V34.8H27.3z" opacity={opacityValue}/>
+                    <path style={{fill:"#267886",stroke:"black",strokeWidth:0.2,strokeMiterlimit:10}} d="M28.3,25.7H15.7c-0.9,0-1.7-0.7-1.7-1.7v-0.2
+                    c0-0.9,0.7-1.7,1.7-1.7h12.7c0.9,0,1.7,0.7,1.7,1.7v0.2C30,25,29.3,25.7,28.3,25.7z" opacity={opacityValue}/>
+                    <path style={{fill:"none",stroke:"black",strokeWidth:0.2,strokeMiterlimit:10}} d="M27.2,25.7H16.5v21l0,0c0,0,0,0.2,0,0.3
+                        c0,2.2,2.4,3.9,5.4,3.9s5.4-1.7,5.4-3.9c0-0.1,0-0.3,0-0.3l0,0V25.7z" opacity={opacityValue}/>
+                    <rect x="16.5" y="17.7" style={{fill:"#174F54",stroke:"black",strokeWidth:0.2,strokeMiterlimit:10}} width="11" height="4.5" opacity={opacityValue}/>
+                    
+                </g>
+                
+                
+
+                <g style={{transform:"translate(5px,8px)"}}>
+                    <path style={{fill:"#615C7C"}} d="M49.3,41.2l-0.1,5.3c0,0,0,0.2,0,0.3c0,2.2-2.4,4-5.3,4s-5.4-1.7-5.4-3.9c0-0.1,0-0.3,0-0.3v-7.3
+		                c0,0,0.3-1,2.2,0c0.4,0.2,2,0.9,2.9,0c1-1,2.1-0.8,2.9,0l2.8,1" opacity={opacityValue}/>
+                    <path style={{fill:"#615C7C",stroke:"black",strokeWidth:0.2,strokeMiterlimit:10}} d="M50.3,25.5H37.7c-0.9,0-1.7-0.7-1.7-1.7v-0.2
+                        c0-0.9,0.7-1.7,1.7-1.7h12.7c0.9,0,1.7,0.7,1.7,1.7v0.2C52,24.7,51.3,25.5,50.3,25.5z" opacity={opacityValue}/>
+                    <path style={{fill:"none",stroke:"black",strokeWidth:0.2,strokeMiterlimit:10}} d="M49.2,25.5H38.5v21l0,0c0,0,0,0.2,0,0.3
+                        c0,2.2,2.4,3.9,5.4,3.9s5.4-1.7,5.4-3.9c0-0.1,0-0.3,0-0.3l0,0V25.5z" opacity={opacityValue}/>
+                    <rect x="38.5" y="17.5" style={{fill:"#6F487C",stroke:"black",strokeWidth:0.2,strokeMiterlimit:10}} width="11" height="4.5" opacity={opacityValue}/>
+                </g>
+
+     
+                <motion.g fill="#DEDEDE" 
+                        strokeWidth={0.3} 
+                        stroke="black" 
+                        whileHover={{ stroke:"black", fill:"#6e5b7b", transitionDelay:0.1, scale:1.2, translateX:`${114/2-79}px`, translateY:`${100/2-(35+8)}px`}} 
+                        transition={ {duration: 0.5} }>
+                <motion.circle cx = {79.1} cy={35+8} r = {12} fill={"#efefef"} strokeWidth={0.4} stroke="black" />
+                <g style={{transform:"translateY(8px)"}}>
+                    <line style={{fill:"none",stroke:"black",strokeMiterlimit:10}} x1="79.1" y1="24.5" x2="79.1" y2="45.5" strokeWidth={mouseIn?0.55:0.4}/>
+                    <line style={{fill:"none",stroke:"black",strokeMiterlimit:10}} x1="89.6" y1="35" x2="68.6" y2="35" strokeWidth={mouseIn?0.55:0.4}/>
+                </g>
+                <motion.rect x={0} y = {0} width={114} height={100} fill={"transparent"} strokeWidth={0}/>
+                </motion.g>
+
+                <text x="32" y="80" style={{fontSize:"0.65rem"}}>Submission</text>
+                </motion.svg>
+               
+        </div>
+    )
+}
+
+
+export const MCAdministrationIcon = (props) => {
+    const [mouseIn, setMouseIn] = useState(false)
+
+    const opacityValue = mouseIn?0.35:0.85
+    return(
+        <div style={{width:"100%"}}>
+                <motion.svg
+                    width={"200px"}
+                    viewBox={"0 0 114 100"}
+                    xmlns="http://www.w3.org/2000/svg"
+                    xmlnsXlink="http://www.w3.org/1999/xlink"
+                    onMouseEnter={e => setMouseIn(true)} onMouseLeave = {e => setMouseIn(false)}
+                >
+
+                <path style={{fill:"#F6F6F6"}} d="M98.7,90.9h-83c-2,0-3.7-1.6-3.7-3.7V17.9
+                    c0-2,1.6-3.7,3.7-3.7h83c2,0,3.7,1.6,3.7,3.7v69.2C102.3,89.2,100.8,90.9,98.7,90.9z" stroke="black"  strokeWidth={0.3}/>
+                <motion.g 
+                    animate={mouseIn?{ rotate: 360 }:null}
+                    transition={mouseIn?{ ease: "linear", duration: 4, repeat: Infinity,repeatType: "mirror"}:null}>
+
+                    <path style={{fill:"#FF5A2A"}} stroke="black" strokeWidth={0.3} d="M75.8,41.6c-0.4-3.1-1.7-6-3.6-8.4l2.9-3.7
+                        L74,28.4l-1.4-1.4l-3.8,3c-2.3-1.6-4.9-2.7-7.8-3.1l-0.5-3.9h-1.6h-2l-0.5,3.9c-3.4,0.5-6.5,1.9-9,4L43.7,28l-1.2,1.2l-1.4,1.4
+                        l3,3.8c-1.4,2.1-2.4,4.6-2.7,7.2l-4.5,0.6v1.6v2l4.5,0.6c0.4,3.2,1.7,6,3.6,8.4L42,58.6l1.2,1.2l1.4,1.4l3.8-3
+                        c2.2,1.6,4.9,2.7,7.7,3.1l0.6,4.5h1.6h2l0.6-4.5c2.9-0.4,5.7-1.5,7.9-3.2l3.9,3.1L74,60l1.4-1.4l-3-3.9c1.8-2.3,3-5.1,3.4-8.1
+                        l4.8-0.6v-1.6v-2L75.8,41.6z M58.7,57.6c-7.3,0-13.2-5.9-13.2-13.2s5.9-13.2,13.2-13.2s13.2,5.9,13.2,13.2S66,57.6,58.7,57.6z"/>
+                    <circle style={{fill:"#D6D6D6"}} stroke="black" strokeWidth={0.3} cx="58.7" cy="44.4" r="7.6"/>
+                </motion.g>
+                
+                <text x = "25" y="80" style={{fontSize:"0.65rem"}}>Administration</text>
+                
+                </motion.svg>
+               
+        </div>
+    )
+}
+
+
+
+
+
+
+

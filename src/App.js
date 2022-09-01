@@ -22,7 +22,8 @@ import { MCDatasetSelection } from './components/main/dataset-view/MCDatasetSele
 import { MCSampleSubmission } from './components/submission/MCSampleSubmission';
 import { MCAdminLogin } from './components/main/admin/Login';
 import { getMitoCubeAdminToken } from './components/utils/Misc';
-import { MCSumissionView } from './components/submission/MCSubmissionView';
+import { MCSumissionView, MCSubmissionAdminView  } from './components/submission/MCSubmissionView';
+import { MCAdminUserView } from './components/main/admin/User';
 
 export function MCHelpText(props) {
   return(
@@ -147,28 +148,49 @@ function App() {
           </MCProtectedRoute>
         }/>
 
-      <Route path="/admin/performance" element = {
+      {/* <Route path="/admin/performance" element = {
         <MCProtectedRoute isAuthenthicated={isAdminAuthenthicated.isAuth}>
             <div>
               <h3>performance</h3>
             </div>
         </MCProtectedRoute>
       }
-      />
+      /> */}
 
-      <Route path="/admin/submission" element = {
+      <Route path="/admin/performance" element = {
         <MCProtectedRoute isAuthenthicated={true}>
             <div>
-              <h3>Submissions</h3>
+              <h3>Performance</h3>
               <MCSumissionView />
             </div>
         </MCProtectedRoute>
       }
       />
+
+      <Route path="/admin/submission" element = {
+        <MCProtectedRoute isAuthenthicated={isAdminAuthenthicated.isAuth}> 
+            <div>
+             
+              <MCSubmissionAdminView token={isAuthenthicated.token}/>
+            </div>
+        </MCProtectedRoute>
+      }
+      />
+
       <Route path="/admin/settings" element = {
         <MCProtectedRoute isAuthenthicated={isAdminAuthenthicated.isAuth}>
             <div>
               <h3>Settings</h3>
+            </div>
+        </MCProtectedRoute>
+      }
+      />
+
+      <Route path="/admin/users" element = {
+        <MCProtectedRoute isAuthenthicated={isAdminAuthenthicated.isAuth}>
+            <div>
+              <h3>Users</h3>
+              <MCAdminUserView token={isAdminAuthenthicated.token}/>
             </div>
         </MCProtectedRoute>
       }

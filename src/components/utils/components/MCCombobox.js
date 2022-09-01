@@ -8,6 +8,7 @@ export function MCCombobox(props) {
     const renderItems = (item, { handleClick, modifiers, query }) => {
 
         const selected = placeholder===item
+        
         return(
             <MenuItem 
                 key = {item} 

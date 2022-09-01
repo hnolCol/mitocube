@@ -74,7 +74,7 @@ export function MCAdminLogin(props) {
                 <p>Welcome to the Admin Restricted Site of MitoCube. View instrument performance, edit and export submissions and add users.</p>
                 <div className="admin-nav-container">
                   
-                  {["Performance","Submission","Settings"].map(v => {
+                  {["Performance","Submission","Settings","Users"].map(v => {
                     return (
                       <div key={v} className="admin-nav-box">
                           <Link style={{textDecoration:"none", color:"#2F5597", fontWeight:"bold", fontSize:"1.3rem"}} to = {`/admin/${v.toLowerCase()}`}>

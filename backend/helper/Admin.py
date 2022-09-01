@@ -13,17 +13,32 @@ class AdminUsers(object):
         self.pathToUsers = pathToUsers
         self.__readUsers()
         self.__initMainUser()
+        self.__saveUsers()
 
     def __initMainUser(self):
         ""
+        email = generate_password_hash(config("email-admin"))
+        pw = generate_password_hash(config("admin-pw"))
+       
+        superAdminEmailFound = [userEmailHash for userEmailHash in self.users.keys() if check_password_hash(userEmailHash,config("email-admin"))]
+    
+        #print(check_password_hash(self.users[superAdminEmailFound[0]]["pw"],config("admin-pw")))
+       
+        if len(superAdminEmailFound) != 0 and len(self.users) == 0:
+            raise ValueError("Something is wrong.")
         if len(self.users) == 0:
-            
+           
             email = generate_password_hash(config("email-admin"))
             pw = generate_password_hash(config("admin-pw"))
 
-            print(check_password_hash(email,"h.nolte@age.mpg.de"))
+            #print(check_password_hash(email,"h.nolte@age.mpg.de"))
             self.users[email] = {"pw":pw,"super-admin":True}
 
+        elif len(superAdminEmailFound) > 0 and not check_password_hash(self.users[superAdminEmailFound[0]]["pw"],config("admin-pw")): #pw changed of admin from env file - update!! 
+            for sAdminFound in superAdminEmailFound:
+                del self.users[sAdminFound]
+            self.users[email] = {"pw":generate_password_hash(config("admin-pw")),"super-admin":True}
+        
 
     def __readUsers(self):
         ""
@@ -39,13 +54,14 @@ class AdminUsers(object):
 
     def addUser(self,emailString,pwString,superAdmin=False):
         ""
-        if any( check_password_hash(userEmailHash,emailString) for userEmailHash in self.users.keys()):
+        if any(check_password_hash(userEmailHash,emailString) for userEmailHash in self.users.keys()):
             return False,"Email already included."
         else:
             print("")
-            email = generate_password_hash(config(emailString))
-            pw = generate_password_hash(config("pwString"))
+            email = generate_password_hash(emailString)
+            pw = generate_password_hash(pwString)
             self.users[email] = {"pw":pw,"super-admin":superAdmin}
+            return True, "User created."
 
     def isUserSuperAdmin(self,emailString):
         ""

@@ -54,6 +54,26 @@ class AdminLoginWebsite(Resource):
         return {"success":False,"token":"","msg":"Input not valid."}
 
 
+
+class AdminUser(Resource):
+    def __init__(self,*args,**kwargs):
+        """
+        """
+        self.token = kwargs["token"]
+        self.users = kwargs["user"]
+    
+    def  post(self):
+        ""
+        data = json.loads(request.data, strict=False)
+        if all(x in data for x in ["token","pw","email"]):
+            print(data)
+            print(self.token.isAdminTokenValidated(data["token"]))
+            if self.token.isAdminTokenValidated(data["token"]):
+                ok, msg = self.users.addUser(data["email"],data["pw"],superAdmin=False)
+                return {"success":ok, "msg":msg}
+        else:
+            return {"success":False, "msg":"Not all required data foud in json."}
+
 class AdminLoginValidation(Resource):
     def __init__(self,*args,**kwargs):
         """

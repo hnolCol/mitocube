@@ -5,9 +5,9 @@ from .dataset.MitoMap import DatasetsMitoMap
 from .feature.Features import Features, FeaturesInDatasets, FeatureDetails, FeatureDBInfo, FeatureSummary
 from .feature.cards.Data import ChartDataForFeatures, CorrelationsToFeature
 from .feature.cards.Layout import CardLayout
-from .submission.ID import DataID, DataSubmissionDetails
+from .submission.ID import DataID, DataSubmissionDetails, DataSubmissions
 from .filter.Filter import Filter
-from .login.Login import LoginWebsite, TokenValid, AdminLoginWebsite, AdminLoginValidation, AdminTokenValid
+from .login.Login import LoginWebsite, TokenValid, AdminLoginWebsite, AdminLoginValidation, AdminTokenValid, AdminUser
 
 mitoCubeResources = [
     {
@@ -133,16 +133,25 @@ mitoCubeResources = [
     {
         "url":'/api/data/submission/id',
         "obj": DataID,
-        "reqKwargs" : ["data","token"]
+        "reqKwargs" : ["data","token","submission"]
     },
     {
         "url":'/api/data/submission/details',
         "obj": DataSubmissionDetails,
-        "reqKwargs" : ["data","token","email"]
+        "reqKwargs" : ["data","token","email","submission"]
+    },
+    {
+        "url":'/api/admin/submissions',
+        "obj": DataSubmissions,
+        "reqKwargs" : ["token","submission"]
+    },
+    ### Admin Users
+    {
+        "url":'/api/admin/users',
+        "obj": AdminUser,
+        "reqKwargs" : ["token","user"]
     }
-    
 
-    
     
 ]
 

@@ -183,7 +183,17 @@ export function MCGroupingTable(props) {
     const cellRenderer = (rowIndex,columnIndex) => {
        
         if (data !== undefined && isArray(data)){
+            if (data[rowIndex] === undefined){
+                return (
+                    <EditableCell2 
+                        value = {""} 
+                        rowIndex={rowIndex} 
+                        columnIndex={columnIndex}
+                        //onChange={(newValue, rowIndex, columnIndex)  => console.log(newValue, rowIndex, columnIndex)}
+                        onConfirm={handleDataEditing}/>
+                )}
             if (columnIndex !== 0) {
+                
                 return (
                     <EditableCell2 
                             value = {data[rowIndex][columnNames[columnIndex]]} 
@@ -242,14 +252,14 @@ export function MCGroupingTable(props) {
         <div style={{paddingTop:"1rem",paddingBottom:"1rem",height:"500px",overflowY:"hidden"}}>
             <MCAddGroupDialog {...addGroup} reportGroup = {addGroupToGrouping} onClose={closeDialog}/>
             <MCRenameGrouping {...editGrouping} onClose={closeEditGrouping} reportChange = {saveGrouping}/>
-            <ButtonGroup>
+            <ButtonGroup style={{paddingBottom:"0.5rem"}}>
                 <FileInput buttonText="..." onInputChange={handleTextInput}/>
-                <Button text = "Template" onClick={e => downloadTxtFile(arrayToTabDel(data,columnNames),`template.txt`)}/>
+                <Button text = "Template" rightIcon="download" onClick={e => downloadTxtFile(arrayToTabDel(data,columnNames),`templateForSampleSubmission.txt`)}/>
             </ButtonGroup>
             {data!==undefined?
             <HotkeysProvider>
                 <Table2
-                                numRows={data.length}
+                                numRows={data.length+2}
                                 numFrozenColumns={1}
                                 enableMultipleSelection = {true}
                                 forceRerenderOnSelectionChange={true}
