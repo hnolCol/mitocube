@@ -45,7 +45,7 @@ class AdminUsers(object):
         if os.path.exists(self.pathToUsers):
             with open(self.pathToUsers, 'rb') as f:
                 usersFromFile = pickle.load(f)
-            self.users = {**usersFromFile,**self.users}
+            self.users = {**usersFromFile}
 
     def __saveUsers(self):
         ""
@@ -54,6 +54,7 @@ class AdminUsers(object):
 
     def addUser(self,emailString,pwString,superAdmin=False):
         ""
+        self.__readUsers()
         if any(check_password_hash(userEmailHash,emailString) for userEmailHash in self.users.keys()):
             return False,"Email already included."
         else:
@@ -61,10 +62,12 @@ class AdminUsers(object):
             email = generate_password_hash(emailString)
             pw = generate_password_hash(pwString)
             self.users[email] = {"pw":pw,"super-admin":superAdmin}
+            self.__saveUsers()
             return True, "User created."
 
     def isUserSuperAdmin(self,emailString):
         ""
+        self.__readUsers()
         for userEmailHash, userDetails in self.users.items():
             if check_password_hash(userEmailHash,emailString):
                 return userDetails["super-admin"]
@@ -72,6 +75,7 @@ class AdminUsers(object):
 
     def validateUser(self,emailString,pwString):
         ""
+        self.__readUsers()
         for userEmailHash, userDetails in self.users.items():
             if check_password_hash(userEmailHash,emailString) and check_password_hash(userDetails["pw"],pwString):
                 return True, userDetails["super-admin"]

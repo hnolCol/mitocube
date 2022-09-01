@@ -113,8 +113,9 @@ class DataSubmissionDetails(Resource):
                 return {"success":False,"error":"Token is not valid."}
             
             else:
+                try:
                     submission = data["submission"]
-                    print(submission)
+                    
                     sampleSubmission = OrderedDict() 
                     sampleSubmission["Creation Date"] = submission["time"]
                     sampleSubmission["State"] = submission["details"]["State"]
@@ -169,7 +170,8 @@ class DataSubmissionDetails(Resource):
                         self.email.sendEmail(title="MitoCube - Submission Complete {}".format(sampleSubmission["dataID"]), 
                                             html= createEmailSummaryForProject(sampleSubmission), recipients = [sampleSubmission[submissionSaveName]])
                         return {"success":True}
-
+                except:
+                    {"success":False,"msg":"There was an error extracting the submission details."}
 
         return {"success":False,"msg":"missing json data"}
 

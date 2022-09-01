@@ -66,11 +66,12 @@ class AdminUser(Resource):
         ""
         data = json.loads(request.data, strict=False)
         if all(x in data for x in ["token","pw","email"]):
-            print(data)
-            print(self.token.isAdminTokenValidated(data["token"]))
+            
             if self.token.isAdminTokenValidated(data["token"]):
                 ok, msg = self.users.addUser(data["email"],data["pw"],superAdmin=False)
                 return {"success":ok, "msg":msg}
+            else:
+                return {"success":False,"msg":"Admin token is not valid."}
         else:
             return {"success":False, "msg":"Not all required data foud in json."}
 
