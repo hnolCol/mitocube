@@ -161,7 +161,7 @@ function App() {
         <MCProtectedRoute isAuthenthicated={true}>
             <div>
               <h3>Performance</h3>
-              <MCSumissionView />
+              <MCSumissionView token={isAdminAuthenthicated.token}/>
             </div>
         </MCProtectedRoute>
       }
@@ -170,8 +170,7 @@ function App() {
       <Route path="/admin/submission" element = {
         <MCProtectedRoute isAuthenthicated={isAdminAuthenthicated.isAuth}> 
             <div>
-             
-              <MCSubmissionAdminView token={isAuthenthicated.token}/>
+              <MCSubmissionAdminView token={isAdminAuthenthicated.token}/>
             </div>
         </MCProtectedRoute>
       }

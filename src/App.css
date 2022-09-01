@@ -852,6 +852,10 @@ hr {
   position: relative;
 }
 
+.submission-prop {
+  padding: 0.2rem;
+}
+
 .submission-details-item-container {
 
   max-height :  calc(100vh - 2rem - 145px);

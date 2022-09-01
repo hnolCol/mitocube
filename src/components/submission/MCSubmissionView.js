@@ -21,7 +21,7 @@ function MCSubmissionItem(props) {
     const [isUpdated, setIsUpdated] = useState(false)
 
     const onEditJsonParams = (params) => {
-        console.log(params)
+        //console.log(params)
         if (["dataID","SampleNumber"].includes(params.name)){
             setAlertState({isOpen:true,children:<div>The dataID and sample number cannot be changed.</div>})
             return false
@@ -75,6 +75,7 @@ function MCSubmissionItem(props) {
 
     return(
         <div>
+        
         <MCSubmissionHeader 
                 paramsFile = {paramsFile} 
                 states = {states} 
@@ -87,9 +88,8 @@ function MCSubmissionItem(props) {
         
         <Collapse isOpen={isOpen}>
         
-       
             <ReactJson  
-                theme={"shapeshifter:inverted"} 
+                // theme={"shapeshifter:inverted"} 
                 src = {paramsFile} 
                 displayDataTypes={false} 
                 style={{fontSize:".75rem"}} name={false} onEdit={onEditJsonParams}/>
@@ -111,24 +111,31 @@ function MCSubmissionHeader (props) {
         const now = new Date()
 
         return `${now.getDay()-d.getDay()} days`
-
     }
 
     return(
         <div key = {paramsFile.dataID}   className="submission-container" onMouseEnter={e => setMouseOverDataID(paramsFile.dataID)} onMouseLeave={e => setMouseOverDataID(undefined)}>
             <div className="submission-box"
                     >
-
-                        <div style={{color:mouseOverDataID===paramsFile.dataID? "#6e5b7b":"darkgrey", transitionDuration:"1.5s",transitionProperty:"color"}}>
-                            <h5>{dateString} ({getDaysSinceSumbission(dateString)} )</h5>
-                            <h3>{paramsFile.Title}</h3>
-                            {paramsFile.shortDescription}
+                       
+                           
+                        
+                        <div style={
+                            {
+                                color:mouseOverDataID===paramsFile.dataID? "#3f5b66":"#2F5597", 
+                                transitionDuration:"1.5s",
+                                transitionProperty:"color"
+                            }}>
+                                <h3>{paramsFile.Title}</h3>
                         </div>
 
+                        <div style={{fontSize:"1em",paddingRight:"5rem"}}>
+                            {paramsFile.shortDescription}
+                        </div>
                         <div className="dataset-tag-box">
                             {["Experimentator","Email","Type","Material","Organism","dataID"].map(k => {
                                 return (
-                                    <div key={k} className="dataset-prop">
+                                    <div key={k} className="submission-prop">
                                     <Code>{paramsFile[k]}</Code>
                                 </div>
                                 )
@@ -151,7 +158,8 @@ function MCSubmissionHeader (props) {
                     </div>
 
                 <div className="submission-box" >
-                            <p>Submission State</p>
+                            
+                            {dateString} ({getDaysSinceSumbission(dateString)} )
                             < MCSubmissionTimeLine states={states} state={paramsFile.State}/>
                 </div>
                 </div>
@@ -276,7 +284,8 @@ export function MCSubmissionAdminView (props) {
         <div className="submission-admin-view">
              <Alert {...alertState} canEscapeKeyCancel={true} canOutsideClickCancel={true} onClose={e => setAlertState({isOpen:false})}/>
              <h2>Submissions</h2>
-            <p>Overveiw of submissions. You can search for projects and also edit the submission. You can also transfer the project from here to the MitoCube public space by uploading the data.</p>
+             <Link to="/admin/">Back</Link>
+            {/* <p>Overveiw of submissions. You can search for projects and also edit the submission. You can also transfer the project from here to the MitoCube public space by uploading the data.</p> */}
             <div style={{height:"60px"}}>
             <InputGroup 
                         leftIcon={"filter"} 
