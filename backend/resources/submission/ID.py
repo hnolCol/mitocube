@@ -80,8 +80,8 @@ class DataSubmissionDetails(Resource):
             if all(x in data for x in ["dataID","token","paramsFile"]):
                 token = data["token"]
                 
-                # if token == "None" or not self.token.isAdminToken(token):
-                #     return {"success":False,"error":"Token is not valid."}
+                if token == "None" or not self.token.isAdminToken(token):
+                    return {"success":False,"error":"Token is not valid."}
                 dataID = data["dataID"]
                 paramsFile = data["paramsFile"]
                 ok, msg, paramsFile = self.submission.update(dataID,paramsFile)
@@ -94,8 +94,8 @@ class DataSubmissionDetails(Resource):
         if request.data != b'':
             data = json.loads(request.data, strict=False)
             token = data["token"]
-            # if token == "None" or not self.token.isAdminToken(token):
-            #     return {"success":False,"error":"Token is not valid."}
+            if token == "None" or not self.token.isAdminToken(token):
+                return {"success":False,"error":"Token is not valid."}
             dataID = data["dataID"]
             
             ok, msg = self.submission.delete(dataID)
@@ -168,7 +168,8 @@ class DataSubmissionDetails(Resource):
                     if self.submission.add(sampleSubmission):
 
                         self.email.sendEmail(title="MitoCube - Submission Complete {}".format(sampleSubmission["dataID"]), 
-                                            html= createEmailSummaryForProject(sampleSubmission), recipients = [sampleSubmission[submissionSaveName]])
+                                            html= createEmailSummaryForProject(sampleSubmission), 
+                                            recipients = [sampleSubmission[submissionSaveName]] + self.submission.data.getConfigParam("email-cc-submission-list"))
                         return {"success":True}
                 except:
                     {"success":False,"msg":"There was an error extracting the submission details."}

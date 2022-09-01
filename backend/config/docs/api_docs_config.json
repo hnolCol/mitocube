@@ -12,6 +12,7 @@
         "MAIL_USE_SSL": 1,
         "MAIL_DEFAULT_SENDER" : "support@mitocube.com"
     },
+    "email-cc-submission-list" : ["dominique.diehl@age.mpg.de","hendrik.nolte@age.mpg.de"],
     "email-pw": "email-pw",
     "side-menu" : {
         "main" : [
