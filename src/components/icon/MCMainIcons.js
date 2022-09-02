@@ -175,7 +175,7 @@ export const MCSubmissionIcon = (props) => {
 export const MCAdministrationIcon = (props) => {
     const [mouseIn, setMouseIn] = useState(false)
 
-    const opacityValue = mouseIn?0.35:0.85
+    
     return(
         <div style={{width:"100%"}}>
                 <motion.svg
@@ -186,8 +186,8 @@ export const MCAdministrationIcon = (props) => {
                     onMouseEnter={e => setMouseIn(true)} onMouseLeave = {e => setMouseIn(false)}
                 >
 
-                <path style={{fill:"#F6F6F6"}} d="M98.7,90.9h-83c-2,0-3.7-1.6-3.7-3.7V17.9
-                    c0-2,1.6-3.7,3.7-3.7h83c2,0,3.7,1.6,3.7,3.7v69.2C102.3,89.2,100.8,90.9,98.7,90.9z" stroke="black"  strokeWidth={0.3}/>
+                <path style={{fill:"#F6F6F6",stroke:"#000000",strokeWidth:0.3,strokeMiterlimit:10}} d="M98.6,88.3H15.7c-2.1,0-3.7-1.7-3.7-3.7V15.4
+                        c0-2.1,1.7-3.7,3.7-3.7h82.9c2.1,0,3.7,1.7,3.7,3.7v69.2C102.3,86.6,100.7,88.3,98.6,88.3z"/>
                 <motion.g 
                     animate={mouseIn?{ rotate: 360 }:null}
                     transition={mouseIn?{ ease: "linear", duration: 4, repeat: Infinity,repeatType: "mirror"}:null}>

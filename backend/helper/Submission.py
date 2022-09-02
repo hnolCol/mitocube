@@ -8,11 +8,12 @@ from datetime import date
 
 class Submission(object):
 
-    def __init__(self,pathToSubmissionFolder,pathToArchive,data,*args,**kwargs):
+    def __init__(self,pathToSubmissionFolder,pathToArchive,data,email,*args,**kwargs):
 
         self.pathToFolder = pathToSubmissionFolder
         self.pathToArchive = pathToArchive
         self.data = data
+        self.email = email
 
     def _createFolder(self, dataID):
         ""
@@ -117,8 +118,7 @@ class Submission(object):
         pathToFolder = self._getPath(dataID)
         
         if os.path.exists(pathToFolder):
-            print("Update")
-            print(paramsFile)
+    
             prevParamFile = self._readParams(dataID)
             if "State" not in prevParamFile:
                 prevParamFile["State"] = "Submitted"
@@ -126,8 +126,15 @@ class Submission(object):
                 if "updatedState" not in paramsFile:
                 
                     paramsFile["updatedState"] = {}
-            
+
                 paramsFile["updatedState"][paramsFile["State"]] = date.today().strftime("%Y%m%d")
+
+                self.email.sendEmail(
+                        title="Project {} State Changed To {}".format(paramsFile["dataID"],paramsFile["State"]),
+                        body="",
+                        recipients = [paramsFile["Email"]] + self.data.getConfigParam("email-cc-submission-list"),
+                        html = "<div><p>Dear {}</p><p>We are happy to inform you that the state of the project: {} has been changed to {}.</p><p>You will be notified if the project's state will change again.</p><p>The MitoCube Team</p></div>".format(paramsFile["Experimentator"],paramsFile["Title"],paramsFile["State"])
+                        )
             self._writeParams(os.path.join(pathToFolder,"params.json"),paramsFile)
             return True, "Submission updated.", paramsFile
         else:

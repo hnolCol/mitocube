@@ -189,7 +189,7 @@ function App() {
         <MCProtectedRoute isAuthenthicated={isAdminAuthenthicated.isAuth}>
             <div>
               <h3>Users</h3>
-              <MCAdminUserView token={isAdminAuthenthicated.token}/>
+              <MCAdminUserView token={isAdminAuthenthicated.token} superAdmin = {isAdminAuthenthicated.superAdmin}/>
             </div>
         </MCProtectedRoute>
       }

@@ -41,7 +41,8 @@ tokenManager = Token(pathToTokens)
 dbManager = DBFeatures(pathToDB=pathToDB)
 dataManger = Data(pathToData,pathToAPIConfig,dbManager)
 adminUserManager = AdminUsers(pathToUsers)
-submissionManager =  Submission(pathToSubmissionFolder,pathToArchive ,dataManger)
+
+
 ##update email settings
 emailSettings = dataManger.getConfigParam("email-sever-settings")
 for k,v in emailSettings.items():
@@ -51,13 +52,16 @@ for k,v in emailSettings.items():
                 app.config[k] = v
 app.config["MAIL_PASSWORD"] = config("email-pw")
 
+#init email and submission manager
+emailHelper = EmailHelper(app)
+submissionManager =  Submission(pathToSubmissionFolder,pathToArchive ,dataManger, emailHelper)
 ##put helpers in dict for easy init
 helpers = {
         "data" :  dataManger,
         "featureFinder" : FeatureFinder(data = dataManger, DB = dbManager),
         "db" : dbManager,
         "token" : tokenManager,
-        "email" : EmailHelper(app),
+        "email" : emailHelper,
         "user" : adminUserManager,
         "submission" : submissionManager
 }

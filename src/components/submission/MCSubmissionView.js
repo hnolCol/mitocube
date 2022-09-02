@@ -5,9 +5,9 @@ import { motion } from "framer-motion"
 import { MCAnimatedPercentage } from "../utils/components/MCSVGUtils"
 import { MCPerformanceChart } from "./charts/MCPerformanceChart"
 import axios from "axios"
-import { MCCSVDownload } from "../utils/components/MCCSVDownload"
 import ReactJson from 'react-json-view'
 import { MCCombobox } from "../utils/components/MCCombobox"
+import { downloadJSONFile } from "../utils/Misc"
 import _ from "lodash"
 import { Text } from "@visx/text"
 const instruments = ["QExactive 1","QExactive 2"]
@@ -144,6 +144,7 @@ function MCSubmissionHeader (props) {
                     <ButtonGroup vertical={false} style={{marginTop:"0.3rem"}}>
                         <Button text="Save" rightIcon="floppy-disk" disabled={!isUpdated} onClick={handleUpdate} intent={!isUpdated?"none":"primary"} minimal={true}/>
                         <Button icon={"edit"} onClick={()=> setIsOpen(!isOpen)} minimal={true} intent={isOpen?"primary":"none"}/>
+                        <Button icon="download" onClick={e => downloadJSONFile(paramsFile,`params-${paramsFile.dataID}`)} minimal={true}/>
                         <Button text="" icon="trash"  onClick={handleDelete} intent={"danger"}  minimal={true}/>
                         <MCCombobox 
                                 items = {states} 

@@ -105,6 +105,7 @@ button:focus {
 .tag-container-evenly {
   display: flex;
   justify-content: space-evenly;
+  flex-wrap: wrap;
 }
 
 .tag-container-between {
