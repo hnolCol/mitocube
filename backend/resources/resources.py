@@ -5,7 +5,7 @@ from .dataset.MitoMap import DatasetsMitoMap
 from .feature.Features import Features, FeaturesInDatasets, FeatureDetails, FeatureDBInfo, FeatureSummary
 from .feature.cards.Data import ChartDataForFeatures, CorrelationsToFeature
 from .feature.cards.Layout import CardLayout
-from .submission.ID import DataID, DataSubmissionDetails, DataSubmissions
+from .submission.ID import DataID, DataSubmissionDetails, DataSubmissions, SampleList
 from .filter.Filter import Filter
 from .login.Login import LoginWebsite, TokenValid, AdminLoginWebsite, AdminLoginValidation, AdminTokenValid, AdminUser
 
@@ -150,8 +150,13 @@ mitoCubeResources = [
         "url":'/api/admin/users',
         "obj": AdminUser,
         "reqKwargs" : ["token","user"]
+    },
+    ### Sample list
+    {
+        "url":'/api/admin/samplelist',
+        "obj": SampleList,
+        "reqKwargs" : ["token","submission"]
     }
-
     
 ]
 

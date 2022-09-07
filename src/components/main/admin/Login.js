@@ -6,7 +6,7 @@ import { useState } from "react"
 import axios from "axios"
 import { MCHeader } from "../../utils/components/MCHeader"
 import { Link } from "react-router-dom"
-import { setMitoCubeAdminToken } from "../../utils/Misc"
+import { removeMitoCubeAdminToken, setMitoCubeAdminToken } from "../../utils/Misc"
 
 
 export function MCAdminLogin(props) {
@@ -14,7 +14,8 @@ export function MCAdminLogin(props) {
     const {isAuthenthicated,isAdminAuthenthicated, token, setAdminAuthenticationState, ...rest} = props
     const [loginInfo,setLoginInfo] = useState({pw:"",email:"",validationCode:""})
     const [adminTokenDetails,setAdminToken] = useState({adminToken:undefined,superAdmin:false,validated:false})
-
+    const [infoText, setInfoText] = useState("")
+    
     const handleInputChange = (e) => {
         //pw and email input
         const id = e.target.id 
@@ -23,6 +24,11 @@ export function MCAdminLogin(props) {
             return { ...prevValues, [id] : e.target.value}})
         }
       
+    const logout = (e) => {
+      removeMitoCubeAdminToken()
+      setAdminAuthenticationState({isAuth:false,token:null,superAdmin:false})
+      
+    }
     
 
     const validateCode = (e) => {
@@ -50,16 +56,22 @@ export function MCAdminLogin(props) {
 
     const loginAttempt = (e) => {
       // login using email and password.
-      if (loginInfo.email.length < 4 && loginInfo.pw.length < 4) return 
+      setInfoText("")
+      if (loginInfo.email.length < 4 && loginInfo.pw.length < 4) {
+        setInfoText("Login information does not meet min requirement.")
+        return 
+      }
+      
       axios.post('/api/login/admin', {email:loginInfo.email,pw:loginInfo.pw,token:token},
                 {headers : {'Content-Type': 'application/json'}}).then(response => {
                 if (response.status === 200 & "success" in response.data & response.data["success"] & "token" in response.data) {
-                      console.log(response.data)
+                      
                       setAdminToken({adminToken:response.data.token,superAdmin:response.data.superAdmin})
                 }
                 
         else {
-          console.log(response.data)
+          
+          setInfoText(response.data["msg"])
            // setInfoObj({isLoading:false,"infoText":"Password is incorrect or API not reached."})
           }
       }) 
@@ -69,7 +81,11 @@ export function MCAdminLogin(props) {
         <div>
         <div className="welcome-content">
             {isAuthenthicated && isAdminAuthenthicated?
+              
               <div style={{width:"100%",minWidth:"150px"}}>
+                <div style={{position:"absolute",right:0,top:0,width:"100px"}}>
+                  <Button text="Logout" minimal={true} small={true} onClick={logout}/>
+                </div>
                 <MCHeader text="Admin Content" hexColor="darkgrey"/>
                 <p>Welcome to the Admin Restricted Site of MitoCube. View instrument performance, edit and export submissions and add users.</p>
                 <div className="admin-nav-container">
@@ -87,6 +103,9 @@ export function MCAdminLogin(props) {
               </div>
             :
             <div>
+              <div style={{position:"absolute",right:0,top:0,width:"100px"}}>
+                  <Link to="/"><Button text="Home" minimal={true} small={true} onClick={logout}/></Link>
+              </div>
                <MCSpinner initialText={""} textAnchor="middle" textX = {25}/>
                 <MCHeader text="Welcome to MitoCube Admin Content" />
                <p>This content offers administrative actions and overviews. You cannot create an account, please contact the site administrator to get access.</p>
@@ -129,6 +148,7 @@ export function MCAdminLogin(props) {
                   </div>}
               <div style={{fontSize:"0.75rem"}}>
                 <p>{adminTokenDetails.adminToken===undefined?"Please enter admin password and email. A verification code will be sent to your email.":"Please enter verificaion code."}</p>
+                <p>{infoText}</p>
               </div>
             </div>}
             

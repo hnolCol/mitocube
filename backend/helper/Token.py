@@ -85,13 +85,14 @@ class Token(object):
 
     def isAdminToken(self,adminToken):
         ""
+        self.__readTokens()
         if adminToken in self.tokens and self.tokens[adminToken]["isAdminToken"]:
             return True
         return False
 
     def isAdminTokenValidated(self,adminToken):
         ""
-        return adminToken in self.tokens and self.isAdminToken(adminToken) and self.tokens[adminToken]["validated"]
+        return self.isAdminToken(adminToken) and self.tokens[adminToken]["validated"]
 
     def validateToken(self,adminTokenID,validationCode):
         ""

@@ -58,7 +58,7 @@ export function MCCardHeader(props){
                             <MenuItem 
                                 text="Download data"
                                 icon={"download"} 
-                                onClick={e => downloadTxtFile(arrayOfObjectsToTabDel(Array.isArray(props.downloadData)?props.downloadData:JSON.parse(props.downloadData)),`${props.label}-MitoCube-(${props.dataID}).txt`)}/>
+                                onClick={e => downloadTxtFile(arrayOfObjectsToTabDel(Array.isArray(props.downloadData)?props.downloadData:JSON.parse(props.downloadData),[]),`${props.label}-MitoCube-(${props.dataID}).txt`)}/>
 
                             <MenuItem text="Remove" icon={"remove"} intent="danger" onClick={(e) => props.handleRemoveRequest(props.id)}/>
                         </Menu>}>

@@ -10,13 +10,14 @@ import { MCCombobox } from "../utils/components/MCCombobox"
 import { downloadJSONFile } from "../utils/Misc"
 import _ from "lodash"
 import { Text } from "@visx/text"
+import { MCCreateSampleList } from "./MCCreateSampleList"
 const instruments = ["QExactive 1","QExactive 2"]
 
 const instrumentMetrices = [{name:"Identified Peptides",value:0.5},{name:"MS/MS Identification",value:0.88},{name:"Proteins",value:0.94}]
 
 
 function MCSubmissionItem(props) {
-    const {dataID, token, handleDataChange, paramsFile, states, setAlertState} = props
+    const {dataID, token, handleDataChange, paramsFile, states, setAlertState,openSampleListDialog} = props
     const [isOpen, setIsOpen] = useState(false)
     const [isUpdated, setIsUpdated] = useState(false)
 
@@ -84,7 +85,8 @@ function MCSubmissionItem(props) {
                 handleDelete={handleDelete} 
                 handleStateChange = {handleStateChange} 
                 isUpdated={isUpdated}
-                handleUpdate = {handleUpdate}/>
+                handleUpdate = {handleUpdate}
+                openSampleListDialog = {openSampleListDialog}/>
         
         <Collapse isOpen={isOpen}>
         
@@ -102,23 +104,24 @@ function MCSubmissionItem(props) {
 
 
 function MCSubmissionHeader (props) {
-    const {paramsFile,states, isOpen, setIsOpen, handleDelete, handleStateChange, isUpdated, handleUpdate}= props
+    const {paramsFile,states, isOpen, setIsOpen, handleDelete, handleStateChange, isUpdated, handleUpdate, openSampleListDialog}= props
     const [mouseOverDataID,setMouseOverDataID] = useState(false)
     const dateString = `${paramsFile["Creation Date"].substring(0,4)}-${paramsFile["Creation Date"].substring(4,6)}-${paramsFile["Creation Date"].substring(6)}`
     const getDaysSinceSumbission = (dateString) => {
 
         const d =  new Date(dateString)
         const now = new Date()
+        
+        const diffTime = Math.abs(now - d);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
 
-        return `${now.getDay()-d.getDay()} days`
+        return `${diffDays} days`
     }
 
     return(
         <div key = {paramsFile.dataID}   className="submission-container" onMouseEnter={e => setMouseOverDataID(paramsFile.dataID)} onMouseLeave={e => setMouseOverDataID(undefined)}>
             <div className="submission-box"
                     >
-                       
-                           
                         
                         <div style={
                             {
@@ -144,8 +147,7 @@ function MCSubmissionHeader (props) {
                     <ButtonGroup vertical={false} style={{marginTop:"0.3rem"}}>
                         <Button text="Save" rightIcon="floppy-disk" disabled={!isUpdated} onClick={handleUpdate} intent={!isUpdated?"none":"primary"} minimal={true}/>
                         <Button icon={"edit"} onClick={()=> setIsOpen(!isOpen)} minimal={true} intent={isOpen?"primary":"none"}/>
-                        <Button icon="download" onClick={e => downloadJSONFile(paramsFile,`params-${paramsFile.dataID}`)} minimal={true}/>
-                        <Button text="" icon="trash"  onClick={handleDelete} intent={"danger"}  minimal={true}/>
+                        <Button icon="th-list" onClick={e => openSampleListDialog(paramsFile.dataID)} minimal={true}/>
                         <MCCombobox 
                                 items = {states} 
                                 placeholder="State .."
@@ -155,6 +157,8 @@ function MCSubmissionHeader (props) {
                                             small : true,
                                             icon : "tag"
                                         }}/>
+                        <Button icon="download" onClick={e => downloadJSONFile(paramsFile,`params-${paramsFile.dataID}`)} minimal={true}/>
+                        <Button text="" icon="trash"  onClick={handleDelete} intent={"danger"}  minimal={true}/>
                     </ButtonGroup>
                     </div>
 
@@ -194,7 +198,7 @@ function MCSubmissionTimeLine (props) {
 
 export function MCSubmissionAdminView (props) {
     const [submissionDetails, setSubmissions] = useState({submissions:[],states:[],submissionSatesCounts:{},submissionsToShow:[],submissionFilter:"None",searchString:""})
-   // const [submissionFilter, setSubmissionFilter] = useState(undefined)
+    const [sampleListDialog, setSampleListDialog] = useState({isOpen:false})
     const [alertState, setAlertState] = useState({isOpen:false,children:<div>Warning!</div>})
     const {token} = props    
 
@@ -261,6 +265,11 @@ export function MCSubmissionAdminView (props) {
 
     }
 
+    const openSampleListDialog = (dataID) => {
+
+        setSampleListDialog({isOpen:true,dataID:dataID})
+    }
+
 
     const handleSubmissionUpdate = (dataID,updated_src) => {
         
@@ -284,6 +293,7 @@ export function MCSubmissionAdminView (props) {
     return (
         <div className="submission-admin-view">
              <Alert {...alertState} canEscapeKeyCancel={true} canOutsideClickCancel={true} onClose={e => setAlertState({isOpen:false})}/>
+             <MCCreateSampleList {...sampleListDialog} onClose = {setSampleListDialog} token={token} handleDataChange = {handleSubmissionUpdate}/>
              <h2>Submissions</h2>
              <Link to="/admin/">Back</Link>
             {/* <p>Overveiw of submissions. You can search for projects and also edit the submission. You can also transfer the project from here to the MitoCube public space by uploading the data.</p> */}
@@ -335,6 +345,7 @@ export function MCSubmissionAdminView (props) {
                             key = {v.dataID} 
                             token={token} 
                             handleDataChange = {handleSubmissionUpdate} 
+                            openSampleListDialog = {openSampleListDialog}
                             setAlertState = {setAlertState} 
                             states = {submissionDetails.states}
                             {...v}/>)

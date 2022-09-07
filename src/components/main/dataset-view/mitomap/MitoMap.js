@@ -11,6 +11,7 @@ import { MCSpinner } from "../../../spinner/MCSpinner";
 import { MCMinimalBoxplot } from "../../charts/types/MCMinimalBoxplot";
 import {MCSVGFrame} from "../../charts/AxisContainer"
 import _ from "lodash";
+import { Link } from "react-router-dom";
 export function MCMitoMap(props) {
 
     const {token, dataID,groupingNames, mitoMapData, setMitoMapData, setMitoMapANOVADetails} = props
@@ -58,6 +59,15 @@ export function MCMitoMap(props) {
             }
         )
       }, [token,dataID, mitoMapData.anovaDetails]);
+
+
+
+    const resetMitoMapData = (e) => {
+
+        setMitoMapData(prevValues => {
+            return { ...prevValues,"anovaDetails":{},"isLoading":false}
+          })
+    }
 
     const togglePathwayNames = (e) => {
         console.log("toggle")
@@ -133,7 +143,7 @@ export function MCMitoMap(props) {
                             changed of the specific pathway. In the future you will be able to select the circles to view the underyling proteins and direction.`}</p>
                         <p>{mitoMapData.anovaDetails["anovaType"] === "1-way ANOVA"?`One way ANOVA based on ${mitoMapData.anovaDetails["grouping1"]} (p-value < ${mitoMapData.anovaDetails["pvalue"]})`:`Two way anova based on ${mitoMapData.anovaDetails["grouping1"]} and ${mitoMapData.anovaDetails["grouping2"]} (p-value < ${mitoMapData.anovaDetails["pvalue"]})`}</p>
                         <p>{mitoMapData.msg}</p>
-
+                        <Button text = "Reset" minimal={true} small={true} intent="danger" onClick={resetMitoMapData}/>
                         <Switch 
                             checked = {mitoMapData.showNames} 
                             label="Show pathway names" 

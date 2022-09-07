@@ -48,6 +48,12 @@ export function getMitoCubeAdminToken() {
     return tokenString===undefined || tokenString === null?"":tokenString
 }
 
+export function removeMitoCubeAdminToken() {
+    // removes mitocube-token
+    if (localStorage.getItem("mitocube-token-admin") !== null){
+        localStorage.removeItem("mitocube-token-admin")
+    }
+}
 
 export function setMitoCubeAdminToken(tokenString) {
     // save token string to local storage

@@ -2,7 +2,7 @@ import { AxisBottom, AxisLeft } from "@visx/axis"
 import { scaleLinear } from "@visx/scale"
 import { localPoint } from '@visx/event';
 import axios from "axios";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { MCSpinner } from "../../spinner/MCSpinner";
 import { GridRows, GridColumns } from '@visx/grid';
 import { useToggle, arrayOfObjectsToTabDel, downloadSVGAsText, downloadTxtFile, findClosestMatch, saveFeatureList } from "../../utils/Misc";
@@ -11,6 +11,7 @@ import _ from "lodash";
 import { Button, ButtonGroup, Dialog, FileInput, InputGroup, Menu, MenuItem } from "@blueprintjs/core";
 import { MCGroupingSelection } from "./MCDataset";
 import { Popover2, Popover2InteractionKind } from "@blueprintjs/popover2";
+import MCScatterPoint from "./MCScatterPoint";
 
 function MCCreateList(props) {
 
@@ -135,7 +136,7 @@ export function MCVolcanoGrid(props) {
                         transferPoints : transferPoints,
                         mouseOverPlot : mouseOverPlot,
                         transferPointHandler:handleCrossPoint,
-                        highlightPoint:crossPoint,
+                        highlightPoint:transferPoints || mouseOverPlot === `volc-${i}`? crossPoint : undefined,
                         setMouseOverPlot:setMouseOverPlot,
                         setVolcanoData :setVolcanoData,
                         svgID : `volc-${i}`,
@@ -250,7 +251,7 @@ const initZoomState = {active:false,x:undefined,y:undefined,width:4,height:4,xDo
 export function MCVolcano(props) {
 
     const [filterIndex, setFilterIndex] = useState(undefined)
-    const [highlightIndex, setHighlightIndex] = useState([])
+    const [highlightIndex, setHighlightIndex] = useState([undefined])
     const [zoomActive, setZoomActive] = useState(initZoomState)
     const [labels, setLabels] = useState([])
     const [search, setSearch] = useState(undefined)
@@ -281,49 +282,58 @@ export function MCVolcano(props) {
     var minDistanceX = (xDomain[1] - xDomain[0])*0.01
     var minDistanceY = (yDomain[0] - yDomain[1])*0.01
     const turnLabelToLeftXLimit = 0.80 * xDomain[1]
-  
-  
-    var pointsToShow = [] 
-   
-    const xscale = scaleLinear({
-        domain : xDomain,
+    
+    // init scales
+    const xscale = useMemo(() => scaleLinear({
+        domain : zoomActive.xDomain!==undefined?zoomActive.xDomain:xDomain,
         range : [0+margin.left,width-margin.right],
        
-    })
+    }),[margin.left,width,margin.right,xDomain,zoomActive.xDomain])
 
-    const yscale = scaleLinear({
-        domain : yDomain,
+    const yscale = useMemo(() => scaleLinear({
+        domain : zoomActive.yDomain!==undefined?zoomActive.yDomain:yDomain,
         range : [0+margin.top,height-margin.bottom],
-        
-    })
+        }),[margin.top,height,margin.bottom,yDomain,zoomActive.yDomain])
 
+    // filter points to show based on some values
+    var pointsToShow = useMemo(() => {
+        var pps = []
+
+            if (zoomActive.xDomain!==undefined){
+                pps = _.filter(points, o => o[0] > zoomActive.xDomain[0] && o[0] < zoomActive.xDomain[1] && o[1] > zoomActive.yDomain[1] && o[1] < zoomActive.yDomain[0])
+            }
+            else {
+                pps = zoomActive.active?zoomActive.filteredPoints:points
+            }
+
+            if (filterIndex !== undefined){
+                pps = _.filter(pps, o => o[filterIndex] !== "-")   
+            }
+            if (highlightIndex.length > 1 && highlightIndex[1].length > 1) {
+                pps = _.concat(_.filter(pps, x => !highlightIndex[1].includes(x[3])),_.filter(pps, x => highlightIndex[1].includes(x[3])))
+            }
+        return pps
+            
+        },[zoomActive.xDomain,zoomActive.yDomain,zoomActive.active,filterIndex,highlightIndex[0]])
+    
     if (zoomActive.xDomain!==undefined) {
-        xscale.domain(zoomActive.xDomain)
-        yscale.domain(zoomActive.yDomain)
         minDistanceX = (zoomActive.xDomain[1] - zoomActive.xDomain[0])*0.01
         minDistanceY = (zoomActive.yDomain[0] - zoomActive.yDomain[1])*0.01
-        pointsToShow = _.filter(points, o => o[0] > zoomActive.xDomain[0] && o[0] < zoomActive.xDomain[1] && o[1] > zoomActive.yDomain[1] && o[1] < zoomActive.yDomain[0])
-        
-    }
-    else {
-        pointsToShow = zoomActive.active?zoomActive.filteredPoints:points
     }
 
-    if (filterIndex!==undefined)
-        {
-            pointsToShow = _.filter(pointsToShow, o => o[filterIndex] !== "-")   
-        }
-
-    if (highlightIndex.length > 1 && highlightIndex[1].length > 1) {
-        //sort array in a way that the highlightIndex matching items are over the other circles
-        pointsToShow = _.concat(_.filter(pointsToShow, x => !highlightIndex[1].includes(x[3])),_.filter(pointsToShow, x => highlightIndex[1].includes(x[3])))
-    }
-    
     const searchWordActive = search!==undefined
-    const re = new RegExp(_.escapeRegExp(search), 'i')
-    const isMatch = result => [3,4].map(testIndex => re.test(result[testIndex])).some(a => a) // a===true if at least one index matches
+    const regExpMatchingPoints = useMemo(() => {
+        const searchWordActive = search!==undefined
+        const re = new RegExp(_.escapeRegExp(search), 'i')
+        const isMatch = result => [3,4].map(testIndex => re.test(result[testIndex])).some(a => a) // a===true if at least one index matches
+        return searchWordActive?_.filter(pointsToShow, isMatch):[]
+    }, [searchWordActive, search])
+
     
-    const regExpMatchingPoints = searchWordActive?_.filter(pointsToShow, isMatch):[]
+    // const re = new RegExp(_.escapeRegExp(search), 'i')
+    // const isMatch = result => [3,4].map(testIndex => re.test(result[testIndex])).some(a => a) // a===true if at least one index matches
+    
+    //const regExpMatchingPoints = searchWordActive?_.filter(pointsToShow, isMatch):[]
     const regExpSignificant = searchWordActive?regExpMatchingPoints.filter(p => p[2]).length : 0
     const regExpSignificant_up = searchWordActive?regExpMatchingPoints.filter(p => p[2] && p[0] > 0).length: 0
         // pointsToShow = _.filter(pointsToShow, isMatch)
@@ -368,8 +378,8 @@ export function MCVolcano(props) {
                         "active":true,
                         "x":mouseCoord.x,
                         "y":mouseCoord.y,
-                        "width":-1,
-                        "height":-1,
+                        "width":0.1,
+                        "height":0.1,
                         "origin":mouseCoord,
                         filteredPoints:_.sampleSize(points,0.3*points.length)}}) //faster zoom function
         }
@@ -399,7 +409,7 @@ export function MCVolcano(props) {
     const handleHighlightSelection = (catName, highlightPointIndices) => {
      
         if (highlightIndex.length > 0 && highlightIndex[0] === catName){
-            setHighlightIndex([])
+            setHighlightIndex([undefined])
         }
         else {
             setHighlightIndex([catName,highlightPointIndices])
@@ -420,7 +430,7 @@ export function MCVolcano(props) {
     const handleReset = (e)  => {
         setZoomActive(initZoomState)
         if (filterIndex!==undefined) setFilterIndex(undefined)
-        if (highlightIndex.length > 1) setHighlightIndex([])
+        if (highlightIndex.length > 1) setHighlightIndex([undefined])
         if (search!==undefined) setSearch(undefined)
         if (labels.length > 0)setLabels([])
 
@@ -483,6 +493,7 @@ export function MCVolcano(props) {
             const pointsToSearch = searchWordActive?regExpMatchingPoints:pointsToShow
             const idxMin = findClosestMatch(point, pointsToSearch,0,1,minDistanceX,minDistanceY)
             const pp =idxMin===undefined?undefined:pointsToSearch[idxMin]
+            
             if (highlightPoint===undefined && pp === undefined){
                 return
             }
@@ -516,7 +527,7 @@ export function MCVolcano(props) {
                     
                     {Object.keys(highlightFeatures).map(highlightColumn => {
 
-                        const highlightIndexCatName = highlightIndex.length > 0?highlightIndex[0]:undefined
+                        const highlightIndexCatName = highlightIndex.length > 1?highlightIndex[0]:undefined
 
                         
                             return (
@@ -623,19 +634,33 @@ export function MCVolcano(props) {
 
 
         {pointsToShow.map((p,idx) =>{
-            const highlightIndexActive = highlightIndex.length>0&&highlightIndex[1].includes(p[3])
+            const highlightIndexActive = highlightIndex.length > 1 &&highlightIndex[1].includes(p[3])
             const addToRadius = highlightIndexActive?highlightRadius-defaultRadius:0
             const o = transferPoint? 0.1:searchWordActive?0.1:0.75
             
             return( 
-                <circle 
-                    key={`${idx}-pp`} 
-                    cx={xscale(p[0])} 
-                    cy={yscale(p[1])} 
-                    r = {(highlightPointIsValid && p[3]===highlightPoint[0][3]?defaultRadius+4:defaultRadius+addToRadius)} 
-                    fill={p[2]?p[0]>0?"#ea563c":"#7894a2":defaultCircleFill} 
-                    opacity={o}
-                    {...circleProps}/>
+                <MCScatterPoint 
+                    key={`${idx}-pp`}  
+                    xscale = {xscale}
+                    yscale= {yscale}
+                    p = {p}
+                    r = {highlightPointIsValid && p[3]===highlightPoint[0][3]?defaultRadius+4:defaultRadius+addToRadius}
+                    idx = {idx}
+                    defaultCircleFill = {defaultCircleFill}
+                    circleProps = {circleProps}
+                    defaultRadius = {defaultRadius}
+                    addToRadius = {addToRadius}
+                    highlightPointIsValid = {highlightPointIsValid}
+                    highlightPoint = {highlightPoint}
+                    opacity = {o}/>
+                // <circle 
+                //     key={`${idx}-pp`} 
+                //     cx={xscale(p[0])} 
+                //     cy={yscale(p[1])} 
+                //     r = {(highlightPointIsValid && p[3]===highlightPoint[0][3]?defaultRadius+4:defaultRadius+addToRadius)} 
+                //     fill={p[2]?p[0]>0?"#ea563c":"#7894a2":defaultCircleFill} 
+                //     opacity={o}
+                //     {...circleProps}/>
             )
         })}
         

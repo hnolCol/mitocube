@@ -10,7 +10,7 @@ import { Text } from "@visx/text";
 function MCMinimalClusterView(props) {
 
     const {margin,width,height,vs,clusterIndex,mouseOver,mouseOverText,mouseOverColor,selected,colorScale, groupingNames, hoverColorAndGroups} = props
-
+    
     const [mouseOverBarIndex, setMouseOverBarIndex] = useState(undefined)
     const nXValues = vs.length
     const maxValue = _.max(vs.map(v => Math.abs(v)))
@@ -127,12 +127,12 @@ export function MCClusterOverview(props) {
             clusterColors,
             handleClusterIndexSelection,
             groupingColorMapper,
-            
+            clusterIndexToShow,
             groupingNames,
             colorPalette,colorPaletteValues,hoverColorAndGroups} = props
 
     const [mouseOverIndex, setMouseOverIndex] = useState()
-    const [selectedIndex, setSelectedIndex] = useState([])
+   
     
     const colorScale = scaleLinear({
         range:colorPalette,
@@ -141,17 +141,14 @@ export function MCClusterOverview(props) {
 
     const handleClusterSelection = (e,clusterIndex) => {
         if (e.shiftKey){
-            if (selectedIndex.includes(clusterIndex)){
-                setSelectedIndex(_.difference(selectedIndex,[clusterIndex]))
-                handleClusterIndexSelection(_.difference(selectedIndex,[clusterIndex]))
+            if (clusterIndexToShow.includes(clusterIndex)){
+                handleClusterIndexSelection(_.difference(clusterIndexToShow,[clusterIndex]))
             }
             else {
-                setSelectedIndex(_.concat(selectedIndex,[clusterIndex]))
-                handleClusterIndexSelection(_.concat(selectedIndex,[clusterIndex]))
+                handleClusterIndexSelection(_.concat(clusterIndexToShow,[clusterIndex]))
             }
         }
         else {
-            setSelectedIndex([clusterIndex])
             handleClusterIndexSelection([clusterIndex])
         }
 
@@ -160,12 +157,16 @@ export function MCClusterOverview(props) {
     }
     return (
 
-        <div style={{flexDirection:"row",flexWrap:"wrap",display:"flex",minWidth:"200px",maxWidth:"400px",height:"800px",overflowY:"scroll"}}>
+        <div style={{flexDirection:"row",flexWrap:"wrap",display:"flex",minWidth:"200px",maxWidth:"400px",height:"85vh",overflowY:"scroll",marginTop:"2rem"}}>
             {clusterIndexValues.map((clusterIndex, idx) => {
-                const selectedCluster = selectedIndex.includes(clusterIndex)
+                const selectedCluster = clusterIndexToShow.includes(clusterIndex)
                 return(
                     <div key={`clust${clusterIndex}`} style={{width:"200px"}}>
-                        <svg width={180} height={110} onMouseUp={e => handleClusterSelection(e,clusterIndex)} onMouseEnter={e => setMouseOverIndex(clusterIndex)} onMouseLeave={e => setMouseOverIndex()}>
+                        <svg width={180} height={110} 
+                            onMouseUp={e => handleClusterSelection(e,clusterIndex)} 
+                            onMouseEnter={e => setMouseOverIndex(clusterIndex)} 
+                            onMouseLeave={e => setMouseOverIndex()}>
+                                
                             <rect x = {0} y = {0} width={180} height={110} fill="#efefef" />
                             <MCMinimalClusterView 
                                 vs = {values[idx]} 

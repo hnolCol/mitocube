@@ -5,7 +5,7 @@ import { useState } from "react";
 
 export function MCAdminUserView (props) {
     const {token, superAdmin}  = props
-    console.log(superAdmin)
+    
     const [userInfo,setUserInfo] = useState({pw:"",email:""})
     const handleInputChange = (e) => {
         //pw and email input
@@ -47,7 +47,7 @@ export function MCAdminUserView (props) {
                             />
                     
                     <Button icon="log-in" disabled={(userInfo.email.length < 6 || userInfo.pw.length < 6)} intent={"primary"} onClick = {addUser}/>
-                </div>:<p>You are not allowed to crate users. Please contact the main administrator.</p>}
+                </div>:<p>You are not allowed to create users. Please contact the main administrator (super-admin).</p>}
         </div>
     )
 }

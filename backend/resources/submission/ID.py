@@ -1,4 +1,5 @@
 from logging import PlaceHolder
+from tkinter.tix import Tree
 from typing import OrderedDict
 
 import pandas as pd 
@@ -54,6 +55,33 @@ details = [
     {"field":"numeric-input","q":"Number of groupings","min":1,"max":999,"minorStepSize":1,"defaultValue":2,"placeholder":"Number of groupings (Genotype, Treatment, ..).","name":"n_groupings"},
 ]
 
+
+class SampleList(Resource):
+    ""
+    def __init__(self,*args,**kwargs):
+        """
+        """
+        self.token = kwargs["token"]
+        self.submission = kwargs["submission"]
+
+    def get(self):
+        ""
+        token = request.args.get('token', default="None", type=str)
+        if token == "None" or not self.token.isAdminToken(token):
+            return {"success":False,"error":"Token is not valid. Admin token required."}
+
+        dataID = request.args.get('dataID', default="None", type=str)
+        startRow = request.args.get('startRow', default="A", type=str)
+        startColumn = request.args.get('startColumn', default=1, type=int)
+        direction = request.args.get('direction', default="Rows", type=str)
+        scramble = request.args.get('scramble', default="True", type=str) == "True"
+        internalID = request.args.get('internalID', default="000", type=str)
+        
+        ok, paramsFile, sampleList = self.submission.getSampleList(dataID,internalID,startRow=startRow,startColumn=startColumn,direction=direction, scramble=scramble)
+        if ok:
+            return {"success":ok,"paramsFile":paramsFile, "sampleList":sampleList}
+        else:
+            return {"success":ok,"msg":paramsFile}
 
 
 class DataSubmissionDetails(Resource):

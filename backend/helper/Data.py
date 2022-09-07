@@ -2,7 +2,7 @@
 
 
 from ast import Or
-from typing import OrderedDict
+
 import matplotlib
 import pandas as pd 
 import numpy as np 
@@ -22,7 +22,7 @@ import itertools
 from statsmodels.stats.multitest import multipletests
 from .stats import TwoWAyANOVA
 from .Misc import buildRegex
-
+from collections import OrderedDict
 
 Set6 = ["#444444", "#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99",
             "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6", "#6a3d9a"]
@@ -212,11 +212,32 @@ class Data(object):
             return pd.DataFrame(columns=self.getAPIParam("data-presentation"))
 
     def getExpressionColumns(self,dataID):
-        ""
+        "Limited to two groupings."
         if dataID in self.dfs:
             groupings = self.getParam(dataID,"groupings") 
             firstGroupingName = self.dfs[dataID]["params"]["groupingNames"][0]
-            return np.array([i for v in groupings[firstGroupingName].values() for i in v ]).flatten().tolist() 
+            expressionColumnNames = np.array([i for v in groupings[firstGroupingName].values() for i in v ]).flatten().tolist() 
+            
+            if len(self.dfs[dataID]["params"]["groupingNames"]) > 1:
+                groupMapper = self.getGroupingMapper(dataID)
+               # print(groupMapper)
+                secondGroupingName = self.dfs[dataID]["params"]["groupingNames"][1]
+                groupDataFrame = pd.DataFrame({
+                    "SampleName" : expressionColumnNames, 
+                    "Grouping1": [groupMapper[firstGroupingName][colName] for colName in expressionColumnNames],
+                    "Grouping2" : [groupMapper[secondGroupingName ][colName] for colName in expressionColumnNames]})
+
+                sortGrouping1Dict = dict([(groupName,n) for n,groupName in enumerate(groupings[firstGroupingName].keys())])
+                groupDataFrame["Grouping1Factorized"] = groupDataFrame["Grouping1"].map(sortGrouping1Dict)          
+                sortGrouping2Dict = dict([(groupName,n) for n,groupName in enumerate(groupings[secondGroupingName].keys())])
+                groupDataFrame["Grouping2Factorized"] = groupDataFrame["Grouping2"].map(sortGrouping2Dict)
+
+                #print(groupDataFrame)
+                groupDataFrameSorted = groupDataFrame.sort_values(by=["Grouping1Factorized","Grouping2Factorized"],kind="stable")
+                
+                expressionColumnNames = groupDataFrameSorted["SampleName"].values.tolist()
+
+            return expressionColumnNames
 
     def getFilterColors(self):
         ""
@@ -375,7 +396,7 @@ class Data(object):
         if dbInfoColumns  is not None:
            return self.dbManager.getDBInfoForFeatureList(featureIDs,dbInfoColumns,*args,**kwargs)
 
-    def getCorrelatedFeatures(self,dataID,featureIDs,scale=True):
+    def getCorrelatedFeatures(self,dataID,featureIDs,scale=True, N = 40):
         ""
         if dataID in self.dfs:
             boolIdx = self.dfs[dataID]["data"].index.isin(featureIDs)
@@ -388,15 +409,16 @@ class Data(object):
                     #filter other features to have overlapping non NaN columns (n=4)
                     X = self.dfs[dataID]["data"].dropna(subset=expColumnsWithNonNan, thresh=expColumnsWithNonNan.size)
                     correlation = X.corrwith(pd.Series(Y.values.T.flatten(),index=expColumnsWithNonNan),axis=1).dropna().sort_values(ascending=False)
-                    corrHead = correlation.head(20)
+                    corrHead = correlation.head(N)
                     XX = self.dfs[dataID]["data"].loc[corrHead.index,]
-                    values = XX.loc[:,expColumns].values                
+                    values = XX.loc[:,expColumnsWithNonNan].values                
+                    
                     
 
                     if scale:
-                        values = zscore(values,axis=1,nan_policy="omit")
-                        maxValue = np.nanmax(np.abs(values.flatten()))
-                        values = pd.DataFrame(values).replace({np.nan: None}).values
+                        Zvalues = zscore(values,axis=1,nan_policy="omit")
+                        maxValue = np.nanmax(np.abs(Zvalues.flatten()))
+                        Zvalues = pd.DataFrame(Zvalues).replace({np.nan: None}).values
                         colorPalette = sns.color_palette("RdBu_r",n_colors=5).as_hex()
                         colorValues = np.linspace(-maxValue,maxValue,num=5).flatten().tolist()
                     
@@ -413,18 +435,18 @@ class Data(object):
                     
                     corrDataForHeatmap = {
                     
-                        "values"          :   values.tolist(), 
-                        "columnNeams"     :   expColumns,
+                        "values"          :   Zvalues.tolist(), 
+                        "columnNames"     :   expColumnsWithNonNan.tolist(),
                         "colorPalette"    :   colorPalette,
                         "colorValues"     :   colorValues,
                         "corrCoeff"       :   corrCoeff,
                         "groupingColors"  :  groupColorValues,
                         "groupingLegend"  :  groupingColorMapper,
                         "featureNames"    :  featureNames,
-                        "downloadData"    : [dict([(expColumns[n],v) for n,v in enumerate(vv)] + 
+                        "downloadData"    : [OrderedDict([(expColumnsWithNonNan[n],v) for n,v in enumerate(vv)] + 
                                 [("Feature Name",featureNames[m])] + 
                                 [("FeatureID",IDsOfCorrFeatures[m])] + 
-                                [("CorrCoeff to {}".format(featureIDs[0]),corrCoeff[m])]) for m,vv in enumerate(values)]
+                                [("CorrCoeff to {}".format(featureIDs[0]),corrCoeff[m])] + [("raw-{}".format(expColumnsWithNonNan[nRawIdx]),vraw) for nRawIdx,vraw in enumerate(values[m,:].flatten())]) for m,vv in enumerate(Zvalues)]
                         }
 
                     
@@ -523,7 +545,7 @@ class Data(object):
                 N = len(idxs)
                 N_sig = sigIdx.size
 
-                XX = X.loc[sigIdx,expColumns]
+               # XX = X.loc[sigIdx,expColumns]
 
 
 
@@ -566,32 +588,8 @@ class Data(object):
                 #print(self.getDataForCard(dataID,idxs[0],{})["chart"])
                 boxplotData = self._getBoxplotDataForMultipleFeatures(dataID,idxs,title=pathwayName)
                 pathwayIntensities[pathwayName] = boxplotData#self.getDataForCard(dataID,idxs[0],{})["chart"]
-                #print(boxplotData)
-                # pathwayIntensities[pathwayName] = {
-                #     "graphData" : {
-                #         1 : {
-                #             "values" : [
-                #                     {"q25":4,"m":6,"q75":9,"min":3,"max":11},
-                #                     {"q25":4,"m":6,"q75":9,"min":3,"max":11},
-                #                     {"q25":4,"m":8,"q75":9,"min":3,"max":11}],
-                #             "minValue" : 1,
-                #             "maxValue" : 15,
-                #             "featureNames" : [""],
-                #             "vertical" : False,
-                #             "title" : "",
-                #             "legendTitle": groupingNames[0],
-                #             "legendData" : groupingColorMapper[groupingNames[0]]
-                            
-                #         }
-                        
-                #     },
-                #     "graphType" : {1:"boxplot"}
-                #}
-                pathwayIDMatches[pathwayName] = sorted([{"name" : geneNames.iloc[n], "idx":idx, "sig" : idx in boolIdx.values} for n,idx in enumerate(idxs)], key=lambda d: d["sig"], reverse=True)
-
-
-            
-           
+                #sort features by significance
+                pathwayIDMatches[pathwayName] = sorted([{"name" : geneNames.iloc[n], "idx":idx, "sig" : idx in boolIdx.values} for n,idx in enumerate(idxs)], key=lambda d: d["sig"], reverse=True)           
 
             return True, {
                     "pathwayIDMatch":pathwayIDMatches,
@@ -608,7 +606,7 @@ class Data(object):
         meltedData = self.getDataForFeatures(dataID,featureIDs,zscore_transform=True)
         
         groupingColorMapper = self.getGroupingColorMapper(dataID)
-        print(groupingColorMapper)
+        #print(groupingColorMapper)
         groupings = self.getParam(dataID,"groupings") 
         
         if groupings is None: return {}
@@ -616,7 +614,6 @@ class Data(object):
        
         minValue, maxValue = meltedData["value"].quantile(q=[0,1]).values
         marginRange = np.sqrt((maxValue- minValue)**2) * 0.05
-
         
         groupedData = meltedData.groupby(by = groupingNames,sort=False) #level_X == quantile due to reset_index
         boxplotData = groupedData.quantile(q=[0,0.25,0.5,0.75,1]).reset_index() 
@@ -624,7 +621,7 @@ class Data(object):
         boxplotData[quantileColumnName] = boxplotData[quantileColumnName].replace([0,0.25,0.5,0.75,1],["min","q25","m","q75","max"])
 
         v, legendTitle, legendData, tickLabel, legendItems = self._getDataForBoxplot(boxplotData,groupedData,groupings,groupingNames,groupingColorMapper,quantileColumnName)
-        print(legendData)
+        #print(legendData)
         
         #print(v)
 
@@ -644,7 +641,7 @@ class Data(object):
                         
             }
 
-        print(chartData)
+       # print(chartData)
 
         return chartData 
 
@@ -732,32 +729,17 @@ class Data(object):
 
             if anovaType == "1-way ANOVA":
                 boolIdx, selectionpvalues, pvalueNames = self._performOneWayANOVA(X,groupings,grouping1,anovaCutoff)
-                # results = pd.DataFrame(index = X.index)
-                # testGroupData = [X[columnNames].values for columnNames in groupings[grouping1].values()]
-                # F,p = f_oneway(*testGroupData,axis=1)
-                # oneWayANOVAColumnName = "p-1WANOVA({})".format(grouping1)
-                # results[oneWayANOVAColumnName] = p
-                # boolIdx = results.index[results[oneWayANOVAColumnName] < anovaCutoff]
-                # selectionpvalues = [pd.Series(results.loc[X.index,oneWayANOVAColumnName].values, name=oneWayANOVAColumnName, index=X.index).loc[boolIdx].reset_index()]
-                # pvalueNames = [oneWayANOVAColumnName]
+                
                 
             elif anovaType == "2-way ANOVA":
                 ok, ds = self._checkTwoWayANOVADetails(anovaDetails,groupingNames)
-                if not okay:
+                if not ok:
                     return False, ds
                 else:
                     grouping2 = ds
                 
                 boolIdx, selectionpvalues, pvalueNames = self._performTwoWayANOVA(X,expColumns,anovaDetails,groupings,grouping1,grouping2,anovaCutoff)
-                # cutoffPValueColumn = anovaDetails["pvalueType"]
-                # anovaGrouping = OrderedDict([(k,v) for k,v in groupings.items() if k in [grouping1,grouping2]])
-                # if len(anovaGrouping)!= 2:
-                #     return False, "Groupings filtering resulted in less than two groupings. Name changed?"
-                # anovaCalc = TwoWAyANOVA(X,anovaGrouping,expColumns)
-                # p = anovaCalc.caulculate()
-                # boolIdx = p.index[p.loc[:,cutoffPValueColumn] < anovaCutoff]
-                # pvalueNames = p.columns.values.tolist()
-                # selectionpvalues = [p.loc[boolIdx].reset_index()]       
+                   
 
             if not np.any(boolIdx):
                     return False, "Signficance cutoff resulted in an empty data frame (e.g. no signficiantly different proteins)."

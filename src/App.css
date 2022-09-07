@@ -665,7 +665,7 @@ hr {
 
 .dataset-container{
   margin-top:42px;
-  overflow: scroll;
+  overflow: hidden;
   width: calc(100vw - 2rem);
   margin-right: 1.0rem ;
   margin-left: 1.0rem ;
@@ -862,4 +862,5 @@ hr {
   max-height :  calc(100vh - 2rem - 145px);
   overflow-y: scroll;
   padding-bottom: 4rem;
+ 
 }

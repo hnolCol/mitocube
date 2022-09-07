@@ -92,6 +92,7 @@ function App() {
           {headers : {'Content-Type': 'application/json'}}).then(response => {
             if (response.status === 200 && response.data.success) {
                 setAdminAuthenticationState({isAuth:response.data.valid,token:tokenString,superAdmin:response.data.superAdmin})
+                navigate(location)
             }
             else {
               //setAuthenticationState({isAuth:false,token:null})
@@ -158,7 +159,7 @@ function App() {
       /> */}
 
       <Route path="/admin/performance" element = {
-        <MCProtectedRoute isAuthenthicated={true}>
+        <MCProtectedRoute isAuthenthicated={isAdminAuthenthicated.isAuth}>
             <div>
               <h3>Performance</h3>
               <MCSumissionView token={isAdminAuthenthicated.token}/>
