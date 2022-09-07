@@ -251,15 +251,15 @@ class Submission(object):
                     creationDate = datetime.strptime(paramsFile["Creation Date"] , '%Y%m%d').date()
                     today = date.today() 
                     deltaDays = today - creationDate
-                    print(deltaDays.days)
+                    
                     paramsFile["daysFromCreationToDone"] = deltaDays.days
 
-                # self.email.sendEmail(
-                #         title="Project {} State Changed To {}".format(paramsFile["dataID"],paramsFile["State"]),
-                #         body="",
-                #         recipients = [paramsFile["Email"]] + self.data.getConfigParam("email-cc-submission-list"),
-                #         html = "<div><p>Dear {}</p><p>We are happy to inform you that the state of the project: {} has been changed to {}.</p><p>You will be notified if the project's state will change again.</p><p>The MitoCube Team</p></div>".format(paramsFile["Experimentator"],paramsFile["Title"],paramsFile["State"])
-                # )
+                self.email.sendEmail(
+                        title="Project {} State Changed To {}".format(paramsFile["dataID"],paramsFile["State"]),
+                        body="",
+                        recipients = [paramsFile["Email"]] + self.data.getConfigParam("email-cc-submission-list"),
+                        html = "<div><p>Dear {}</p><p>We are happy to inform you that the state of the project: {} has been changed to {}.</p><p>You will be notified if the project's state will change again.</p><p>The MitoCube Team</p></div>".format(paramsFile["Experimentator"],paramsFile["Title"],paramsFile["State"])
+                )
 
             self._writeParams(os.path.join(pathToFolder,"params.json"),paramsFile)
             return True, "Submission updated.", paramsFile
