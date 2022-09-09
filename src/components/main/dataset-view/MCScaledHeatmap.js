@@ -547,53 +547,6 @@ export function MCScaledHeatmap(props) {
                                     colorScale = {colorScale}
                                     opacity = {!itemHighlighted?1:itemHighlighted&&rowData[nColumns] === highlightedItem?1:0.2}
                                     />
-                            // <g key={`${rowIndex}-rowID`} 
-                            //     opacity={!itemHighlighted?1:itemHighlighted&&rowData[nColumns] === highlightedItem?1:0.2} 
-                            //     onMouseEnter = {e => handleHighlightedItems(rowData[nColumns])}>
-                                
-                            //     <rect 
-                            //         key = {`cluster-${rowIndex}`}
-                            //         x = {0} 
-                            //         y={rowIndex*binHeight} 
-                            //         width={binHeight} 
-                            //         height = {binHeight} 
-                            //         fill = {clusterColors[rowData[nColumns+1]]}
-                            //         stroke="black" 
-                            //         strokeWidth={0.4}/>
-                            //     {_.range(nColumns).map(columnIndex => {
-                            //         const v = rowData[columnIndex]
-                            //         return(
-                            //             <rect 
-                            //                     key = {`${columnIndex}-${rowIndex}`}
-                            //                     x = {(columnIndex+1)*binHeight+5} 
-                            //                     y={rowIndex*binHeight} 
-                            //                     width={binHeight} 
-                            //                     height = {binHeight} 
-                            //                     fill = {colorScale(v)} 
-                            //                     stroke="black" 
-                            //                     strokeWidth={0.4}/>)
-                            //     })}
-                                
-                            //     <Text  
-                            //         x = {(nColumns+(nExtraColumns+1))*(binHeight)+binHeight/4+8} 
-                            //         y={rowIndex*binHeight+binHeight/2} 
-                            //         fontSize={10} 
-                            //         textAnchor={"start"} 
-                            //         verticalAnchor={"middle"}>
-                            //             {`${rowData[nColumns+2]} (${rowData[nColumns]})`}
-                            //     </Text>
-                            //     {_.range(nExtraColumns).map(iiExtra => {
-                            //     return(
-                            //         <rect 
-                            //             key = {`mito-${rowIndex}-${iiExtra}`}
-                            //             x = {(nColumns+1+iiExtra)*binHeight+8} 
-                            //             y={rowIndex*binHeight} 
-                            //             width={binHeight} 
-                            //             height = {binHeight} 
-                            //             fill = {rowData[nColumns+(3+iiExtra)]!=="-"?"#bf3525":"#efefef"}
-                            //             stroke="black" 
-                            //             strokeWidth={0.4}/>)})}
-                            // </g>
                             )
                         
                     })

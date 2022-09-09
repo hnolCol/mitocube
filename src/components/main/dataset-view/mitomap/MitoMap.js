@@ -149,7 +149,7 @@ export function MCMitoMap(props) {
                             label="Show pathway names" 
                             onChange={togglePathwayNames}/>
                     </div>
-                    <div style={{overflowY:"scroll",height:"80vh"}}>
+                    <div style={{overflowY:"scroll",height:"65vh"}}>
                     {
                     mitomapPathways.main !==undefined && _.isObject(mitomapPathways) ? 
                     Object.keys(mitomapPathways.main).map(topPath => {

@@ -35,7 +35,7 @@ mitoCubeResources = [
     {
         "url":'/api/token/admin/valid',
         "obj":  AdminTokenValid,
-        "reqKwargs" : ["token"]
+        "reqKwargs" : ["token","user"]
     },
     
     # {

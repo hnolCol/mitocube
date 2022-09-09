@@ -44,7 +44,7 @@ class AdminLoginWebsite(Resource):
             if not validUser:
                 return {"success":False,"token":"","msg":"Account information not valid."}
 
-            adminTokenString, validateCode = self.token.createAdminToken()
+            adminTokenString, validateCode = self.token.createAdminToken(superAdmin)
            
             self.email.sendEmail(
                 title="Admin Login Validation Code",
@@ -111,16 +111,14 @@ class AdminTokenValid(Resource):
         """
         """
         self.token = kwargs["token"]
+        self.users = kwargs["user"]
 
     def post(self):
         "Returns if token is valid"
         data = json.loads(request.data, strict=False)
         if "token" in data:
-            print(data)
-            print(self.token.isAdminTokenValidated(data["token"]))
-          
             if self.token.isAdminTokenValidated(data["token"]):
-
-                return {"success":True,"valid":True,"superAdmin":False}
+                superAdmin = self.token.isTokensuperAdmin(data["token"])
+                return {"success":True,"valid":True,"superAdmin":superAdmin}
             
         return {"success":False}

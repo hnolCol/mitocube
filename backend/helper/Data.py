@@ -396,7 +396,7 @@ class Data(object):
         if dbInfoColumns  is not None:
            return self.dbManager.getDBInfoForFeatureList(featureIDs,dbInfoColumns,*args,**kwargs)
 
-    def getCorrelatedFeatures(self,dataID,featureIDs,scale=True, N = 40):
+    def getCorrelatedFeatures(self,dataID,featureIDs,scale=True, N = 20):
         ""
         if dataID in self.dfs:
             boolIdx = self.dfs[dataID]["data"].index.isin(featureIDs)
@@ -411,10 +411,8 @@ class Data(object):
                     correlation = X.corrwith(pd.Series(Y.values.T.flatten(),index=expColumnsWithNonNan),axis=1).dropna().sort_values(ascending=False)
                     corrHead = correlation.head(N)
                     XX = self.dfs[dataID]["data"].loc[corrHead.index,]
-                    values = XX.loc[:,expColumnsWithNonNan].values                
+                    values = XX.loc[:,expColumns].values                
                     
-                    
-
                     if scale:
                         Zvalues = zscore(values,axis=1,nan_policy="omit")
                         maxValue = np.nanmax(np.abs(Zvalues.flatten()))
@@ -426,6 +424,7 @@ class Data(object):
                     groupingColorMapper = self.getGroupingColorMapper(dataID)
 
                     groupColorValues = []
+
                     for groupingName, groupingMapper in groupingMapper.items():
                         hexColorValues = [groupingColorMapper[groupingName][groupingMapper[colName]] for colName in expColumns]
                         groupColorValues.append(hexColorValues)
@@ -435,19 +434,19 @@ class Data(object):
                     
                     corrDataForHeatmap = {
                     
-                        "values"          :   Zvalues.tolist(), 
-                        "columnNames"     :   expColumnsWithNonNan.tolist(),
-                        "colorPalette"    :   colorPalette,
-                        "colorValues"     :   colorValues,
-                        "corrCoeff"       :   corrCoeff,
-                        "groupingColors"  :  groupColorValues,
-                        "groupingLegend"  :  groupingColorMapper,
-                        "featureNames"    :  featureNames,
-                        "downloadData"    : [OrderedDict([(expColumnsWithNonNan[n],v) for n,v in enumerate(vv)] + 
-                                [("Feature Name",featureNames[m])] + 
-                                [("FeatureID",IDsOfCorrFeatures[m])] + 
-                                [("CorrCoeff to {}".format(featureIDs[0]),corrCoeff[m])] + [("raw-{}".format(expColumnsWithNonNan[nRawIdx]),vraw) for nRawIdx,vraw in enumerate(values[m,:].flatten())]) for m,vv in enumerate(Zvalues)]
-                        }
+                            "values"          :   Zvalues.tolist(), 
+                            "columnNames"     :   expColumns,
+                            "colorPalette"    :   colorPalette,
+                            "colorValues"     :   colorValues,
+                            "corrCoeff"       :   corrCoeff,
+                            "groupingColors"  :  groupColorValues,
+                            "groupingLegend"  :  groupingColorMapper,
+                            "featureNames"    :  featureNames,
+                            "downloadData"    : [OrderedDict([(expColumns[n],v) for n,v in enumerate(vv)] + 
+                                    [("Feature Name",featureNames[m])] + 
+                                    [("FeatureID",IDsOfCorrFeatures[m])] + 
+                                    [("CorrCoeff to {}".format(featureIDs[0]),corrCoeff[m])] + [("raw-{}".format(expColumns[nRawIdx]),vraw) for nRawIdx,vraw in enumerate(values[m,:].flatten())]) for m,vv in enumerate(Zvalues)]
+                            }
 
                     
                     return  corrDataForHeatmap

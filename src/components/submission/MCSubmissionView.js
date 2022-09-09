@@ -7,10 +7,11 @@ import { MCPerformanceChart } from "./charts/MCPerformanceChart"
 import axios from "axios"
 import ReactJson from 'react-json-view'
 import { MCCombobox } from "../utils/components/MCCombobox"
-import { downloadJSONFile } from "../utils/Misc"
+import { arrayToTabDel, downloadJSONFile, downloadTxtFile } from "../utils/Misc"
 import _ from "lodash"
 import { Text } from "@visx/text"
 import { MCCreateSampleList } from "./MCCreateSampleList"
+import { Tooltip2 } from "@blueprintjs/popover2"
 const instruments = ["QExactive 1","QExactive 2"]
 
 const instrumentMetrices = [{name:"Identified Peptides",value:0.5},{name:"MS/MS Identification",value:0.88},{name:"Proteins",value:0.94}]
@@ -89,13 +90,13 @@ function MCSubmissionItem(props) {
                 openSampleListDialog = {openSampleListDialog}/>
         
         <Collapse isOpen={isOpen}>
-        
+            <div style={{maxHeight:"50vh",overflowY:"scroll"}}>
             <ReactJson  
                 // theme={"shapeshifter:inverted"} 
                 src = {paramsFile} 
                 displayDataTypes={false} 
                 style={{fontSize:".75rem"}} name={false} onEdit={onEditJsonParams}/>
-        
+            </div>
         </Collapse>
 
         </div>
@@ -144,10 +145,31 @@ function MCSubmissionHeader (props) {
                                 )
                             })}                           
                         </div>
+
                     <ButtonGroup vertical={false} style={{marginTop:"0.3rem"}}>
-                        <Button text="Save" rightIcon="floppy-disk" disabled={!isUpdated} onClick={handleUpdate} intent={!isUpdated?"none":"primary"} minimal={true}/>
-                        <Button icon={"edit"} onClick={()=> setIsOpen(!isOpen)} minimal={true} intent={isOpen?"primary":"none"}/>
-                        <Button icon="th-list" onClick={e => openSampleListDialog(paramsFile.dataID)} minimal={true}/>
+
+                        <Button text="Save" 
+                                rightIcon="floppy-disk" 
+                                disabled={!isUpdated} 
+                                onClick={handleUpdate} 
+                                intent={!isUpdated?"none":"primary"} 
+                                minimal={true}/>
+
+                        <Button icon={"edit"} 
+                                onClick={()=> setIsOpen(!isOpen)} 
+                                minimal={true} 
+                                intent={isOpen?"primary":"none"}/>
+
+                        <Tooltip2 content={<div>
+                                <p>Create a sample list (Run Name and Plate position + Groupings) for example Xcalibur.</p>
+                                <p>It is recommended to scramble the runs.</p>
+                                </div>}>
+                            <Button 
+                                icon="th-list" 
+                                onClick={e => openSampleListDialog(paramsFile.dataID)} 
+                                minimal={true}/>
+                        </Tooltip2>
+
                         <MCCombobox 
                                 items = {states} 
                                 placeholder="State .."
@@ -157,18 +179,37 @@ function MCSubmissionHeader (props) {
                                             small : true,
                                             icon : "tag"
                                         }}/>
-                        <Button icon="download" onClick={e => downloadJSONFile(paramsFile,`params-${paramsFile.dataID}`)} minimal={true}/>
+                        <Tooltip2 content={<p>Download complete paramter file as a json file.</p>}>
+                            <Button icon="download" intent="primary" onClick={e => downloadJSONFile(paramsFile,`params-${paramsFile.dataID}`)} minimal={true}/>
+                        </Tooltip2>
+                        <Tooltip2 content={<p>Download submission summary as tab-delimited text file.</p>}>
+                            <Button icon="download" intent="success" onClick={e => downloadTxtFile(arrayToTabDel(extractMainParamsFromJSON(paramsFile),["Parameter","Value"]),`params-${paramsFile.dataID}.txt`)} minimal={true}/>
+                        </Tooltip2>
+                        <Tooltip2 content={<p>Place project to archive.</p>}>
                         <Button text="" icon="trash"  onClick={handleDelete} intent={"danger"}  minimal={true}/>
+                        </Tooltip2>
+                        
                     </ButtonGroup>
                     </div>
 
                 <div className="submission-box" >
-                            
                             {dateString} ({getDaysSinceSumbission(dateString)} )
                             < MCSubmissionTimeLine states={states} state={paramsFile.State}/>
                 </div>
                 </div>
     )
+}
+
+
+function extractMainParamsFromJSON(paramsFile) {
+
+    const extractedParams = Object.keys(paramsFile).map(v => {
+        const value = paramsFile[v]
+        return({Parameter:v,Value:_.isString(value )?paramsFile[v]:_.isArray(value)&&_.isString(value[0])?_.join(value,","):JSON.stringify(value)})
+    })
+    console.log(extractedParams )
+
+    return extractedParams 
 }
 
 

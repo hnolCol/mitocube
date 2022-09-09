@@ -32,7 +32,7 @@ class Token(object):
     def updateTokens(self):
         ""
 
-    def __createToken(self,N, isAdminToken = False, validHours = 48, emailValidated = False):
+    def __createToken(self,N, isAdminToken = False, validHours = 48, emailValidated = False, superAdmin = False):
         ""
         t1 = datetime.now()
         t2 = t1 + timedelta(hours=validHours)
@@ -43,14 +43,15 @@ class Token(object):
             "isAdminToken" : isAdminToken,
             "validTill" : t2,
             "validated" : emailValidated,
-            "validationCode" : validateCode
+            "validationCode" : validateCode,
+            "superAdmin" : superAdmin
             }
         return  tokenString,validateCode,t
 
-    def createAdminToken(self):
+    def createAdminToken(self, superAdmin = False):
         ""
         #create admin token, quires validated by email
-        tokenString, validateCode, t = self.__createToken(N = 120, isAdminToken = True, validHours = 48, emailValidated = False)
+        tokenString, validateCode, t = self.__createToken(N = 120, isAdminToken = True, validHours = 48, emailValidated = False, superAdmin=superAdmin)
         
         self.tokens[tokenString] = t
         self.__saveTokens()
@@ -93,6 +94,12 @@ class Token(object):
     def isAdminTokenValidated(self,adminToken):
         ""
         return self.isAdminToken(adminToken) and self.tokens[adminToken]["validated"]
+
+    def isTokensuperAdmin(self,adminToken):
+        ""
+        if adminToken in self.tokens and "superAdmin" not in self.tokens[adminToken]:
+            return False
+        return self.isAdminToken(adminToken) and self.tokens[adminToken]["validated"] and self.tokens[adminToken]["superAdmin"]
 
     def validateToken(self,adminTokenID,validationCode):
         ""
