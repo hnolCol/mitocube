@@ -58,12 +58,26 @@ class AdminLoginWebsite(Resource):
 class AdminUser(Resource):
     def __init__(self,*args,**kwargs):
         """
+        Handles user management.
         """
         self.token = kwargs["token"]
         self.users = kwargs["user"]
     
-    def  post(self):
+
+    def get(self):
         ""
+        token = request.args.get('token', default="None", type=str)
+        print(token)
+        if token == "None" or not self.token.isAdminTokenValidated(token):
+            return {"success":False,"error":"Token is not valid."}
+        ok, users = self.users.getUsers()
+        
+        return {"success":ok, "users":users}
+
+
+
+    def  post(self):
+        "Add user"
         data = json.loads(request.data, strict=False)
         if all(x in data for x in ["token","pw","email"]):
             

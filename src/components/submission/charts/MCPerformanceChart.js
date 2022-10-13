@@ -14,7 +14,7 @@ export function MCPerformanceChart(props) {
     const {width, height, margin, points, highlightItem, itemColors, quantileData } = props
     
     const lineItems = Object.keys(points)
-    const highlightItemExists = lineItems.includes(highlightItem)
+    // const highlightItemExists = lineItems.includes(highlightItem)
     console.log(itemColors)
     const dateScale = useMemo(
         () => {

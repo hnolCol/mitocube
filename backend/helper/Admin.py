@@ -65,6 +65,14 @@ class AdminUsers(object):
             self.__saveUsers()
             return True, "User created."
 
+    def getUsers(self):
+        "Return list of users"
+        self.__readUsers()
+        if hasattr(self,"users") and len(self.users) > 0:
+            return True, list(self.users.keys())
+        else:
+            return False, []
+
     def isUserSuperAdmin(self,emailString):
         ""
         self.__readUsers()

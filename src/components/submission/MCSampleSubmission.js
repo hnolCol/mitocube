@@ -289,8 +289,8 @@ export function MCSampleSubmission (props) {
 function checkDetailInput(submission,details) {
     const detailNames = details.map(v=>v.name)
 
-    console.log(detailNames)
-    console.log(submission.details)
+    // console.log(detailNames)
+    // console.log(submission.details)
 
 
     const detailNamesInSubmission = Object.keys(submission.details)

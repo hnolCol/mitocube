@@ -179,7 +179,6 @@ class DataSubmissionDetails(Resource):
                    
                     groupingNames = [colName for colName in groupingDf.columns if colName not in ["Run","Replicate"]]
 
-                    
                     if len(groupingNames) == 0:
                         return {"success":False,"msg":"Groupings could not be found/infered. All columns/row completed?"}
                     groupings = OrderedDict() 
@@ -190,7 +189,12 @@ class DataSubmissionDetails(Resource):
                         for run,group in groupingDf[["Run",groupingName]].values:
                             grouping[group.strip()].append(run)
                         groupings[groupingName.strip()] = grouping
+                    #adding groupings to the submisison
                     sampleSubmission["groupings"] = groupings
+
+                    #extracting the replicates
+                    if "Replicate" in groupingDf.columns:
+                        sampleSubmission["replicates"] = OrderedDict ([(replicate,runName) for runName, replicate in groupingDf["Run","Replicate"].values()])
                     
                     if self.submission.add(sampleSubmission):
 

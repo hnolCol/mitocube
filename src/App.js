@@ -189,7 +189,6 @@ function App() {
       <Route path="/admin/users" element = {
         <MCProtectedRoute isAuthenthicated={isAdminAuthenthicated.isAuth}>
             <div>
-              <h3>Users</h3>
               <MCAdminUserView token={isAdminAuthenthicated.token} superAdmin = {isAdminAuthenthicated.superAdmin}/>
             </div>
         </MCProtectedRoute>

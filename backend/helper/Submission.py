@@ -91,7 +91,16 @@ class Submission(object):
         return groupings
 
     def getSampleList(self,dataID,replaceNumberID, startRow = "A", startColumn = 1, direction="Rows", scramble = True):
-        ""
+        """
+        Creates a list of samples on a 96 well plate outline.
+        Paramters
+            
+            dataID(str)     -   dataID asssigned to a submission
+            replaceNumberID(str)    -   string to replace the placeholder (000 by default) to add facility specific information (internalID, columnID)
+            starRow     -
+            startColumn     -
+            scramble(bool) - enables scrambling of the sample list
+        """
         columns = list(range(1,13))
         rows = ["A","B","C","D","E","F","G","H"]
         if direction == "Rows":
@@ -119,7 +128,7 @@ class Submission(object):
                     if run in mapper:
                         stringAdd.append(mapper[run])
 
-                newName = "_".join([srun[0].replace(params["Creation Date"],date.today().strftime("%Y%m%d")).replace("_000_","_{}_".format(replaceNumberID))]+stringAdd+[srun[1]])
+                newName = "_".join([srun[0].replace(params["Creation Date"],date.today().strftime("%Y%m%d")).replace("_000_","_{}_".format(replaceNumberID))]+[srun[1]]+stringAdd)
                 newRunNames[run] = newName
             
             params["groupings"] = self._updateGrouping(groupingsToRename,newRunNames)
@@ -127,20 +136,23 @@ class Submission(object):
 
             #create list 
             lastIndex = startIndex+len(newRunNames)
+            
             if lastIndex >= len(orderedWellPosition):
                 #more than one plate
                 d = OrderedDict([(colName,[]) for colName in ["Run","Position","Plate"]+ params["groupingNames"]])
                 plate = 1 
                 runningIndex = startIndex
-                for runIdx, run in newRunNames.values():
+                for runIdx, run in enumerate(newRunNames.values()):
         
                     pos = orderedWellPosition[runningIndex]
                       
                     d["Run"].append(run)
                     d["Position"].append(pos)
                     d["Plate"].append(plate)
+                    
                     for mapperIdx,mapper in enumerate(groupingsToGenerateName):
                     #split last number of 
+                       
                         if runs[runIdx] in mapper:
                             d[params["groupingNames"][mapperIdx]].append(mapper[runs[runIdx]])
 
@@ -231,6 +243,7 @@ class Submission(object):
             return False, "DataID not found."
 
     def update(self,dataID,paramsFile):
+        ""
         pathToFolder = self._getPath(dataID)
         states = self.data.getAPIParam("submission-states")
         if os.path.exists(pathToFolder):
@@ -253,15 +266,17 @@ class Submission(object):
                     deltaDays = today - creationDate
                     
                     paramsFile["daysFromCreationToDone"] = deltaDays.days
-
+                additionalInfo = "You will be notified if the project's state will change again." if paramsFile["State"] != states[-1] else "The results will be delivered in another email or using the network attached server."
                 self.email.sendEmail(
                         title="Project {} State Changed To {}".format(paramsFile["dataID"],paramsFile["State"]),
                         body="",
                         recipients = [paramsFile["Email"]] + self.data.getConfigParam("email-cc-submission-list"),
-                        html = "<div><p>Dear {}</p><p>We are happy to inform you that the state of the project: {} has been changed to {}.</p><p>You will be notified if the project's state will change again.</p><p>The MitoCube Team</p></div>".format(paramsFile["Experimentator"],paramsFile["Title"],paramsFile["State"])
+                        html = "<div><p>Dear {}</p><p>We are happy to inform you that the state of the project: {} has been changed to {}.</p><p>{}</p><p>The MitoCube Team</p></div>".format(paramsFile["Experimentator"],paramsFile["Title"],paramsFile["State"],additionalInfo)
                 )
 
             self._writeParams(os.path.join(pathToFolder,"params.json"),paramsFile)
             return True, "Submission updated.", paramsFile
         else:
             return False, "Path not found", self._readParams(dataID)
+
+

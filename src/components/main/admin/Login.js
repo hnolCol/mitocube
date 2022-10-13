@@ -129,6 +129,13 @@ export function MCAdminLogin(props) {
                           value={loginInfo.pw}
                           type={"password"}
                           onChange = {handleInputChange}
+                          onKeyUp={e => {
+                            
+                            if (e.code === "Enter") {
+                              e.preventDefault();
+                              loginAttempt()
+                              // tried all this stuff, but nothing stops the future OK button from handling the event!
+                              ;}}}
                           />
                 
                 
@@ -143,6 +150,12 @@ export function MCAdminLogin(props) {
                             fill={true}
                             value={loginInfo.validationCode}
                             onChange = {handleInputChange}
+                            onKeyUp={e => {
+                              if (e.code === "Enter") {
+                                e.preventDefault();
+                                validateCode()
+                                // tried all this stuff, but nothing stops the future OK button from handling the event!
+                                ;}}}
                         />
                       <Button icon="log-in" intent={"success"} onClick = {validateCode}/>
                   </div>}

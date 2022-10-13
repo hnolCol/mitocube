@@ -1,4 +1,4 @@
-import { Alert, Button, Collapse, Icon, InputGroup, Code, ButtonGroup } from "@blueprintjs/core"
+import { Alert, Button, Collapse, Icon, InputGroup, Code, ButtonGroup, MenuItem, Menu, Dialog } from "@blueprintjs/core"
 import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
 import { motion } from "framer-motion"
@@ -8,43 +8,63 @@ import axios from "axios"
 import ReactJson from 'react-json-view'
 import { MCCombobox } from "../utils/components/MCCombobox"
 import { arrayToTabDel, downloadJSONFile, downloadTxtFile } from "../utils/Misc"
-import _ from "lodash"
+import _, { update } from "lodash"
 import { Text } from "@visx/text"
 import { MCCreateSampleList } from "./MCCreateSampleList"
-import { Tooltip2 } from "@blueprintjs/popover2"
+import { Popover2, Tooltip2 } from "@blueprintjs/popover2"
+import MCGroupingNameDialog from "./MCGroupingNameDialog"
+
+
 const instruments = ["QExactive 1","QExactive 2"]
 
 const instrumentMetrices = [{name:"Identified Peptides",value:0.5},{name:"MS/MS Identification",value:0.88},{name:"Proteins",value:0.94}]
 
 
 function MCSubmissionItem(props) {
-    const {dataID, token, handleDataChange, paramsFile, states, setAlertState,openSampleListDialog} = props
+    const {dataID, token, handleDataChange, paramsFile, states, setAlertState,openSampleListDialog, openRenameGroupingDialog, isUpdated, setIsUpdated} = props
+    
     const [isOpen, setIsOpen] = useState(false)
-    const [isUpdated, setIsUpdated] = useState(false)
+    
 
     const onEditJsonParams = (params) => {
         //console.log(params)
+        
         if (["dataID","SampleNumber"].includes(params.name)){
-            setAlertState({isOpen:true,children:<div>The dataID and sample number cannot be changed.</div>})
+            setAlertState({isOpen:true,alert:"danger",children:<div>The dataID, groupingNames and sample number cannot be changed.</div>})
             return false
         }
+        else if (params.namespace.length > 0 && ["groupingNames"].includes(params.namespace[0])){
+            setAlertState({isOpen:true,alert:"danger",children:<div>Please use the groupingNames rename dialog - changes not saved.</div>})
+            return false
+        } 
+        else if (params.namespace.length > 0 && "groupings" === params.namespace[0]){
+            setAlertState({
+                isOpen:true,
+                alert:"warning",
+                children:<div>You have changed some grouping which will affect the raw file creation. Please note that you will have to take care that all groupings are changed accordingly e.g. in all groupings.</div>})
+                setIsUpdated(dataID,true)
+                handleDataChange(dataID,params.updated_src)
+                return true
+        } 
         else if (params.name === "State" && !states.includes(params.new_value)){
             setAlertState({isOpen:true,children:<div>State must be one of the following: {states.join(", ")}</div>})
             return false
         }
         else {
-            setIsUpdated(true)
+            setIsUpdated(dataID,true)
             handleDataChange(dataID,params.updated_src)
         }
        
         
     }
 
+
+
     const handleUpdate = (e) =>{
 
         axios.put('/api/data/submission/details', {token : token, dataID : dataID, paramsFile: paramsFile}).then(response => {
             if (response.data !== undefined && response.data.success){
-                setIsUpdated(false)
+                setIsUpdated(dataID,false)
                 handleDataChange(dataID,response.data.paramsFile)
                 
             }
@@ -62,7 +82,7 @@ function MCSubmissionItem(props) {
 
             paramsFile["State"] = newState
             handleDataChange(dataID,paramsFile)
-            setIsUpdated(true)
+            setIsUpdated(dataID,true)
             setAlertState({isOpen:true,children:<div>State of {dataID} changed to : {newState}. Please note that you still have to save/upload the changes.</div>})
         }
         
@@ -87,7 +107,9 @@ function MCSubmissionItem(props) {
                 handleStateChange = {handleStateChange} 
                 isUpdated={isUpdated}
                 handleUpdate = {handleUpdate}
-                openSampleListDialog = {openSampleListDialog}/>
+                openSampleListDialog = {openSampleListDialog}
+                openRenameGroupingDialog = {openRenameGroupingDialog}
+                />
         
         <Collapse isOpen={isOpen}>
             <div style={{maxHeight:"50vh",overflowY:"scroll"}}>
@@ -104,8 +126,9 @@ function MCSubmissionItem(props) {
 }
 
 
+
 function MCSubmissionHeader (props) {
-    const {paramsFile,states, isOpen, setIsOpen, handleDelete, handleStateChange, isUpdated, handleUpdate, openSampleListDialog}= props
+    const {paramsFile,states, isOpen, setIsOpen, handleDelete, handleStateChange, isUpdated, handleUpdate, openSampleListDialog, openRenameGroupingDialog}= props
     const [mouseOverDataID,setMouseOverDataID] = useState(false)
     const dateString = `${paramsFile["Creation Date"].substring(0,4)}-${paramsFile["Creation Date"].substring(4,6)}-${paramsFile["Creation Date"].substring(6)}`
     const getDaysSinceSumbission = (dateString) => {
@@ -119,8 +142,11 @@ function MCSubmissionHeader (props) {
         return `${diffDays} days`
     }
 
+
     return(
-        <div key = {paramsFile.dataID}   className="submission-container" onMouseEnter={e => setMouseOverDataID(paramsFile.dataID)} onMouseLeave={e => setMouseOverDataID(undefined)}>
+        <div key = {paramsFile.dataID} className="submission-container" onMouseEnter={e => setMouseOverDataID(paramsFile.dataID)} onMouseLeave={e => setMouseOverDataID(undefined)}>
+            
+           
             <div className="submission-box"
                     >
                         
@@ -154,12 +180,19 @@ function MCSubmissionHeader (props) {
                                 onClick={handleUpdate} 
                                 intent={!isUpdated?"none":"primary"} 
                                 minimal={true}/>
+                        <Popover2 content={
+                            <Menu>
+                                <MenuItem text="Grouping Names" onClick={() => openRenameGroupingDialog(paramsFile.dataID,paramsFile)}/>
+                                <MenuItem 
+                                    text={isOpen?"Close params file":"Edit params file"} 
+                                    intent = {isOpen?"danger":"none"}
+                                    onClick={() => setIsOpen(!isOpen)}/>
 
+                            </Menu>}>
                         <Button icon={"edit"} 
-                                onClick={()=> setIsOpen(!isOpen)} 
                                 minimal={true} 
                                 intent={isOpen?"primary":"none"}/>
-
+                        </Popover2>
                         <Tooltip2 content={<div>
                                 <p>Create a sample list (Run Name and Plate position + Groupings) for example Xcalibur.</p>
                                 <p>It is recommended to scramble the runs.</p>
@@ -207,8 +240,6 @@ function extractMainParamsFromJSON(paramsFile) {
         const value = paramsFile[v]
         return({Parameter:v,Value:_.isString(value )?paramsFile[v]:_.isArray(value)&&_.isString(value[0])?_.join(value,","):JSON.stringify(value)})
     })
-    console.log(extractedParams )
-
     return extractedParams 
 }
 
@@ -236,10 +267,12 @@ function MCSubmissionTimeLine (props) {
     )
 }
 
-
+const initRenameGrouping = {isOpen:false,groupingNames:[],dataID:undefined,paramsFile:{}}
 export function MCSubmissionAdminView (props) {
     const [submissionDetails, setSubmissions] = useState({submissions:[],states:[],submissionSatesCounts:{},submissionsToShow:[],submissionFilter:"None",searchString:""})
+    const [groupingRenameDetails, setGroupingRenameDetails] = useState(initRenameGrouping)
     const [sampleListDialog, setSampleListDialog] = useState({isOpen:false})
+    const [updatedDataIDs, setUpdatedDataIDs] = useState({})
     const [alertState, setAlertState] = useState({isOpen:false,children:<div>Warning!</div>})
     const {token} = props    
 
@@ -261,6 +294,38 @@ export function MCSubmissionAdminView (props) {
           
         }, []);
 
+
+    const openRenameGroupingDialog = (dataID,paramsFile) => {
+        
+        setGroupingRenameDetails({isOpen:true,dataID:dataID,paramsFile:paramsFile,groupingNames:paramsFile.groupingNames})
+
+    }
+
+    const handleRenameGrouping = (renameDict,dataID,paramsFile) =>{
+
+        const groupingNamesToRename = Object.keys(renameDict)
+     
+        const originalGroupingNames = paramsFile.groupingNames
+        const updatedGroupingNames = originalGroupingNames.map(groupingName => groupingNamesToRename.includes(groupingName)?renameDict[groupingName]:groupingName)
+        
+        var updated_src = {...paramsFile}
+        updated_src["groupingNames"] = updatedGroupingNames
+        var groupings = updated_src["groupings"]
+
+        const updatedGroupings = Object.fromEntries(Object.keys(groupings).map(v => [groupingNamesToRename.includes(v)?renameDict[v]:v,groupings[v]]))
+        updated_src["groupings"] = updatedGroupings
+     
+        handleSubmissionUpdate(dataID,updated_src)
+        setUpdatedState(dataID,true)
+        closeRenameGroupingDialog()
+        
+
+    }
+
+    const closeRenameGroupingDialog = () => {
+        setGroupingRenameDetails(initRenameGrouping)
+    }
+
     const getStateCounts = (states, submissions) => {
 
         const stateCounts = Object.fromEntries(states.map(state => [state,0]))
@@ -275,7 +340,7 @@ export function MCSubmissionAdminView (props) {
         // let shownSubmissionDetails = _.filter(submissionDetails.submissions, v => submissionDetails.submissionsToShow.includes(v.dataID))
 
         const submissionsFiltered = filterName === "None"?_.map(filteredSubmissions, v => v.dataID):_.map(_.filter(filteredSubmissions, v => v.paramsFile.State === filterName),v => v.dataID)
-        console.log(filteredSubmissions)
+        //console.log(filteredSubmissions)
         setSubmissions(prevValues => {
             return { ...prevValues, "submissionsToShow":submissionsFiltered, "submissionFilter":filterName}})
 
@@ -311,6 +376,7 @@ export function MCSubmissionAdminView (props) {
         setSampleListDialog({isOpen:true,dataID:dataID})
     }
 
+    
 
     const handleSubmissionUpdate = (dataID,updated_src) => {
         
@@ -331,10 +397,32 @@ export function MCSubmissionAdminView (props) {
     }
 
 
+    const setUpdatedState = (dataID,state=true) => {
+        var copiedState = {...updatedDataIDs}
+        copiedState[dataID] = state
+        setUpdatedDataIDs(copiedState)
+        // if (Object.keys(copiedState).includesdataID){
+        //     let newState = !copiedState[dataID]
+        //     copiedState[dataID] = newState
+        // }
+        // else {
+           
+        // }
+        
+    }
+
+
+    
     return (
         <div className="submission-admin-view">
              <Alert {...alertState} canEscapeKeyCancel={true} canOutsideClickCancel={true} onClose={e => setAlertState({isOpen:false})}/>
              <MCCreateSampleList {...sampleListDialog} onClose = {setSampleListDialog} token={token} handleDataChange = {handleSubmissionUpdate}/>
+             
+             <MCGroupingNameDialog 
+                {...groupingRenameDetails}
+                closeDialog = {closeRenameGroupingDialog} 
+                changeGroupingNames = {handleRenameGrouping}/>
+
              <h2>Submissions</h2>
              <Link to="/admin/">Back</Link>
             {/* <p>Overveiw of submissions. You can search for projects and also edit the submission. You can also transfer the project from here to the MitoCube public space by uploading the data.</p> */}
@@ -384,11 +472,14 @@ export function MCSubmissionAdminView (props) {
                         return(
                         <MCSubmissionItem 
                             key = {v.dataID} 
-                            token={token} 
+                            token= {token} 
                             handleDataChange = {handleSubmissionUpdate} 
                             openSampleListDialog = {openSampleListDialog}
+                            openRenameGroupingDialog = {openRenameGroupingDialog}
                             setAlertState = {setAlertState} 
                             states = {submissionDetails.states}
+                            isUpdated = {Object.keys(updatedDataIDs).includes(v.dataID)?updatedDataIDs[v.dataID]:false}
+                            setIsUpdated = {setUpdatedState}
                             {...v}/>)
                     }
                     else {
