@@ -25,7 +25,7 @@ import { getMitoCubeAdminToken } from './components/utils/Misc';
 import { MCSubmissionAdminView  } from './components/submission/MCSubmissionView';
 import {  MCPerformanceView } from "./components/performance/MCPerformanceView"
 import { MCAdminUserView } from './components/main/admin/User';
-
+import { removeMitoCubeAdminToken } from "./components/utils/Misc"
 export function MCHelpText(props) {
   return(
     <div className='help-text-div'>
@@ -103,6 +103,13 @@ function App() {
       })
   },[]);
 
+
+  const loggingAdminOut = () => {
+    //log admin out
+    removeMitoCubeAdminToken()
+    setAdminAuthenticationState({isAuth:false,token:null,superAdmin:false})
+  }
+
   return (
     <div className='App-header'>
       {/* < MCIcon width = {"200px"}/> */}
@@ -167,7 +174,7 @@ function App() {
       <Route path="/admin/performance" element = {
         <MCProtectedRoute isAuthenthicated={isAdminAuthenthicated.isAuth}>
             <div>
-              <MCPerformanceView token={isAdminAuthenthicated.token}/>
+              <MCPerformanceView token={isAdminAuthenthicated.token} logoutAdmin = {loggingAdminOut}/>
             </div>
         </MCProtectedRoute>
       }

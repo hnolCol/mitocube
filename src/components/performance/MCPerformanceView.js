@@ -5,14 +5,13 @@ import { MCAnimatedPercentage } from "../utils/components/MCSVGUtils"
 import { MCPerformanceChart } from "./charts/MCPerformanceChart"
 import { MCAddPerformanceDialog } from "../dialogs/MCAddPerformanceData"
 import { MCHeader } from "../utils/components/MCHeader"
-
-
-const instruments = ["QExactive 1","QExactive 2"]
+import { Link } from "react-router-dom"
 
 const instrumentMetrices = [{name:"Identified Peptides",value:0.5},{name:"MS/MS Identification",value:0.88},{name:"Proteins",value:0.94}]
 
 
 export function MCPerformanceView(props){
+    const {logoutAdmin } = props
     const [perfromanceDialog, setPerformanceDialog] = useState({isOpen:false})
 
     const closePerformanceDialog = () => {
@@ -26,7 +25,11 @@ export function MCPerformanceView(props){
                 <MCHeader text="Performance Overview" fontSize={10}/>
             </div>
             <div style={{position:"absolute", right:"0",top:"0",margin:"0.5rem"}}>
-                <Button text="" intent="primary" icon="add" onClick={e => setPerformanceDialog(prevValue => {return {...prevValue,"isOpen":true}})}/>
+                
+                <Button text="" intent="primary" icon="add" minimal={true} onClick={e => setPerformanceDialog(prevValue => {return {...prevValue,"isOpen":true}})}/>
+                <Link to="/"><Button icon="home" minimal={true}/></Link>
+                <Button icon="log-out" minimal={true} onClick={e => logoutAdmin()}/>
+                
             </div>
             <MCAddPerformanceDialog {...perfromanceDialog} onClose={closePerformanceDialog} canEscapeKeyClose={false} canOutsideClickClose={false}/>
             
