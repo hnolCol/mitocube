@@ -130,10 +130,11 @@ class DataSubmissionDetails(Resource):
 
     def post(self):
         "Returns JSON object"
-       
+        print("STARTING")
         if request.data != b'':
             data = json.loads(request.data, strict=False)
-            
+            print("HALLO!")
+            print(data)
             token = data["token"]
             
             if token == "None" or not self.token.isValid(token):
@@ -194,7 +195,8 @@ class DataSubmissionDetails(Resource):
 
                     #extracting the replicates
                     if "Replicate" in groupingDf.columns:
-                        sampleSubmission["replicates"] = OrderedDict ([(replicate,runName) for runName, replicate in groupingDf["Run","Replicate"].values()])
+                        print(groupingDf)
+                        sampleSubmission["replicates"] = OrderedDict ([(replicate,runName) for runName, replicate in groupingDf[["Run","Replicate"]].values])
                     
                     if self.submission.add(sampleSubmission):
 
@@ -202,8 +204,9 @@ class DataSubmissionDetails(Resource):
                                             html= createEmailSummaryForProject(sampleSubmission), 
                                             recipients = [sampleSubmission[submissionSaveName]] + self.submission.data.getConfigParam("email-cc-submission-list"))
                         return {"success":True}
-                except:
-                    {"success":False,"msg":"There was an error extracting the submission details."}
+                except Exception as e:
+                    print(e)
+                    return {"success":False,"msg":"There was an error extracting the submission details."}
 
         return {"success":False,"msg":"missing json data"}
 
