@@ -159,7 +159,7 @@ export function MCAddPerformanceDialog (props) {
 
     useEffect(() => {
 
-        axios.get('/api/admin/performance',{token:token}).then(response => {
+        axios.get('/api/admin/performance/details',{token:token}).then(response => {
             if (response.data["success"]) {
 
                 setPerformanceDetails(response.data)

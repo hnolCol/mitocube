@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button, Collapse, H4, Icon} from "@blueprintjs/core"
 import { motion } from "framer-motion"
 import { MCAnimatedPercentage } from "../utils/components/MCSVGUtils"
@@ -6,13 +6,20 @@ import { MCPerformanceChart } from "./charts/MCPerformanceChart"
 import { MCAddPerformanceDialog } from "../dialogs/MCAddPerformanceData"
 import { MCHeader } from "../utils/components/MCHeader"
 import { Link } from "react-router-dom"
+import axios from "axios"
 
 const instrumentMetrices = [{name:"Identified Peptides",value:0.5},{name:"MS/MS Identification",value:0.88},{name:"Proteins",value:0.94}]
 
 
 export function MCPerformanceView(props){
-    const {logoutAdmin } = props
+    const {logoutAdmin, token } = props
+    console.log(token)
     const [perfromanceDialog, setPerformanceDialog] = useState({isOpen:false})
+
+    useEffect(() => {
+        axios.get('/api/admin/performance', {params:{token:token}}).then(response => console.log(response))
+    },[token])
+
 
     const closePerformanceDialog = () => {
 

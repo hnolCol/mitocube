@@ -9,7 +9,7 @@ from .submission.ID import DataID, DataSubmissionDetails, DataSubmissions, Sampl
 from .filter.Filter import Filter
 from .login.Login import LoginWebsite, TokenValid, AdminLoginWebsite, AdminLoginValidation, AdminTokenValid, AdminUser
 from .performance.ShareToken import ShareTokenValid, ShareToken
-from .performance.ShareData import ShareData
+from .performance.ShareData import ShareData, ShareDataDetails
 mitoCubeResources = [
     {
         "url":'/api/login',
@@ -173,11 +173,13 @@ mitoCubeResources = [
         "url":'/api/admin/performance',
         "obj": ShareData,
         "reqKwargs" : ["token","performance"]
+    },
+    {
+        "url":'/api/admin/performance/details',
+        "obj": ShareDataDetails,
+        "reqKwargs" : ["token","performance"]
     }
-    
 
-
-    
 ]
 
 

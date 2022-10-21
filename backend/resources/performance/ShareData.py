@@ -9,7 +9,9 @@ REQUIRED_INFO = ["General","Metrices","Properties","Distributions"]
 
 renameInfoToKw = {"General" : "generalInfo", "Metrices":"metrices","Properties":"properties","Distributions":"distributions","QC-Peptides":"qcPeptides"}
 
-class ShareData(Resource):
+
+
+class ShareDataDetails(Resource):
 
     def __init__(self,*args,**kwargs):
         """
@@ -34,6 +36,33 @@ class ShareData(Resource):
                 "performanceHeaders": r,
                 "uniqueProperties" : uniquePropertyValues
                 }
+
+
+class ShareData(Resource):
+
+    def __init__(self,*args,**kwargs):
+        """
+        """
+        self.token = kwargs["token"]
+        self.performance = kwargs["performance"]
+    
+
+    def get(self):
+        "Returns performance data"
+       
+        token = request.args.get('token', default="None", type=str)
+       
+        if token == "None" or not self.token.isAdminValid(token):
+            return {"success":False,"msg":"Token is not valid."}
+        
+
+        if self.performance.df.index.size == 0:
+            return {"success":False,"msg":"No performance runs found. Please add them using the add button."}
+
+        performanceDataByProperty = self.performance.getPerformanceData()
+
+        print(performanceDataByProperty)
+        return {"success":True,"performanceData" : performanceDataByProperty}
 
     def post(self):
         "Adds a perfromance data."
