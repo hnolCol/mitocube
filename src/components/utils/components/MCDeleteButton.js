@@ -1,4 +1,5 @@
 import { motion } from "framer-motion"
+import _ from "lodash"
 
 export function MCDeleteButton(props) {
 
@@ -7,7 +8,8 @@ export function MCDeleteButton(props) {
         if (props.callback!==undefined){
             e.stopPropagation()
             props.callback(props.callbackValue)
-        }
+            }
+            
     }
 
 

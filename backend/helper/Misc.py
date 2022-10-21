@@ -1,3 +1,4 @@
+from datetime import date
 import numpy as np 
 import string
 import random
@@ -6,6 +7,10 @@ import re
 def getRandomString(N = 20):
     "returns a random string of N characters"
     return ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k=N))
+
+def getCurrentDate():
+  
+    return date.today().strftime("%Y%m%d")
 
 def corr2_coeff_rowwise2(A,B):
     A_mA = A - A.mean(1)[:,None]

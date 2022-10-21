@@ -416,9 +416,11 @@ hr {
   display: flex;
   flex-direction: row;
   justify-content: flex-end; 
-  align-items: stretch;
+  align-items: center;
   
 }
+
+
 
 .hor-aligned-out  {
   display: flex;
@@ -690,11 +692,22 @@ hr {
   grid-template-columns:  repeat(auto-fit, minmax(150px, 1fr));
 }
 
+.user-items-container{
+  margin-top: 0.2rem;
+  display: grid;
+  align-items:center;
+  grid-template-columns:  repeat(auto-fit, minmax(80px, 4fr));
+
+}
+
+
+
 .admin-nav-box{
   min-width: 150px;
   height : 30px;
   margin: 2rem;
-}
+  border-radius: 0.25rem;
+  }
 .admin-nav-box:hover{
   background-color: white;
 
@@ -863,4 +876,10 @@ hr {
   overflow-y: scroll;
   padding-bottom: 4rem;
  
+}
+
+.performance-run-prop-div{
+  margin-left: 0.65rem;
+  margin-bottom: 0.45rem;
+
 }

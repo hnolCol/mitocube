@@ -14,6 +14,7 @@ from backend.helper.FeatureFinder import FeatureFinder
 from backend.helper.Email import EmailHelper
 from backend.helper.Admin import AdminUsers
 from backend.helper.Submission import Submission
+from backend.helper.Performance import Performance
 #external package imports
 
 import os
@@ -32,16 +33,20 @@ api = Api(app)
 pathToTokens = os.path.join(app.root_path,"backend","data","dynamic","tokens.json")
 pathToUsers = os.path.join(app.root_path,"backend","data","dynamic","users.json")
 pathToData = os.path.join(app.root_path,"backend","data","static","datasets")
+pathToPerformanceData = os.path.join(app.root_path,"backend","data","dynamic","performance")
 pathToDB = os.path.join(app.root_path,"backend","data","static","dbs","uniprot")
 pathToSubmissionFolder =  os.path.join(app.root_path,"backend","data","dynamic","submissions")
 pathToArchive =  os.path.join(app.root_path,"backend","data","archive")
 pathToAPIConfig = os.path.join(app.root_path,"backend","config","docs")
 #define data helpers
-tokenManager = Token(pathToTokens)
+
 dbManager = DBFeatures(pathToDB=pathToDB)
 dataManger = Data(pathToData,pathToAPIConfig,dbManager)
 adminUserManager = AdminUsers(pathToUsers)
-
+tokenManager = Token(pathToTokens, tokensValid = dataManger.getAPIParam("token-valid(h)"), shareTokensValid = dataManger.getAPIParam("share-token-valid(h)"))
+performanceManager = Performance(pathToData = pathToPerformanceData, 
+                        performanceConfig = dataManger.getAPIParam("performance-runs"), 
+                        propertyOptions = dataManger.getAPIParam("performancePropertyOptions"))
 
 ##update email settings
 emailSettings = dataManger.getConfigParam("email-sever-settings")
@@ -63,7 +68,8 @@ helpers = {
         "token" : tokenManager,
         "email" : emailHelper,
         "user" : adminUserManager,
-        "submission" : submissionManager
+        "submission" : submissionManager,
+        "performance" : performanceManager
 }
 
 # add resources 

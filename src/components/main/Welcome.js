@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { MCSpinner } from "../spinner/MCSpinner";
-import { MCProteinSearchIcon, MCDatasetSearchIcon, MCSubmissionIcon, MCAdministrationIcon } from "../icon/MCMainIcons";
+import { MCProteinSearchIcon, MCDatasetSearchIcon, MCSubmissionIcon, MCAdministrationIcon, MCNeoNtermiomicsIcon } from "../icon/MCMainIcons";
 import { InputGroup, Button } from "@blueprintjs/core";
 import axios from "axios";
 
@@ -26,8 +26,8 @@ export function Welcome(props) {
   }
 
     const checkPW =(e) => {
+
       e.preventDefault() 
-      
       if (pw.length === 0) {
         setInfoObj({isLoading:false,"infoText":"Please provide password."})
         return
@@ -44,9 +44,7 @@ export function Welcome(props) {
               }
             else {
                 setInfoObj({isLoading:false,"infoText":"Password is incorrect or API not reached."})
-
               }
-              
         })
       }
     }
@@ -68,6 +66,7 @@ export function Welcome(props) {
             <div className="tag-container-evenly">
 
               <Link to="/protein"><MCProteinSearchIcon/></Link>
+              <Link to="/nterm"><MCNeoNtermiomicsIcon/></Link>
               <Link to="/dataset"><MCDatasetSearchIcon/></Link>
               <Link to="/submission"><MCSubmissionIcon /></Link>
               <Link to="/admin"><MCAdministrationIcon/></Link>

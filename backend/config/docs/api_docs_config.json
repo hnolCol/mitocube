@@ -117,8 +117,25 @@
         "experiment-procedure-params" : ["Creation Date","Material","Publication","Experimental Info","Experimentator"],
         "short-cut-filter-param" : "Type",
         "short-cut-colors" : ["#365072","#6e5b7b","#b66476","#e8696e","#eaac89","#8c7f77"],
-        "submission-states" : ["Submitted","Processed","Measuring","Data analysis","Done"]
-          
-    } 
+        "submission-states" : ["Submitted","Processed","Measuring","Data analysis","Done"],
+        "token-valid(h)" : 48,
+        "share-token-valid(h)" : 3000,
+        "performance-runs" : {
+            "General" : ["Date","Researcher"],
+            "Properties" : ["Instrument","Acquisition Mode","Column Length"],
+            "Metrices" : ["Identified Peptides", "Identified Proteins"],
+            "Distributions" : ["CScore","Retention length"],
+            "QC-Peptides" : {
+                "name" : ["LGGNEQVTR","YILAGVENSK","GTFIIDPGGVIR","GTFIIDPAAVIR","GAGSSEPVTGLDAK","TPVISGGPYEYR","VEATFGVDESNAK","TPVITGAPYEYR","DGLDAASYYAPVR","ADVTPADFSEWSK","LFLQFGAQGSPFLK"],
+                "metrices" : ["Retention time","Peak width"]
+         }
+        },
+        "performancePropertyOptions" : {
+            "Instrument" : ["Exploris 480 #1","QExactive #1"],
+            "Column Length" : ["40cm","30cm","15cm"],
+            "Material" : ["HeLa digest"],
+            "Acquisition Mode" : ["DDA","DIA"]
+        }
 
+    } 
 }

@@ -1,3 +1,4 @@
+from requests import delete
 from flask import request, jsonify
 from flask_restful import Resource
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -67,27 +68,46 @@ class AdminUser(Resource):
     def get(self):
         ""
         token = request.args.get('token', default="None", type=str)
-        print(token)
         if token == "None" or not self.token.isAdminTokenValidated(token):
             return {"success":False,"error":"Token is not valid."}
         ok, users = self.users.getUsers()
-        
-        return {"success":ok, "users":users}
 
+        return {"success":ok, "users":users}
 
 
     def  post(self):
         "Add user"
         data = json.loads(request.data, strict=False)
-        if all(x in data for x in ["token","pw","email"]):
+        if all(x in data for x in ["token","pw","email","name"]):
             
             if self.token.isAdminTokenValidated(data["token"]):
-                ok, msg = self.users.addUser(data["email"],data["pw"],superAdmin=False)
-                return {"success":ok, "msg":msg}
+                ok, msg, users = self.users.addUser(data["email"],data["pw"],data["name"],superAdmin=False)
+                return {"success":ok, "msg":msg, "users": users}
             else:
                 return {"success":False,"msg":"Admin token is not valid."}
         else:
             return {"success":False, "msg":"Not all required data foud in json."}
+
+
+    def delete(self):
+        ""
+        if request.data != b'':
+            data = json.loads(request.data, strict=False)
+            if not "token" in data:
+                return {"success":False,"error":"token missing."}
+            if not "userID" in data:
+                return {"success":False,"error":"userID missing."}
+
+            token = data["token"]
+            userID = data["userID"]
+            if token != "None" and self.token.isAdminValid(token):
+                okDeleteUsers, msg =  self.users.deleteUserByID(userID)
+                okGetUsers, users = self.users.getUsers()
+                if okDeleteUsers:
+                    return {"success":True,"msg":msg,"users":users}
+            
+            return {"success":False,"error":"Token is not valid."}
+        return {"success":False,"error":"No json data."}
 
 class AdminLoginValidation(Resource):
     def __init__(self,*args,**kwargs):

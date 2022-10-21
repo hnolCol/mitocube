@@ -68,11 +68,11 @@ export function MCAdminLogin(props) {
                       
                       setAdminToken({adminToken:response.data.token,superAdmin:response.data.superAdmin})
                 }
-                
+        
         else {
           
           setInfoText(response.data["msg"])
-           // setInfoObj({isLoading:false,"infoText":"Password is incorrect or API not reached."})
+          
           }
       }) 
       }
@@ -84,13 +84,16 @@ export function MCAdminLogin(props) {
               
               <div style={{width:"100%",minWidth:"150px"}}>
                 <div style={{position:"absolute",right:0,top:0,width:"100px"}}>
+                  <div className="hor-aligned-div">
                   <Button text="Logout" minimal={true} small={true} onClick={logout}/>
+                  <Link to="/"><Button text="Home" minimal={true} small={true}/></Link>
+                  </div>
                 </div>
                 <MCHeader text="Admin Content" hexColor="darkgrey"/>
                 <p>Welcome to the Admin Restricted Site of MitoCube. View instrument performance, edit and export submissions and add users.</p>
                 <div className="admin-nav-container">
                   
-                  {["Performance","Submission","Settings","Users"].map(v => {
+                  {["Performance","Submissions","Users"].map(v => { //"Settings"
                     return (
                       <div key={v} className="admin-nav-box">
                           <Link style={{textDecoration:"none", color:"#2F5597", fontWeight:"bold", fontSize:"1.3rem"}} to = {`/admin/${v.toLowerCase()}`}>
@@ -105,6 +108,7 @@ export function MCAdminLogin(props) {
             <div>
               <div style={{position:"absolute",right:0,top:0,width:"100px"}}>
                   <Link to="/"><Button text="Home" minimal={true} small={true} onClick={logout}/></Link>
+                  
               </div>
                <MCSpinner initialText={""} textAnchor="middle" textX = {25}/>
                 <MCHeader text="Welcome to MitoCube Admin Content" />

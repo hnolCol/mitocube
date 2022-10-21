@@ -1,4 +1,4 @@
-import { Dialog, Classes } from "@blueprintjs/core";
+import { Dialog } from "@blueprintjs/core";
 
 export function MCDialog (props) {
     

@@ -6,13 +6,63 @@ const defaultArea = {fill:"#DEDEDE",stroke:"#000000",strokeWidth:0.4,strokeMiter
 const highlightArea = {fill:"#6e5b7b",stroke:"#000000",strokeWidth:0.4,strokeMiterlimit:10}
 const defaultTableCell = {fill:"#FFFFFF",stroke:"#000000",strokeWidth:0.3,strokeMiterlimit:10}
 const lineStyle = {fill:"none",stroke:"#000000",strokeWidth:0.4,strokeMiterlimit:10}
+
+export const MCNeoNtermiomicsIcon = (props) => {
+    const [mouseIn, setMouseIn] = useState(false)
+
+    
+    return (
+        <div style={{width:"100%"}}>
+        <motion.svg
+            width={"200px"}
+            viewBox={"0 0 114 100"}
+            xmlns="http://www.w3.org/2000/svg"
+            xmlnsXlink="http://www.w3.org/1999/xlink"
+            onMouseEnter={e => setMouseIn(true)} onMouseLeave = {e => setMouseIn(false)}
+        >
+
+        <path style={{fill:"#F6F6F6",stroke:"#000000",strokeWidth:0.3,strokeMiterlimit:10}} d="M98.6,88.3H15.7c-2.1,0-3.7-1.7-3.7-3.7V15.4
+                        c0-2.1,1.7-3.7,3.7-3.7h82.9c2.1,0,3.7,1.7,3.7,3.7v69.2C102.3,86.6,100.7,88.3,98.6,88.3z"/>
+        <g>
+            <path style={{fill:"#3AA58C",stroke:"#000000",strokeWidth:0.4,strokeMiterlimit:10}} 
+                d="M37.9,19.2c-1.4,0-2.6,1.1-2.6,2.6v2c0,1.4,1.1,2.6,2.6,2.6h11.7v-7.1H37.9z"/>
+            <path style={{fill:"#DEDEDE",stroke:"#000000",strokeWidth:0.4,strokeMiterlimit:10}} 
+                d="M79.3,19.2H49.6v7.1h29.7c1.4,0,2.6-1.1,2.6-2.6v-2C81.8,20.3,80.7,19.2,79.3,19.2z"/>
+        </g>
+        <path style={{fill:"#DEDEDE",stroke:"#000000",strokeWidth:0.4,strokeMiterlimit:10}} 
+            d="M92.8,54.9H63.2V62h29.7c1.4,0,2.6-1.1,2.6-2.6v-2C95.4,56,94.2,54.9,92.8,54.9z"/>
+        
+        <line style={{strokeWidth:0.4,stroke:"#000000"}} x1="58.6" y1="33.6" x2="58.6" y2="48.4"/>
+        <path style={{fill:"#3AA58C",stroke:"#000000",strokeWidth:0.4,strokeMiterlimit:10}} 
+            d="M37.9,54.9c-1.4,0-2.6,1.1-2.6,2.6v2c0,1.4,1.1,2.6,2.6,2.6h11.7v-7.1H37.9z"/>
+
+        {/* <circle style={{stroke:"#000000",strokeWidth:0.4,strokeMiterlimit:10}} fill={"#C3931C"} cx="54.5" cy="16.6" r="3.3" opacity={mouseIn?1:0.3}/> */}
+        <circle style={{stroke:"#000000",strokeWidth:0.4,strokeMiterlimit:10}} fill={"#C3931C"} cx="70.9" cy="53.2" r={"3.3"} opacity={mouseIn?1:0.3}/>
+        <polygon style={{fill:"#C3341C",stroke:"#000000",strokeWidth:0.4,strokeMiterlimit:10}} points="70.1,31.8 68.2,28.4 70.1,25 74.1,25 76.1,28.4 74.1,31.8 " opacity={mouseIn?1:0.3}/>
+        {/* //<polygon style={{fill:"#C3341C",stroke:"#000000",strokeWidth:0.4,strokeMiterlimit:10}} points="83.8,67.8 81.8,64.3 83.8,60.9 87.8,60.9 89.7,64.3 87.8,67.8 "opacity={mouseIn?1:0.3}/> */}
+        <motion.g fill="#DEDEDE" 
+                        strokeWidth={0.3} 
+                        stroke="black" 
+                        whileHover={{ stroke:"black", fill:"#6e5b7b", transitionDelay:0.1, scale:1.4, translateY:"5px"}} 
+                        transition={ {duration: 0.5} }>
+
+            <motion.rect x={0} y = {0} width={114} height={100} fill={"transparent"} strokeWidth={0}/>
+            <path style={{stroke:"#000000",strokeWidth:0.4,strokeMiterlimit:10}} 
+                        d="M53.2,37.4c-1.1-1.5-3-2.4-5-2.2c-3,0.3-5.1,3-4.7,5.9s3,5.1,5.9,4.7c1.7-0.2,3.1-1.1,3.9-2.5l-4.5-2.9
+                            L53.2,37.4z"/>
+        </motion.g>
+        
+        <text x="45" y="80" style={{fontSize:"0.65rem"}}>PTMs</text>
+        </motion.svg>
+        </div>
+    )
+
+}
+
+
 export const MCProteinSearchIcon = (props) => {
     const [mouseIn, setMouseIn] = useState(false)
-    const handleMouseEnter = (e) => {
 
-        setMouseIn(true)
-
-    } 
     return(
         <div style={{width:"100%"}}>
                 <motion.svg
@@ -20,7 +70,7 @@ export const MCProteinSearchIcon = (props) => {
                     viewBox={"0 0 114 100"}
                     xmlns="http://www.w3.org/2000/svg"
                     xmlnsXlink="http://www.w3.org/1999/xlink"
-                    onMouseEnter={handleMouseEnter} onMouseLeave = {e => setMouseIn(false)}
+                    onMouseEnter={e => setMouseIn(true)} onMouseLeave = {e => setMouseIn(false)}
                 >
                     <g >
                 

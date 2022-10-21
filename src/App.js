@@ -22,7 +22,8 @@ import { MCDatasetSelection } from './components/main/dataset-view/MCDatasetSele
 import { MCSampleSubmission } from './components/submission/MCSampleSubmission';
 import { MCAdminLogin } from './components/main/admin/Login';
 import { getMitoCubeAdminToken } from './components/utils/Misc';
-import { MCSumissionView, MCSubmissionAdminView  } from './components/submission/MCSubmissionView';
+import { MCSubmissionAdminView  } from './components/submission/MCSubmissionView';
+import {  MCPerformanceView } from "./components/performance/MCPerformanceView"
 import { MCAdminUserView } from './components/main/admin/User';
 
 export function MCHelpText(props) {
@@ -118,8 +119,7 @@ function App() {
               <div>Table View</div>
             </MCProtectedRoute>} /> 
           </Route>
-        
-
+  
         <Route path="/dataset" element={
               <MCProtectedRoute isAuthenthicated={isAuthenthicated.isAuth}>
                 <MCDatasetSelection token={isAuthenthicated.token} setAuthenticationSate={setAuthenticationState}/>
@@ -128,6 +128,12 @@ function App() {
         <Route path="/protein" element={
             <MCProtectedRoute isAuthenthicated={isAuthenthicated.isAuth}>
               <ProteinMainView token={isAuthenthicated.token} setAuthenticationSate={setAuthenticationState}/>
+            </MCProtectedRoute>
+              } />
+        
+        <Route path="/nterm" element={
+            <MCProtectedRoute isAuthenthicated={isAuthenthicated.isAuth}>
+              <p>N-termiomics ...coming soon.</p>
             </MCProtectedRoute>
               } />
 
@@ -161,14 +167,13 @@ function App() {
       <Route path="/admin/performance" element = {
         <MCProtectedRoute isAuthenthicated={isAdminAuthenthicated.isAuth}>
             <div>
-              <h3>Performance</h3>
-              <MCSumissionView token={isAdminAuthenthicated.token}/>
+              <MCPerformanceView token={isAdminAuthenthicated.token}/>
             </div>
         </MCProtectedRoute>
       }
       />
 
-      <Route path="/admin/submission" element = {
+      <Route path="/admin/submissions" element = {
         <MCProtectedRoute isAuthenthicated={isAdminAuthenthicated.isAuth}> 
             <div>
               <MCSubmissionAdminView token={isAdminAuthenthicated.token}/>

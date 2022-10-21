@@ -1,9 +1,9 @@
 
-from tabnanny import check
 from decouple import config
 import os 
 import pickle
 from werkzeug.security import generate_password_hash, check_password_hash
+from .Misc import getCurrentDate, getRandomString
 
 class AdminUsers(object):
     ""
@@ -14,6 +14,7 @@ class AdminUsers(object):
         self.__readUsers()
         self.__initMainUser()
         self.__saveUsers()
+        #print(self.users)
 
     def __initMainUser(self):
         ""
@@ -52,24 +53,35 @@ class AdminUsers(object):
         with open(self.pathToUsers, 'wb') as f:
             pickle.dump(self.users,f)
 
-    def addUser(self,emailString,pwString,superAdmin=False):
+    def addUser(self,emailString,pwString,userName,superAdmin=False):
         ""
         self.__readUsers()
         if any(check_password_hash(userEmailHash,emailString) for userEmailHash in self.users.keys()):
-            return False,"Email already included."
+            return False,"Email already included.", None
         else:
-            print("")
             email = generate_password_hash(emailString)
             pw = generate_password_hash(pwString)
-            self.users[email] = {"pw":pw,"super-admin":superAdmin}
+            self.users[email] = {"pw":pw,"super-admin":superAdmin,"name":userName,"id":getRandomString(N=5),"date":getCurrentDate(),"email":emailString}
             self.__saveUsers()
-            return True, "User created."
+            ok, users = self.getUsers()
+            return True, "User created.", users
+
+    def deleteUserByID(self,userID):
+        ""
+        self.__readUsers()
+        filteredUsers = [emailHash for emailHash, userInfo in self.users.items() if "id" in userInfo and userInfo["id"] == userID]
+        if len(filteredUsers) == 1:
+            del self.users[filteredUsers[0]]
+            self.__saveUsers()
+            return True, "User deleted."
+        
+        return False, "User ID not found or dubplicated."
 
     def getUsers(self):
         "Return list of users"
         self.__readUsers()
         if hasattr(self,"users") and len(self.users) > 0:
-            return True, list(self.users.keys())
+            return True, [{"userName":v["name"],"id":v["id"],"date":v["date"]} for k,v in self.users.items() if all(x in v for x in ["name","id","date"])]
         else:
             return False, []
 

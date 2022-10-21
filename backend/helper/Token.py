@@ -8,10 +8,12 @@ import pickle
 
 class Token(object):
     ""
-    def __init__(self,pathToTokens,*args,**kwargs):
+    def __init__(self,pathToTokens,tokensValid=48,shareTokensValid=3000,*args,**kwargs):
         ""
         self.tokens = dict() 
         self.pathToTokens = pathToTokens
+        self.tokensValid = tokensValid
+        self.shareTokensValid = shareTokensValid
         self.__readTokens()
 
     def __readTokens(self):
@@ -32,7 +34,7 @@ class Token(object):
     def updateTokens(self):
         ""
 
-    def __createToken(self,N, isAdminToken = False, validHours = 48, emailValidated = False, superAdmin = False):
+    def __createToken(self,N, isAdminToken = False, validHours = 48, emailValidated = False, superAdmin = False, shareToken = False):
         ""
         t1 = datetime.now()
         t2 = t1 + timedelta(hours=validHours)
@@ -44,23 +46,32 @@ class Token(object):
             "validTill" : t2,
             "validated" : emailValidated,
             "validationCode" : validateCode,
-            "superAdmin" : superAdmin
+            "superAdmin" : superAdmin,
+            "shareToken" : shareToken
             }
         return  tokenString,validateCode,t
 
     def createAdminToken(self, superAdmin = False):
         ""
         #create admin token, quires validated by email
-        tokenString, validateCode, t = self.__createToken(N = 120, isAdminToken = True, validHours = 48, emailValidated = False, superAdmin=superAdmin)
+        tokenString, validateCode, t = self.__createToken(N = 120, isAdminToken = True, validHours = self.tokensValid, emailValidated = False, superAdmin=superAdmin)
         
         self.tokens[tokenString] = t
         self.__saveTokens()
         return tokenString, validateCode
 
+    def createShareToken(self):
+        ""
+        time.sleep(5)
+        tokenString, _, t = self.__createToken(N = 120,isAdminToken = False, validHours = self.shareTokensValid,emailValidated = True, shareToken = True)
+        self.tokens[tokenString] = t
+        self.__saveTokens()
+        return tokenString
+
     def createToken(self):
         ""
         #create token, that does not have to be validated.
-        tokenString, _, t = self.__createToken(N = 40,isAdminToken = False, validHours = 48,emailValidated = True)
+        tokenString, _, t = self.__createToken(N = 40,isAdminToken = False, validHours = self.tokensValid, emailValidated = True)
         self.tokens[tokenString] = t
         self.__saveTokens()
 
@@ -80,9 +91,23 @@ class Token(object):
         self.__readTokens()
         if tokenID in self.tokens:
             token = self.tokens[tokenID]
-            if token["validated"]:
+            if token["validated"] and self.isValid(tokenID) and token["isAdminToken"]:
                 return True
         return False
+
+    def isShareToken(self,tokenID):
+        ""
+        self.__readTokens()
+        if tokenID in self.tokens:
+            token = self.tokens[tokenID]
+            if token["shareToken"]:
+                return True
+        return False
+
+    def isShareTokenValid(self,tokenID):
+        ""
+        return self.isShareToken(tokenID) and self.isValid(tokenID)
+                
 
     def isAdminToken(self,adminToken):
         ""

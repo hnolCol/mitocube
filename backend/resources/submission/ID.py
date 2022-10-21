@@ -121,7 +121,7 @@ class DataSubmissionDetails(Resource):
         if request.data != b'':
             data = json.loads(request.data, strict=False)
             token = data["token"]
-            if token == "None" or not self.token.isAdminToken(token):
+            if token == "None" or not self.token.isAdminValid(token):
                 return {"success":False,"error":"Token is not valid."}
             dataID = data["dataID"]
             

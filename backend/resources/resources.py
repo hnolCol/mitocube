@@ -8,7 +8,8 @@ from .feature.cards.Layout import CardLayout
 from .submission.ID import DataID, DataSubmissionDetails, DataSubmissions, SampleList
 from .filter.Filter import Filter
 from .login.Login import LoginWebsite, TokenValid, AdminLoginWebsite, AdminLoginValidation, AdminTokenValid, AdminUser
-
+from .performance.ShareToken import ShareTokenValid, ShareToken
+from .performance.ShareData import ShareData
 mitoCubeResources = [
     {
         "url":'/api/login',
@@ -156,7 +157,26 @@ mitoCubeResources = [
         "url":'/api/admin/samplelist',
         "obj": SampleList,
         "reqKwargs" : ["token","submission"]
+    },
+    ##performance data sharing
+    {
+        "url":'/api/admin/shareToken/valid',
+        "obj": ShareTokenValid,
+        "reqKwargs" : ["token"]
+    },
+    {
+        "url":'/api/admin/shareToken',
+        "obj": ShareToken,
+        "reqKwargs" : ["token"]
+    },
+        {
+        "url":'/api/admin/performance',
+        "obj": ShareData,
+        "reqKwargs" : ["token","performance"]
     }
+    
+
+
     
 ]
 
