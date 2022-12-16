@@ -1,9 +1,15 @@
+import { H4 } from "@blueprintjs/core"
 
 
 export function MCHeader(props) {
     return(
-        <div style={{color:props.hexColor}}>
-            <h2>{props.text}</h2>
+        <div style={{
+                color:props.hexColor,
+                fontSize:"1.1rem",
+                fontWeight:"bold",
+                marginTop:"0.1rem",
+                marginBottom:"0.3rem"}}>
+            {props.text}
         </div>
     )
 }

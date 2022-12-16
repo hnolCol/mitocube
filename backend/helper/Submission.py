@@ -1,13 +1,13 @@
-from importlib.resources import path
 import os
 import shutil
-from typing import OrderedDict
+from typing import List, Dict, Tuple
 from .Misc import getRandomString
-import json
 from datetime import date, datetime
-import numpy as np 
 from itertools  import product
+from collections import OrderedDict
 import pandas as pd 
+import numpy as np 
+import json
 class Submission(object):
 
     def __init__(self,pathToSubmissionFolder,pathToArchive,data,email,*args,**kwargs):
@@ -17,37 +17,35 @@ class Submission(object):
         self.data = data
         self.email = email
 
-    def _createFolder(self, dataID):
-        ""
+    def _createFolder(self, dataID) -> Tuple[str,str]:
+        "Create a folder for a new dataID if it does not exists"
         pathToFolder = self._getPath(dataID)
         if not os.path.exists(pathToFolder):
             os.mkdir(pathToFolder)
         
         return pathToFolder, os.path.join(pathToFolder,"params.json")
 
-    def _getListOfSubmissions(self):
-        ""
+    def _getListOfSubmissions(self) -> List[str]:
+        "Runs through the submission folder and returns all the dataIDs (e.g. folder names)"
         return [ f.name for f in os.scandir(self.pathToFolder) if f.is_dir() ]
 
-    def _getPath(self,dataID):
-
+    def _getPath(self,dataID) -> str:
+        "Returns the path to a specific submission"
         return os.path.join(self.pathToFolder,dataID)
 
-    def _getArchivePath(self,dataID):
-
+    def _getArchivePath(self,dataID) -> str:
+        ""
         return os.path.join(self.pathToArchive,dataID)
 
-    def _getPathToParam(self,dataID):
-        ""
+    def _getPathToParam(self,dataID) -> str:
+        "Returns the path to the parameter file by dataID"
         return os.path.join(self._getPath(dataID),"params.json")
 
-    def _readParams(self,dataID):
-        ""
+    def _readParams(self,dataID) -> dict:
+        "Loads the json file for a parameter."
         pathToParam = self._getPathToParam(dataID)
-       # print(pathToParam)
         if os.path.exists(pathToParam):
             params = json.load(open(pathToParam))
-            #print(params)
             return params
 
     def _writeParams(self,pathToParamFile,sampleSubmission):
@@ -64,6 +62,16 @@ class Submission(object):
             ID = getRandomString(N=12)
 
         return ID
+
+    def getSummaryColumns(self):
+        ""
+        summaryColumns = self.data.getAPIParam("submission-summary-short")
+        return summaryColumns if summaryColumns is not None else []
+
+    def getSearchColumns(self):
+        ""
+        searchColumns = self.data.getAPIParam("submission-search-columns")
+        return searchColumns if searchColumns is not None else []
 
     def _getAllRunsFromGrouping(self,groupings):
         ""
@@ -132,6 +140,7 @@ class Submission(object):
                 newRunNames[run] = newName
             
             params["groupings"] = self._updateGrouping(groupingsToRename,newRunNames)
+            params["internalID"] = replaceNumberID
             ok, msg, paramsFile = self.update(dataID,params)
 
             #create list 
@@ -192,7 +201,7 @@ class Submission(object):
             return False, "DataID not found.", None
 
 
-    def getSubmission(self):
+    def getSubmission(self) -> Tuple[List[Dict],List[str]]:
         ""
         dataIDs = self._getListOfSubmissions()
         submissionStates = self.data.getAPIParam("submission-states")
@@ -207,26 +216,31 @@ class Submission(object):
                     "Creation Date" : params["Creation Date"],
                     "paramsFile" : params
                 })
-                # if "State" in params:
-                #     if params["State"] in  submissionSatesCounts:
-                #          submissionSatesCounts[params["State"]] += 1
         submissions.sort(key = lambda v: submissionStates.index(v["paramsFile"]["State"]))
+        
         return submissions, submissionStates
 
-
-    def add(self,sampleSubmission):
+    def getParamFile(self,dataID) -> Dict:
+        ""
+        params = self._readParams(dataID)
+        if params is not None:
+            return params
+        else:
+            return {}
+    def add(self,sampleSubmission) -> bool:
         ""
         if "dataID" not in sampleSubmission:
             return False
-        
         dataID = sampleSubmission["dataID"]
-        pathToFolder, pathToParamFile = self._createFolder(dataID)
+        if dataID in self._getListOfSubmissions():
+            return False
+        _, pathToParamFile = self._createFolder(dataID)
         self._writeParams(pathToParamFile,sampleSubmission)
         
         return True
 
 
-    def delete(self, dataID):
+    def delete(self, dataID) -> Tuple[bool,str]:
         ""
         pathToFolder = self._getPath(dataID)
         #print(pathToFolder)
@@ -267,16 +281,18 @@ class Submission(object):
                     
                     paramsFile["daysFromCreationToDone"] = deltaDays.days
                 additionalInfo = "You will be notified if the project's state will change again." if paramsFile["State"] != states[-1] else "The results will be delivered in another email or using the network attached server."
+                
+                emailAdresses = [paramsFile["Email"]] if "," not in paramsFile["Email"] else paramsFile["Email"].split(",")
                 self.email.sendEmail(
                         title="Project {} State Changed To {}".format(paramsFile["dataID"],paramsFile["State"]),
                         body="",
-                        recipients = [paramsFile["Email"]] + self.data.getConfigParam("email-cc-submission-list"),
+                        recipients = emailAdresses + self.data.getConfigParam("email-cc-submission-list"),
                         html = "<div><p>Dear {}</p><p>We are happy to inform you that the state of the project: {} has been changed to {}.</p><p>{}</p><p>The MitoCube Team</p></div>".format(paramsFile["Experimentator"],paramsFile["Title"],paramsFile["State"],additionalInfo)
                 )
 
             self._writeParams(os.path.join(pathToFolder,"params.json"),paramsFile)
             return True, "Submission updated.", paramsFile
         else:
-            return False, "Path not found", self._readParams(dataID)
+            return False, "Path not found", self.getParamFile(dataID)
 
 

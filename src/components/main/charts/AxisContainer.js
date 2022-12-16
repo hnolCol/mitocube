@@ -7,11 +7,12 @@ import { MCMinimalBoxplot } from './types/MCMinimalBoxplot';
 import { MCRelativeBar } from './types/MCRelativeBar';
 import { Text } from '@visx/text';
 import _ from "lodash"
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { MCSpinner } from '../../spinner/MCSpinner';
 import axios from 'axios';
 import { MCCardHeader } from "../protein-view/CardHeader"
 import { MCHeatmap } from "./types/MCHeatmap";
+
 const getWidthAndStartForAxis = (numberAxis,axesPerRow,width,height) => {
     
     const gridRows = Math.round(numberAxis / axesPerRow)
@@ -95,7 +96,7 @@ export function MCSVGFrame(props){
                 {/* <MinimalPointplot xLimits = {[0,27]} yLimits = {[1,-0.05]} xLabel = {"Time (days)"} yLabel = {"Incorporation rate"} 
                 values = {[[0,0],[7,0.1],[11,0.4],[14,0.6],[21,0.8],[26,0.82]]} title="Ndufa1" width = {parent.width} height = {parent.height} svgRef={svgRef}/>
                 <text x = {20} y={20}>{parent.width}</text> */}
-                {parent.width < 200 || parent.height < 100?
+                {(parent.width < 200 || parent.height < 100)?
                     <Text 
                         x = {parent.width/2} 
                         y={parent.height/2} 
@@ -185,18 +186,29 @@ export const MCAxisHandler = (props) => {
             
             axios.post('/api/features/cards/data/correlation',
                 {"dataID" : dataID, "featureIDs":[featureID], "token" : props.token},
-                {headers : {'Content-Type': 'application/json'}}).then(response => {
+                { headers: { 'Content-Type': 'application/json' } }).then(response => {
                     
-                    if ("error" in response.data & response.data["error"] === "Token is not valid.") {
+                    //console.log(JSON.parse(response.data))
+                    let data = _.isString(response.data) ?  JSON.parse(response.data) :response.data 
+                        
+                    if ("error" in data & data["error"] === "Token is not valid.") {
                         props.resetAuthStatus()
                         return 
                     }
                     setCorrelatedFeature(
-                        {isLoading:false,success:response.data["success"],correlationData:response.data["correlationData"],show:true})
-            }).catch(
-                error => {
+                        {isLoading:false,success:data["success"],correlationData:data["correlationData"],show:true})
+                }).catch(
+                
+                    error => {
+                        console.log(error)
                         setCorrelatedFeature(
-                        {isLoading:false,success:false,correlationData:["error"],show:true})}
+                            {
+                                isLoading: false,
+                                success: false,
+                                correlationData: ["error"],
+                                show: true
+                            })
+                    }
             )
         }
     }
@@ -231,6 +243,7 @@ export const MCAxisHandler = (props) => {
                                     props.chartData.success?
                                     <MCSVGFrame 
                                         id = {props.id} 
+                                        isSummary = {props.isSummary}
                                         graphType = {props.chartData.chart.graphType} 
                                         graphData={props.chartData.chart.graphData}
                                         description = {props.featureProps.shortDescription}/>: 

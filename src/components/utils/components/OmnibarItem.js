@@ -1,14 +1,13 @@
 
 
 import React from 'react';
-import {useState, useMemo} from 'react';
-import { useNavigate , useLocation} from "react-router-dom";
-import { MenuDivider, Text} from '@blueprintjs/core';
+import { useLocation} from "react-router-dom";
+import { MenuDivider } from '@blueprintjs/core';
 
-const QueryParam = () => {
-    const { search } = useLocation();
-    return useMemo(() => new URLSearchParams(search), [search]);
-  }
+// const QueryParam = () => {
+//     const { search } = useLocation();
+//     return useMemo(() => new URLSearchParams(search), [search]);
+//   }
 
 
 export function OmnibarItem(props) {
@@ -19,7 +18,7 @@ export function OmnibarItem(props) {
     const { search } = useLocation();
     const qs = new URLSearchParams(search).get("q")
 
-    const navigate = useNavigate()
+    //const navigate = useNavigate()
     var qValues = [props.item["Entry"]]
     
     const sendGraphID =function(e) {

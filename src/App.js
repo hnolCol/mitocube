@@ -26,6 +26,7 @@ import { MCSubmissionAdminView  } from './components/submission/MCSubmissionView
 import {  MCPerformanceView } from "./components/performance/MCPerformanceView"
 import { MCAdminUserView } from './components/main/admin/User';
 import { removeMitoCubeAdminToken } from "./components/utils/Misc"
+import { MCPTMView } from './components/main/ptm-view/MCPTMView';
 export function MCHelpText(props) {
   return(
     <div className='help-text-div'>
@@ -140,7 +141,7 @@ function App() {
         
         <Route path="/nterm" element={
             <MCProtectedRoute isAuthenthicated={isAuthenthicated.isAuth}>
-              <p>N-termiomics ...coming soon.</p>
+              <MCPTMView token={isAuthenthicated.token} setAuthenticationSate={setAuthenticationState}/> 
             </MCProtectedRoute>
               } />
 
@@ -173,7 +174,7 @@ function App() {
 
       <Route path="/admin/performance" element = {
         <MCProtectedRoute isAuthenthicated={isAdminAuthenthicated.isAuth}>
-            <div>
+            <div style = {{maxHeight:"100vh",height:"100vh",overflowY:"hidden"}}>
               <MCPerformanceView token={isAdminAuthenthicated.token} logoutAdmin = {loggingAdminOut}/>
             </div>
         </MCProtectedRoute>

@@ -40,6 +40,12 @@ export const helpLinks = [
         linkName : "FAQs",
         helpID : "faqs",
         level : 2           
+    },
+    {
+        to : "/help/config",
+        linkName : "API-config",
+        helpID : "API-config",
+        level : 1           
     }
 ]
 

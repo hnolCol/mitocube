@@ -3,13 +3,14 @@ from .dataset.Params import DatasetParams
 from .dataset.Details import DatasetDetails, DatasetGroupings, DatasetExperimentalInfo, DatasetsHeatmap, DatasetsVolcano
 from .dataset.MitoMap import DatasetsMitoMap
 from .feature.Features import Features, FeaturesInDatasets, FeatureDetails, FeatureDBInfo, FeatureSummary
-from .feature.cards.Data import ChartDataForFeatures, CorrelationsToFeature
+from .feature.cards.Data import CorrelationsToFeature
 from .feature.cards.Layout import CardLayout
 from .submission.ID import DataID, DataSubmissionDetails, DataSubmissions, SampleList
 from .filter.Filter import Filter
 from .login.Login import LoginWebsite, TokenValid, AdminLoginWebsite, AdminLoginValidation, AdminTokenValid, AdminUser
 from .performance.ShareToken import ShareTokenValid, ShareToken
 from .performance.ShareData import ShareData, ShareDataDetails
+from .ptm.PTM import PTMView, PTMItems
 mitoCubeResources = [
     {
         "url":'/api/login',
@@ -79,11 +80,11 @@ mitoCubeResources = [
         "obj": FeaturesInDatasets,
         "reqKwargs" : ["featureFinder","token"]
     },
-    {
-        "url":'/api/features/cards/data',
-        "obj": ChartDataForFeatures,
-        "reqKwargs" : ["data","token"]
-    },
+    # {
+    #     "url":'/api/features/cards/data',
+    #     "obj": ChartDataForFeatures,
+    #     "reqKwargs" : ["data","token"]
+    # },
     {
         "url":'/api/features/cards/data/correlation',
         "obj": CorrelationsToFeature,
@@ -172,14 +173,24 @@ mitoCubeResources = [
         {
         "url":'/api/admin/performance',
         "obj": ShareData,
-        "reqKwargs" : ["token","performance"]
+        "reqKwargs" : ["token","performance","data"]
     },
     {
         "url":'/api/admin/performance/details',
         "obj": ShareDataDetails,
         "reqKwargs" : ["token","performance"]
+    },
+    ## ptms
+    {
+        "url":'/api/ptm/items',
+        "obj": PTMItems,
+        "reqKwargs" : ["token","ptm"]
+    },
+    {
+        "url":'/api/ptm',
+        "obj": PTMView,
+        "reqKwargs" : ["token","ptm"]
     }
-
 ]
 
 

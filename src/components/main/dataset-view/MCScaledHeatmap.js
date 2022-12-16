@@ -28,9 +28,9 @@ fill:"#262626"
 
 export function MCClusterANOVASelection(props) {
 
-    const {groupingNames, setANOVASettings, buttonText } = props 
+    const {groupingNames, setANOVASettings, buttonText,  askForNumberClusters } = props 
     const [anovaType,setANOVAType] = useState("1-way ANOVA")
-    const [groupingSelection, setGroupingSelection] = useState({pvalue:0.001})
+    const [groupingSelection, setGroupingSelection] = useState({pvalue:0.001, ncluster:6})
     const oneWayANOVA = anovaType === "1-way ANOVA" || groupingNames.length === 1
 
     const saveGroupingSelection = (groupingKey,groupingValue) => {
@@ -94,7 +94,25 @@ export function MCClusterANOVASelection(props) {
                                     disabled : oneWayANOVA
                                     }}/>
                 </div>
+            
 
+            {askForNumberClusters ?
+                //ask for number of clusters (important for hierarchical clustering)
+                <div className="hor-aligned-div" >
+                        <div style={{paddingRight:"0.5rem",paddingTop:"2px"}}>
+                            <p>Number of cluster:</p>
+                        </div>
+                        <NumericInput 
+                            min={2} 
+                            max={25} 
+                            value={groupingSelection.ncluster} 
+                            onValueChange = {value => saveGroupingSelection("ncluster",value)} 
+                            placeholder={"Number of clusters."} 
+                            stepSize={1} 
+                            minorStepSize={1}/>
+                </div>
+                    : null
+            }
                 <div className="hor-aligned-div" >
                     <div style={{paddingRight:"0.5rem",paddingTop:"2px"}}>
                         <p>Significance:</p>
@@ -130,7 +148,8 @@ export function MCClusterANOVASelection(props) {
 
 MCClusterANOVASelection.defaultProps = {
     groupingNames : ["A","B"],
-    buttonText : "Show Heatmap"
+    buttonText: "Show Heatmap",
+    askForNumberClusters : true
 
 }
 
@@ -148,6 +167,7 @@ export function MCHeatmapWrapper(props) {
        
 
         if (Object.keys(responseData.data).length !== 0) return 
+        if (!_.isFunction(saveHeatmapData)) return 
         if (responseData.anovaDetails===undefined  ||  Object.keys(responseData.anovaDetails).length === 0) return 
         saveHeatmapData(prevValues => {
             return { ...prevValues,"isLoading":true}
@@ -155,8 +175,18 @@ export function MCHeatmapWrapper(props) {
 
         const controller = new AbortController();
 
-        axios.get('/api/data/heatmap', {params:{dataID:dataID,token:token,anovaDetails:responseData.anovaDetails},signal: controller.signal}).then(response => {
-            
+        axios.get('/api/data/heatmap',
+            {
+                params:
+                {
+                    dataID: dataID,
+                    token: token,
+                    anovaDetails: responseData.anovaDetails
+                },
+                signal: controller.signal
+            }).then(response => {
+                
+            console.log(response.data)
             if ("success" in response.data && response.data["success"]) {
                 if (response.data.params === undefined) {
                     
@@ -194,7 +224,6 @@ export function MCHeatmapWrapper(props) {
 
     const handleHighlightedItems = (itemKey) => {
         if (highlightedItem !== itemKey) {
-           
             setHighLightedItem(itemKey)
         }
     }

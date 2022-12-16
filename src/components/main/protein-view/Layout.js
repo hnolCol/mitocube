@@ -205,7 +205,6 @@ export function MCProteinLayout(props) {
                       const cardHidden = v.Entry !== props.selectedFeature.Entry || 
                                   layoutAndCards.activeFilter.includes(v.filterName) || 
                                   removedItems.includes(v.id) || 
-                                  removedItems.includes(v.id) || 
                                   (v.filterName!=="Summary"&&localMitoCubeFilter!==null&&!localMitoCubeFilter["Type"].includes(v.filterName))
                      
                       return(

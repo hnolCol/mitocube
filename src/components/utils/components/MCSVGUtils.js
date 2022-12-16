@@ -1,6 +1,5 @@
 import { motion } from "framer-motion"
 import { animate } from 'framer-motion';
-import { LinearGradient } from '@visx/gradient';
 import { Text } from "@visx/text";
 import { useState, useEffect } from "react";
 import _ from "lodash";
@@ -26,7 +25,7 @@ export const useAnimatedCounter = (
   return counter;
 }
 const darkgreen = '#8cc585';
-const lightgreen = '#e4ebdf';
+//const lightgreen = '#e4ebdf';
 const darkred = "#ad3025"
 const darkorange = "#e94d40";
 

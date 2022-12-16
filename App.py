@@ -15,6 +15,7 @@ from backend.helper.Email import EmailHelper
 from backend.helper.Admin import AdminUsers
 from backend.helper.Submission import Submission
 from backend.helper.Performance import Performance
+from backend.helper.PTM import PTMAnnotations, PTMManger
 #external package imports
 
 import os
@@ -46,7 +47,8 @@ adminUserManager = AdminUsers(pathToUsers)
 tokenManager = Token(pathToTokens, tokensValid = dataManger.getAPIParam("token-valid(h)"), shareTokensValid = dataManger.getAPIParam("share-token-valid(h)"))
 performanceManager = Performance(pathToData = pathToPerformanceData, 
                         performanceConfig = dataManger.getAPIParam("performance-runs"), 
-                        propertyOptions = dataManger.getAPIParam("performancePropertyOptions"))
+                        propertyOptions = dataManger.getAPIParam("performancePropertyOptions"),
+                        mainGroup = dataManger.getAPIParam("performance-main-group"))
 
 ##update email settings
 emailSettings = dataManger.getConfigParam("email-sever-settings")
@@ -60,15 +62,18 @@ app.config["MAIL_PASSWORD"] = config("email-pw")
 #init email and submission manager
 emailHelper = EmailHelper(app)
 submissionManager =  Submission(pathToSubmissionFolder,pathToArchive ,dataManger, emailHelper)
+featureFinder = FeatureFinder(data = dataManger, DB = dbManager)
+ptmManger = PTMManger(dataManger,featureFinder)
 ##put helpers in dict for easy init
 helpers = {
         "data" :  dataManger,
-        "featureFinder" : FeatureFinder(data = dataManger, DB = dbManager),
+        "featureFinder" : featureFinder,
         "db" : dbManager,
         "token" : tokenManager,
         "email" : emailHelper,
         "user" : adminUserManager,
         "submission" : submissionManager,
+        "ptm" : ptmManger,
         "performance" : performanceManager
 }
 

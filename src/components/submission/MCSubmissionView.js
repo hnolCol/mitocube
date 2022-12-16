@@ -1,16 +1,21 @@
-import { Alert, Button, Collapse, InputGroup, Code, ButtonGroup, MenuItem, Menu } from "@blueprintjs/core"
+import { Alert, Button, Collapse, InputGroup, Code, ButtonGroup, MenuItem, Menu, MenuDivider } from "@blueprintjs/core"
 import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
 
 import axios from "axios"
 import ReactJson from 'react-json-view'
 import { MCCombobox } from "../utils/components/MCCombobox"
-import { arrayToTabDel, downloadJSONFile, downloadTxtFile } from "../utils/Misc"
-import _, { update } from "lodash"
+import { arrayOfObjectsToTabDel, arrayToTabDel, downloadJSONFile, downloadTxtFile } from "../utils/Misc"
+import _ from "lodash"
 import { Text } from "@visx/text"
 import { MCCreateSampleList } from "./MCCreateSampleList"
 import { Popover2, Tooltip2 } from "@blueprintjs/popover2"
 import { MCGroupingNameDialog, MCMethodEditingDialog } from "./MCSubmissionDialogs"
+import { MCHeader } from "../utils/components/MCHeader"
+
+
+const initRenameGrouping = {isOpen:false,groupingNames:[],dataID:undefined,paramsFile:{}}
+const initExperimental = {isOpen:false,dataID:undefined,paramsFile:{}}
 
 
 
@@ -83,7 +88,7 @@ function MCSubmissionItem(props) {
 
     }
     const handleDelete = (e) => {
-
+        // handle delete of submission (actually putting to archive)
         axios.delete('/api/data/submission/details', {data : {token : token, dataID : dataID}}).then(response => {
             setAlertState({isOpen:true,children:<div>{response.data.msg}</div>})
         })
@@ -142,9 +147,7 @@ function MCSubmissionHeader (props) {
         <div key = {paramsFile.dataID} className="submission-container" onMouseEnter={e => setMouseOverDataID(paramsFile.dataID)} onMouseLeave={e => setMouseOverDataID(undefined)}>
             
            
-            <div className="submission-box"
-                    >
-                        
+            <div className="submission-box">
                         <div style={
                             {
                                 color:mouseOverDataID===paramsFile.dataID? "#3f5b66":"#2F5597", 
@@ -263,27 +266,39 @@ function MCSubmissionTimeLine (props) {
     )
 }
 
-const initRenameGrouping = {isOpen:false,groupingNames:[],dataID:undefined,paramsFile:{}}
-const initExperimental = {isOpen:false,dataID:undefined,paramsFile:{}}
-export function MCSubmissionAdminView (props) {
-    const [submissionDetails, setSubmissions] = useState({submissions:[],states:[],submissionSatesCounts:{},submissionsToShow:[],submissionFilter:"None",searchString:""})
+
+export function MCSubmissionAdminView(props) {
+    const [submissionDetails, setSubmissions] = useState({
+        submissions: [],
+        states: [],
+        searchColumns : [],
+        submissionSatesCounts: {},
+        submissionsToShow: [],
+        submissionFilter: "None",
+        searchString: "",
+        submissionSummaryColumns: []
+    })
     const [groupingRenameDetails, setGroupingRenameDetails] = useState(initRenameGrouping)
     const [experimentalDetails, setExperimentalDetails] = useState(initExperimental)
     const [sampleListDialog, setSampleListDialog] = useState({isOpen:false})
     const [updatedDataIDs, setUpdatedDataIDs] = useState({})
     const [alertState, setAlertState] = useState({isOpen:false,children:<div>Warning!</div>})
-    const {token} = props    
+    
+    const { token } = props    
 
     useEffect(() => {
         axios.get("/api/admin/submissions", {params:{token:token}}).then(response => {
             if (response.status===200 & "success" in response.data & response.data["success"]) {
-               const stateCounts = getStateCounts(response.data.states,response.data.submissions,)
+                const stateCounts = getStateCounts(response.data.states, response.data.submissions)
+                let responseData = response.data
                setSubmissions(
                     {
-                        submissions:response.data.submissions, 
-                        states : response.data.states, 
+                        submissions:responseData.submissions, 
+                        states: responseData.states, 
+                        searchColumns : responseData.searchColumns,
+                        submissionSummaryColumns : responseData.submissionSummaryColumns,
                         submissionSatesCounts : stateCounts,
-                        submissionsToShow :response.data.submissions.map(v => v.dataID),
+                        submissionsToShow :responseData.submissions.map(v => v.dataID),
                         submissionFilter : "None",
                         searchString : ""
                     })
@@ -346,7 +361,6 @@ export function MCSubmissionAdminView (props) {
 
     const handleFilterSelection = (filterName) => {
         var filteredSubmissions = getStringMatchSubmissions(submissionDetails.searchString)
-        // let shownSubmissionDetails = _.filter(submissionDetails.submissions, v => submissionDetails.submissionsToShow.includes(v.dataID))
 
         const submissionsFiltered = filterName === "None"?_.map(filteredSubmissions, v => v.dataID):_.map(_.filter(filteredSubmissions, v => v.paramsFile.State === filterName),v => v.dataID)
         //console.log(filteredSubmissions)
@@ -358,7 +372,8 @@ export function MCSubmissionAdminView (props) {
     const getStringMatchSubmissions = (searchString) => {
         if (searchString === "") return submissionDetails.submissions
         const re = new RegExp(_.escapeRegExp(searchString), 'i')
-        const searchColumns = ["shortDescription","Material","Organism","dataID","Title","Email","Type","Experimentator"]
+        // search columns should be provided by API!
+        const searchColumns = submissionDetails.searchColumns.slice() // ["shortDescription","Material","Organism","dataID","Title","Email","Type","Experimentator"]
         const isMatch = result => _.filter(searchColumns.map(v => re.test(result.paramsFile[v]))).length > 0
         //const isMatch = result => re.test(result.shortDescription) | re.test(result.Material) | re.test(result.Organism) | re.test(result.dataID) | re.test(result.Title) | re.test(result.Email)  | re.test(result.Email)
         var filteredSubmissions = _.filter(submissionDetails.submissions, isMatch)
@@ -410,20 +425,34 @@ export function MCSubmissionAdminView (props) {
         var copiedState = {...updatedDataIDs}
         copiedState[dataID] = state
         setUpdatedDataIDs(copiedState)
-        // if (Object.keys(copiedState).includesdataID){
-        //     let newState = !copiedState[dataID]
-        //     copiedState[dataID] = newState
-        // }
-        // else {
-           
-        // }
-        
     }
 
+
+    const downloadProjectSummary = (notThisState = undefined) => {
+
+        let submissions = submissionDetails.submissions
+        if (submissions.length > 0) {
+            let summaryColumns = submissionDetails.submissionSummaryColumns
+            if (_.isArray(summaryColumns) && summaryColumns.length > 0){ 
+                let filteredSubmission = notThisState!==undefined?_.filter(submissions, v => v.paramsFile.State !== notThisState):submissions.slice()
+                let submissionSummary = filteredSubmission.map(submission => Object.fromEntries(summaryColumns.map(sumColumn => [sumColumn, submission.paramsFile[sumColumn]])))
+                downloadTxtFile(arrayOfObjectsToTabDel(submissionSummary,summaryColumns),`ProjectSummary(${notThisState===undefined?"allStates":"allStatesBut"+notThisState}).txt`)
+            }
+        }
+    }
+
+    const downloadNotLastStateProjects = (e) => {
+        
+        let notThisState = submissionDetails.states.slice(-1)[0]
+        if (notThisState !== undefined) {
+            downloadProjectSummary(undefined, notThisState)
+        }
+    }
 
     
     return (
         <div className="submission-admin-view">
+            
              <Alert {...alertState} canEscapeKeyCancel={true} canOutsideClickCancel={true} onClose={e => setAlertState({isOpen:false})}/>
              <MCCreateSampleList {...sampleListDialog} onClose = {setSampleListDialog} token={token} handleDataChange = {handleSubmissionUpdate}/>
              <MCMethodEditingDialog 
@@ -436,8 +465,17 @@ export function MCSubmissionAdminView (props) {
                 closeDialog = {closeRenameGroupingDialog} 
                 changeGroupingNames = {handleRenameGrouping}/>
 
-             <h2>Submissions</h2>
-             <Link to="/admin/">Back</Link>
+            <MCHeader text={"Submissions"}/>
+            <div className="top-right-absolute-container">
+                <div className="hor-aligned-div">
+                    <Link to="/admin">
+                        <Button minimal={true} small={true} icon="arrow-left" />
+                    </Link>
+                    <Link to="/">
+                        <Button minimal={true} small={true} icon="home" />
+                    </Link>
+                </div>
+            </div>
             {/* <p>Overveiw of submissions. You can search for projects and also edit the submission. You can also transfer the project from here to the MitoCube public space by uploading the data.</p> */}
             <div style={{height:"60px"}}>
             <InputGroup 
@@ -463,18 +501,42 @@ export function MCSubmissionAdminView (props) {
                         )})
                         }
                 </div>
-                    <div>
+                    <ButtonGroup>
+                        <Tooltip2 content={
+                                <div>
+                                <p>Download project summary of runs not equal to '{submissionDetails.states.slice(-1)[0]}'</p>
+                                <p>as a txt tab delimted file.</p>
+                                </div>}>
+                        <Button
+                            intent="success"
+                            minimal={ true}
+                            onClick={downloadNotLastStateProjects}
+                                rightIcon={"download"} />
+                        </Tooltip2>
+                        
+                        <Tooltip2 content={
+                                <div>
+                                <p>Download project summary of all projects in the database.</p>
+                                </div>}>
+                            <Button 
+                                intent="warning"
+                                minimal={true}
+                                rightIcon={"download"}
+                                onClick={() => downloadProjectSummary()} />
+                        </Tooltip2>
+                        <MenuDivider/>
+                        <Button text={"Filter : "} minimal={true} small={true} />
                         <MCCombobox 
                         items={_.concat(["None"],submissionDetails.states)} 
                         placeholder = {submissionDetails.submissionFilter!==undefined?submissionDetails.submissionFilter:"Filter .."} 
                         callback = {handleFilterSelection}
                         buttonProps = {{
-                            minimal : false,
+                            minimal : true,
                             small : true,
                             intent : "primary"}
                             
                         }/>
-                    </div>
+                    </ButtonGroup>
                 </div>
             
             </div>

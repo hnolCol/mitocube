@@ -1,17 +1,16 @@
 
 import { Button, ButtonGroup, Dialog, FileInput, HotkeysProvider, InputGroup, Menu, MenuDivider, MenuItem, Text } from "@blueprintjs/core"
-import { Table2, SelectionModes, Column, Cell, EditableCell2, EditableName } from "@blueprintjs/table"
-import { calculateNewValue } from "@testing-library/user-event/dist/utils"
-import _, { isArray } from "lodash"
+import { Table2, SelectionModes, Column, Cell, EditableCell2 } from "@blueprintjs/table"
+import _, { isArray, template } from "lodash"
 import { useState } from "react"
-import { MCCSVDownload } from "../utils/components/MCCSVDownload"
-import { arrayOfObjectsToTabDel, arrayToTabDel, downloadSVGAsText, downloadTxtFile } from "../utils/Misc"
+import { arrayToTabDel, downloadTxtFile } from "../utils/Misc"
 
 function MCAddGroupDialog(props) {
     const {isOpen,onClose,grouping,existingGroups,reportGroup,r,columnIndex} = props
     const [groupName, setGroupName] = useState("")
-
+    let groupingNameNotValid = _.isArray(existingGroups)?existingGroups.includes(groupName):false
     const saveGroup = (e) => {
+        if (groupingNameNotValid) return 
         reportGroup(groupName,grouping,r.regions,columnIndex)
         onClose()
     }
@@ -20,9 +19,14 @@ function MCAddGroupDialog(props) {
         <Dialog isOpen = {isOpen} title="Add Group to Grouping" onClose={onClose}>
             <div style={{width:"70%",transform:"translateX(20%)",marginTop:"1rem"}}>
                 <p>{`Enter group name for ${grouping}. Once entered you can access the group from the context menu.`}</p>
-                <InputGroup onChange={e => setGroupName(e.target.value)} value={groupName}/>
+                <InputGroup onChange={e => setGroupName(e.target.value)} value={groupName} 
+                    onKeyUp={e => {
+                        if (e.code === "Enter") {
+                          e.preventDefault();
+                          saveGroup()
+                          ;}}}/>
                 <ButtonGroup fill={true}>
-                    <Button text="OK" intent="primary" onClick={saveGroup} disabled={_.isArray(existingGroups)?existingGroups.includes(groupName):false}/>
+                    <Button text="OK" intent="primary" onClick={saveGroup} disabled={groupingNameNotValid}/>
                     <Button text="Cancel" onClick={onClose}/>
                 </ButtonGroup>
             </div>
@@ -33,8 +37,12 @@ function MCAddGroupDialog(props) {
 function MCRenameGrouping(props) {
     const {isOpen, onClose, grouping, exisitingGroupings, reportChange, columnIndex} = props
     const [groupingName, setGroupingName] = useState("")
+    const groupingNameNotValid = groupingName===""?true:_.isArray(exisitingGroupings)?exisitingGroupings.includes(groupingName):false
+
 
     const saveChange = (e) => {
+         //check for duplicates
+        if ( groupingNameNotValid) return
         reportChange(groupingName,columnIndex)
         onClose()
     }
@@ -42,9 +50,17 @@ function MCRenameGrouping(props) {
         <Dialog isOpen = {isOpen} title="Rename Grouping" onClose={onClose}>
             <div style={{width:"70%",transform:"translateX(20%)",marginTop:"1rem"}}>
                 <p>{`Enter new name for ${grouping}.`}</p>
-                <InputGroup onChange={e => setGroupingName(e.target.value)} value={groupingName} placeholder={grouping}/>
+                <InputGroup 
+                    onChange={e => setGroupingName(e.target.value)} 
+                    value={groupingName} 
+                    placeholder={grouping}
+                    onKeyUp={e => {
+                        if (e.code === "Enter") {
+                          e.preventDefault();
+                          saveChange()
+                          ;}}}/>
                 <ButtonGroup fill={true}>
-                    <Button text="OK" intent="primary" onClick={saveChange} disabled={groupingName===""?true:_.isArray(exisitingGroupings)?exisitingGroupings.includes(groupingName):false}/>
+                    <Button text="OK" intent="primary" onClick={saveChange} disabled={groupingNameNotValid}/>
                     <Button text="Cancel" onClick={onClose}/>
                 </ButtonGroup>
             </div>
@@ -72,7 +88,7 @@ export function MCGroupingTable(props) {
     const [groupings,setGroupings] = useState({})
     const [addGroup,setAddGroup] = useState({})
     const [editGrouping,setEditGrouping] = useState({})
-    
+    const [templateFile, setTemplateFile] = useState("")
     const selectionRegion =(e)=>{
         
         return {
@@ -211,7 +227,7 @@ export function MCGroupingTable(props) {
     }
 
     const handleTextInput = (e) => {
-        
+        // handles text file input 
         const newFiles = e.target.files;
         const fileName = newFiles[0].name;
         const extension = fileName.split(".").pop();
@@ -219,7 +235,7 @@ export function MCGroupingTable(props) {
        
         if (isSupported){
             const reader = new FileReader()
-                reader.onload = (e) => {
+            reader.onload = (e) => {
                 const text = e.target.result.split("\n")
                 const columnNames = text[0].split("\t")
                 if (columnNames.includes("Replicate") && columnNames.includes("Run")){
@@ -227,33 +243,41 @@ export function MCGroupingTable(props) {
                     const numSamples = data.length
                     const replicates = _.uniq(data.map(v => v[_.indexOf(columnNames,"Replicate")]))
                     const dataTable = data.map(rowData => Object.fromEntries(rowData.map((v,i) => [columnNames[i],v])))
-                    
-                    handleTemplateInput(columnNames,dataTable,replicates.length,numSamples)
-                    
+                    const numberOfGroupings = columnNames.length - 2 // Run and Replicate must be the in the file
+                    handleTemplateInput(columnNames,dataTable,replicates.length,numSamples,numberOfGroupings)
 
+                }
+                else {
+                    alert("File must contain Replicate and Run as column names.")
                 }
             }
             reader.readAsText(e.target.files[0])
+            setTemplateFile(fileName)
 
         
         }
+        else {
+            alert ("Wrong file extension. Requires tab delimted txt.")
+        }
+        
         
     }
-            
-        // else if (dataSummary.data[rowIndex] === undefined) return <Cell></Cell>
-        // else if (dataSummary.data[rowIndex][columnNames[columnIndex]] === null) return <Cell></Cell>
-        // else {
-        //     return <Cell wrapText={columnNames[columnIndex] === "shortDescription"}>{dataSummary.data[rowIndex][columnNames[columnIndex]]}</Cell>
-        // }
-        // }
+ 
 
     return(
       
         <div style={{paddingTop:"1rem",paddingBottom:"1rem",height:"500px",overflowY:"hidden"}}>
             <MCAddGroupDialog {...addGroup} reportGroup = {addGroupToGrouping} onClose={closeDialog}/>
             <MCRenameGrouping {...editGrouping} onClose={closeEditGrouping} reportChange = {saveGrouping}/>
-            <ButtonGroup style={{paddingBottom:"0.5rem"}}>
-                <FileInput buttonText="..." onInputChange={handleTextInput}/>
+            <ButtonGroup fill={ true } style={{paddingBottom:"0.5rem"}}>
+                <FileInput
+                    buttonText="..."
+                    onInputChange={handleTextInput}
+                   // inputProps={{ onChange: (e) => console.log(e.target.files)}}
+                    text={templateFile}
+                    fill={true}
+                    hasSelection={templateFile !== ""} />
+                
                 <Button text = "Template" rightIcon="download" onClick={e => downloadTxtFile(arrayToTabDel(data,columnNames),`templateForSampleSubmission.txt`)}/>
             </ButtonGroup>
             {data!==undefined?

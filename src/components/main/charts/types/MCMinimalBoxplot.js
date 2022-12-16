@@ -113,11 +113,25 @@ export function MCMinimalBoxplot(props) {
     const [mousePoint,changeMousePoint] = useState(undefined)
     const [highlightColor, changeHighlightColor] = useState(undefined)
     const [highlightDetails, setHighlightDetails] = useState(undefined)
-    const {x,y,width,height,minValue,maxValue,values, featureNames, title, legend, legendTitle, vertical, highlightPoint, legendItems} = props
+    const {
+            x,
+            y,
+            width,
+            height,
+            minValue,
+            maxValue,
+            values, 
+            featureNames, 
+            title, 
+            legend, 
+            legendTitle, 
+            vertical, 
+            highlightPoint, 
+            legendItems} = props
    
     //const legendItems = _.isObject(legend) ? Object.keys(legend) : []
-   
-    const marginForLegend = legendItems.length > 0?20:0
+    
+    const marginForLegend = legendItems!==undefined && legendItems.length > 0?20:0
     const marginLeft = 5
     const marginRight =  props.vertical?30:50 
     const marginTop = 20 + marginForLegend
@@ -128,12 +142,13 @@ export function MCMinimalBoxplot(props) {
     const widthPerBoxplot = (width-marginLeft - marginRight - marginBetweenBox * (values.length-1)) / values.length
     const rangeMin = props.vertical? y + marginTop : x + marginLeft 
     const rangeMax = props.vertical? (y+height) - marginBottom : (x + width) - marginLeft - marginRight
+    
     const scaleX = scaleLinear({
         domain : [maxValue,minValue],
         range : vertical?[rangeMin, rangeMax]:[rangeMax,rangeMin],
     })
     
-    const widthPerLegendItem = legendItems.length === 0 ? 4 :(width-marginLeft-marginRight) / legendItems.length
+    const widthPerLegendItem = legendItems===undefined?4:legendItems.length === 0 ? 4 :(width-marginLeft-marginRight) / legendItems.length
     const legendBoxWidth = 15
     const legendY = y+15
   
@@ -259,7 +274,7 @@ export function MCMinimalBoxplot(props) {
                             fill = "#262626"
                             scaleToFit = "shrink-only"
                             >
-                                {"To many legend items. Please use tooltip to identify groups."}
+                                {props.vertical?"To many legend items. Please use tooltip to identify groups.":""}
                         </Text>
                         </g>
             }
@@ -277,7 +292,8 @@ export function MCMinimalBoxplot(props) {
                         width = {widthPerBoxplot} 
                         fill={props.backgroundColor}
                     />:
-                <rect key={`${i}-boxplot-background`}
+                <rect 
+                    key={`${i}-boxplot-background`}
                     x = {scaleX(minValue)} 
                     y={y+marginTop + heightPerBoxplot * i + marginBetweenBox * i} 
                     height={heightPerBoxplot} 

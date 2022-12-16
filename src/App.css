@@ -24,7 +24,10 @@ button:focus {
 }
 
 
-
+.little-m {
+  margin : 0.2rem;
+  padding : 0.1rem;
+}
 
 
 @keyframes move-down {
@@ -198,6 +201,15 @@ hr {
 }
 
 
+.top-right-absolute-container {
+  position: absolute;
+  margin: 1rem;
+  top : 0;
+  right : 0;
+  height : 100px;
+  font-size: 00.75rem;
+}
+
 
 .footer {
   height:100px;
@@ -365,6 +377,19 @@ hr {
   justify-content: flex-start;
 }
 
+.vert-align-div-center{
+  flex-direction: column;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vert-align-div-flexStart{
+  flex-direction: column;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
 
 .filter-tag-button-container:hover {
   background-color: rgba(36, 46, 54, 0.658);
@@ -416,6 +441,16 @@ hr {
   display: flex;
   flex-direction: row;
   justify-content: flex-end; 
+  align-items: center;
+  
+}
+
+
+
+.hor-aligned-center-flex-start{
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start; 
   align-items: center;
   
 }
@@ -701,30 +736,26 @@ hr {
 }
 
 
-
 .admin-nav-box{
   min-width: 150px;
   height : 30px;
   margin: 2rem;
   border-radius: 0.25rem;
   }
+
 .admin-nav-box:hover{
   background-color: white;
-
 }
 
 .volcano-container{
   display: grid;
   grid-template-columns:  repeat(auto-fit, minmax(500px, 1fr));
-  
-  /* flex-direction: row;
-  flex-flow: row wrap;
-  align-items: flex-start;
-  justify-content: space-evenly; */
+  height : 90vh;
+  overflow-y:scroll;
 }
 
 .volcano-box{
-  width: 500px;
+  width: 95%;
   height:500px;
   border:  solid 0.2px;
   background-color: white;
@@ -882,4 +913,159 @@ hr {
   margin-left: 0.65rem;
   margin-bottom: 0.45rem;
 
+}
+
+
+.perfomance-chart-container{
+  margin-top: 0.3rem;
+  margin-bottom: 0.4rem;
+  display: grid;
+  justify-content :flex-start;
+  align-items: flex-start;
+  max-height : 70vh;
+  grid-template-columns:  repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.performance-chart-box{
+  min-width: 300px;
+  min-height: 350px;
+  height: 350px;
+  max-height : 350px;
+  }
+
+
+
+.perfomance-run-chart-container{
+  margin-top: 0.3rem;
+  margin-bottom: 0.4rem;
+  display: grid;
+  justify-content :flex-start;
+  align-items: flex-start;
+  /* max-height : 55vh;
+  overflow-y: scroll; */
+  grid-template-columns:  repeat(auto-fit, minmax(200px, 350px));
+}
+
+.performance-run-chart-box{
+  min-width: 200px;
+  min-height: 350px;
+  height: 350px;
+  max-height : 350px;
+  }
+
+  .instrument-container{
+    height : 90vh;
+    max-height: 90vh;
+    overflow-y: scroll;
+    padding-right: 1rem;
+
+  }
+
+
+  .performance-tab-container{
+    max-height: 60vh;
+    margin-top: 0.2rem;
+    padding-left: 0.7rem;
+    background-color:#efefef;
+  }
+
+
+  .performace-specific-run-box{
+    background-color: white;
+    padding: 0.3rem;
+    margin-bottom: 0.6rem;
+    margin-right: 0.6rem;
+    border-radius: 0.2rem;
+  }
+
+
+.performance-metric-container{
+  margin-top: 0.3rem;
+  margin-bottom: 0.4rem;
+  display: grid;
+  justify-content :flex-start;
+  align-items: flex-start;
+  /* max-height : 55vh;
+  overflow-y: scroll; */
+  grid-template-columns:  repeat(auto-fit, minmax(100px, 250px));
+}
+
+
+.performance-metric-item{
+  position: relative;
+  display: flex;
+  min-width: 100px;
+  max-width: 250px;
+  height : 180px;
+  background-color: #efefef;
+  border-color: rgba(255, 255, 255, 0.123);
+  border-width: 1px;
+  padding: 0.2rem;
+  margin : 0.4rem;
+  justify-content: center;
+  align-items: center;
+}
+.performance-metric-absolute-name{
+
+  position: absolute;
+  left: 0.5rem;
+  top: 0.5rem;
+}
+.performance-metric-inner-container{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.performance-metric{
+  font-weight: 500;
+  font-size: 1.3rem;
+  color: darkslategray;
+}
+
+.ptm-item {
+
+    /* border: solid 0.5px black; */
+    border-radius: 0.2rem;
+    min-width: 100%;
+    max-width: 100%;
+    margin-top: 0.75rem;
+    padding: 0.3rem;
+    background-color: white;
+}
+
+.ptm-item:hover {
+  background-color: #fafafa;
+
+}
+
+.ptm-item-container {
+
+  overflow-y:scroll;
+  height : 100%;
+  width: 100%;
+
+}
+
+.ptm-view{
+    font-size: 0.75rem;
+    min-width : calc(100vw - 1rem);
+    max-width : calc(100vw - 1rem);
+    background-color:transparent;
+    padding: 2rem;
+    margin: 0.75rem;
+    height : calc(100vh - 2rem);
+    
+  }
+
+  .background-rect-ptm-inactive {
+    opacity : 0.5;
+    transition-duration: 1.5s;
+    transition-property: opacity;
+  }
+
+.background-rect-ptm {
+  opacity : 1;
+  transition-duration: 1.5s;
+  transition-property: opacity;
 }

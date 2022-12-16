@@ -4,6 +4,13 @@ import string
 import random
 import re 
 
+def mergeDicts(dicts):
+    result = dict()
+    for _dict in dicts:
+        for k,v in _dict.items():
+            result[k] = v
+    return result
+
 def getRandomString(N = 20):
     "returns a random string of N characters"
     return ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k=N))

@@ -23,6 +23,8 @@ from statsmodels.stats.multitest import multipletests
 from .stats import TwoWAyANOVA
 from .Misc import buildRegex
 from collections import OrderedDict
+from typing import List, Tuple, Dict, Any, Iterable, Callable
+from dataclasses import dataclass
 
 Set6 = ["#444444", "#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99",
             "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6", "#6a3d9a"]
@@ -39,7 +41,12 @@ pingouinColumn = {"SS":"Sum of squares", "F":"F-values","MS" : "Mean squares","D
 
 DB_ENTRY_COLUMN = "Entry"
 
-class DBFeatures(object):
+def getChartMarginFromMinMaxValues(minValue, maxValue, marginFraction = 0.05):
+    ""
+    return np.sqrt(maxValue ** 2 - minValue **2) * marginFraction
+
+
+class DBFeatures:
     ""
     def __init__(self,pathToDB,*args,**kwargs):
         ""
@@ -67,7 +74,7 @@ class DBFeatures(object):
         ""
         return [colName for colName in columnNames if colName in self.DBs.columns]
 
-    def update(self):
+    def update(self) -> None:
         ""
         self.__readData()
     
@@ -83,7 +90,7 @@ class DBFeatures(object):
 
     def getDBInfoForFeatureList(self,featureIDs, requiredColNames, plainExport = True, entryInfoDictAsOutput = False):
         ""
-
+    
         idxIntersection = self.DBs.index.intersection(featureIDs)
         matchedColNames = self._findMatchingColumns(requiredColNames)
         if len(matchedColNames) > 0:
@@ -130,47 +137,433 @@ class DBFeatures(object):
 
 
 
+@dataclass() 
+class Dataset:
+
+    dataID : str
+    data : pd.DataFrame
+    params : dict
+    dbManager : DBFeatures
+
+    def getIsInMask(self,featureIDs) -> Tuple[np.ndarray,bool]:
+        """Returns mask and if featureIDs were found in data.index"""
+
+        boolIdx = self.data.index.isin(featureIDs)
+        return boolIdx, np.any(boolIdx)
+
+
+    def getCorrelatedFeatures(self, featureIDs : list, scale : bool = True, N : int = 20) -> Dict[str,Any]:
+        """"""
+        boolIdx, featureDetected = self.getIsInMask(featureIDs)
+        if featureDetected:
+
+            expColumns = self.getExpressionColumns()
+            #remove columns with only NaN
+            expColumnsWithNonNan = self.data.loc[boolIdx,expColumns].dropna(axis=1).columns.values
+            if expColumnsWithNonNan.size > 4:
+                featureDataTransposed = pd.Series(self.data.loc[boolIdx,expColumnsWithNonNan].values.T.flatten(),index=expColumnsWithNonNan)
+                dataWhereFeatureIsNotNaN = self.data.dropna(subset=expColumnsWithNonNan, thresh=3)
+                corrCoeff = dataWhereFeatureIsNotNaN.corrwith(featureDataTransposed,axis=1).dropna().sort_values(ascending=False)
+
+                corrHead = corrCoeff.head(N)
+                corrFeaturesIndex = corrHead.index.values
+                correlatedFeaturesData = self.data.loc[corrFeaturesIndex,]
+                values = correlatedFeaturesData.loc[:,expColumns].values  
+
+                groupingMapper = self.getGroupingMapper()
+                groupingColorMapper = self.getGroupingColorMapper()
+
+                if scale:
+                    #calcualte Z-scores
+                    values = zscore(
+                        correlatedFeaturesData.loc[:,expColumns].values,
+                        axis=1,
+                        nan_policy="omit")
+                    maxValue = np.nanmax(np.abs(values.flatten()))
+                    minValue = -maxValue
+                    #replace nan with None for jsonify
+                    values = pd.DataFrame(values).replace({np.nan: None}).values
+                else:
+                    values = correlatedFeaturesData.loc[:,expColumns].values
+                    minValue, maxValue = np.nanmin(values), np.nanmax(values)
+
+                colorValues = np.linspace(minValue,maxValue,num=5).flatten().tolist()
+                colorPalette = sns.color_palette("RdBu_r",n_colors=5).as_hex()
+
+                groupColorValues = []
+
+                for groupingName, groupingMapper in groupingMapper.items():
+                    hexColorValues = [groupingColorMapper[groupingName][groupingMapper[colName]] for colName in expColumns]
+                    groupColorValues.append(hexColorValues)
+                
+                
+                featureNamesFromDB = self.dbManager.getDBInfoForFeatureListByColumnName(corrFeaturesIndex).fillna("-")
+                featureNames = featureNamesFromDB.values.flatten().tolist()
+                corrCoeff = corrHead.values.flatten().tolist()
+                corrDataForHeatmap = {
+                
+                        "values"          :   values.tolist(), 
+                        "columnNames"     :   expColumns,
+                        "colorPalette"    :   colorPalette,
+                        "colorValues"     :   colorValues,
+                        "corrCoeff"       :   corrCoeff,
+                        "groupingColors"  :  groupColorValues,
+                        "groupingLegend"  :  groupingColorMapper,
+                        "featureNames"    :  featureNames,
+                        "downloadData"    : [OrderedDict([(expColumns[n],v) for n,v in enumerate(vv)] + 
+                                [("Feature Name",featureNames[m])] + 
+                                [("FeatureID",corrFeaturesIndex[m])] + 
+                                [("CorrCoeff to {}".format(featureIDs[0]),corrCoeff[m])] + [("raw-{}".format(expColumns[nRawIdx]),vraw) for nRawIdx,vraw in enumerate(values[m,:].flatten())]) for m,vv in enumerate(values)]
+                        }
+
+                
+                return  corrDataForHeatmap
+        
+
+    def getExperimentalInformation(self, paramNames : list) -> Tuple[bool,List]:
+        """
+        Returns the experimental information defined in the params defined by a
+        list of paramNames
+        """
+        if paramNames is not None:
+            
+            if isinstance(paramNames,str):
+                paramNames = [paramNames]
+            
+            if not isinstance(paramNames, list):
+                return False, ["paramNames should be a list"]
+
+            if not any(paramName in self.params for paramName in paramNames):
+                return False, [f"Param keywords not found in parameter file for {self.dataID}."]
+            
+            experimentalInfo = []
+
+            for paramName in paramNames:
+                if self.hasParam(paramName):
+                    paramValue = self.getParam(paramName)
+                    if isinstance(paramValue,str):
+                        experimentalInfo.append({"title":paramName ,"details":paramValue})
+                    elif isinstance(paramValue,list):
+                        experimentalInfo.extend(paramValue)
+                    else:
+                        experimentalInfo.append(paramValue)
+            return True, experimentalInfo 
+        else:
+            return False, ["Api-config misses param 'experiment-procedure-params"]
+
+    def getExpressionColumns(self) -> List[str]:
+        "Returns the list of columns defined in the groupings."
+        
+        groupingNames = self.getGroupingNames()
+        sampleNames = self.getSamplesNamesByGroupingName(groupingName=groupingNames[0])
+
+        if len(groupingNames) == 1:
+
+            return  sampleNames
+        
+        elif len(groupingNames) > 1:
+
+            groupMapper = self.getGroupingMapper()
+            
+            #create a pandas df to sort 
+            sampleGrouping = pd.DataFrame(sampleNames,columns = ["SampleName"])
+            for n,groupingName in enumerate(groupingNames):
+                if n == 2: break #limited to groupings == 2 
+                sampleGrouping.loc[:,f"Grouping{n}"] = self.mapGroupingsToSampleNames(groupMapper,groupingName,sampleNames)
+                #factorize groupings to position in grouping  to allow sorting after occurance
+                sortGrouping = dict([(groupName,n) for n,groupName in enumerate(self.getGroupsByGroupingName(groupingName))])
+                sampleGrouping.loc[:,f"Grouping{n}-Factorized"] = sampleGrouping.loc[:,f"Grouping{n}"].map(sortGrouping)
+            
+            groupDataFrameSorted = sampleGrouping.sort_values(
+                        by=["Grouping0-Factorized","Grouping1-Factorized"],
+                        kind="stable"
+                        )
+            
+            sampleNames = groupDataFrameSorted["SampleName"].values.tolist()
+        return sampleNames
+
+    def getFeatures(self) -> np.ndarray: 
+        ""
+        return self.data.index.unique().values 
+
+    def getGroupingColorMapper(self) -> Dict[str,Dict[str,str]]:
+        """
+        Returns grouping colors by groupingName -> group -> color hierarchy.
+        """
+
+        groupings = self.getGroupings()
+        groupingNames = self.getGroupingNames()
+        groupingColormaps = self.getParam("groupingCmap")
+        if isinstance(groupingColormaps,dict):
+            #generate colors by cmap 
+            colorsForGroupings = OrderedDict([
+                            (groupingName,
+                            sns.color_palette(
+                                groupingColormaps[groupingName],
+                                n_colors=self.getNumberOfGroups(groupings,groupingName),
+                                desat=0.75).as_hex()) for groupingName in groupingNames if groupingName in groupingColormaps])
+            #asign colors to groupNames          
+            groupingColorMapper = OrderedDict([
+                    (groupingName, OrderedDict([
+                        (groupName,colorsForGroupings[groupingName][n]) for n,groupName in enumerate(groupings[groupingName].keys())])) for groupingName in groupingNames]
+                        )    
+
+        return groupingColorMapper
+        
+
+
+    def getGroupingMapper(self) -> Dict[str,dict]:
+        """
+        Returns a dict providing groupingNames and columnName, group mapper.
+
+        Example: 
+        groupings = {"Genotype" : {"WT": ["WT_01","WT_02"], "KO" : ["KO_01","KO_02"]}}
+        -> 
+        groupingMapper = {"Genotype" : {
+                                        "WT_01":"WT",
+                                        "WT_02":"WT",
+                                        "KO_01":"KO",
+                                        "KO_02":"KO
+                                        }}
+        """
+
+        if hasattr(self,"groupingMapper") and all(k in self.groupingMapper for k in self.getGroupingNames()):
+            return self.groupingMapper
+    
+        self.groupingMapper = OrderedDict() 
+        groupings = self.getParam("groupings") 
+        if isinstance(groupings,dict):
+            for groupingName, grouping in groupings.items():
+                self.groupingMapper[groupingName] = dict([(v,k) for k,vs in grouping.items() for v in vs])
+            return self.groupingMapper 
+        return {}
+
+    def getGroupings(self) -> Dict[str,dict]:
+        ""
+        groupings = self.getParam("groupings")
+        if groupings is not None and isinstance(groupings,dict):
+            return groupings
+        return {}
+
+    def getGroupingNames(self) -> List[str]:
+        "Returns the groupingNames"
+        groupings = self.getGroupings()
+        if groupings is None: return []
+
+        return list(groupings.keys())
+
+    def getGroupingsAndNames(self) -> Tuple[dict,List[str]]:
+        """Returns groupings and the corresponding names, order preserved."""
+        return self.getGroupings(), self.getGroupingNames()
+
+    def getGroupsByGroupingName(self, groupingName : str) -> List[str]:
+        "Retruns the groupNames for a specific grouping"
+        groupings = self.getGroupings()
+        if isinstance(groupings,dict) and groupingName in groupings:
+            return list(groupings[groupingName].keys())
+        return []
+
+    def getNumberOfGroups(self,groupings : dict, groupingName : str) -> int:
+        ""
+        return len(groupings[groupingName])
+
+
+    def getMeltedData(self,featureIDs : List[str], addGroupings : bool = True, zscore_transform : bool = False ) -> pd.DataFrame:
+        """
+        Return melted data frame with/without groupings. 
+        Allows for z-score transformation (unit variance)
+        """
+        if not isinstance(featureIDs,list):
+            raise TypeError("featureIDs must be a list")
+
+        sampleNames = self.getExpressionColumns()
+        boolIdx, featureDected = self.getIsInMask(featureIDs)
+        if not featureDected:
+            raise ValueError("No featureID was found in the dataset.")
+        
+        featureData = self.data.loc[boolIdx]
+        #save index as idx
+        featureData.loc[:,"idx"] = featureData.index
+        if zscore_transform:
+
+            featureData.loc[:,sampleNames] =  zscore(featureData.loc[:,sampleNames].values,
+                                                        axis=1,
+                                                        nan_policy="omit")
+
+        meltedData = featureData.melt(value_vars=sampleNames, id_vars = ["idx"])
+        
+        if addGroupings:
+            groupingMapper = self.getGroupingMapper()
+            for groupingName, mapper in groupingMapper.items():
+
+                meltedData[groupingName] = meltedData["variable"].map(mapper)
+        
+        return meltedData
+
+    def getParams(self) -> dict:
+        "Returns the parameter file"
+        return self.params 
+
+    def getParam(self,paramName) -> Any:
+        ""
+        return self.params.get(paramName)
+
+    def getSamplesNamesByGroupingName(self, groupingName : str) -> np.ndarray:
+        "Returns the sample names"
+        groupings = self.getGroupings()
+        if groupings is None: return np.array()
+        if groupingName not in groupings: return np.array()
+        return np.array([i for v in groupings[groupingName].values() for i in v ]).flatten().tolist()
+
+    def hasParam(self,paramName) -> bool:
+        ""
+        return paramName in self.params
+
+    def mapGroupingsToSampleNames(self, groupMapper : dict, groupingName : str, expressionColumnNames : List[str]) -> List[str]:
+        ""
+        return [groupMapper[groupingName][colName] for colName in expressionColumnNames]
+
+    def isFeatureInDataset(self,featureID : str) -> bool:
+        "Returns true if feature is in the dataset"
+        return featureID in self.data.index
+
+    def matchesFilter(self,filter : dict) -> bool:
+        "Checks if parameters match the filter"
+        if len(filter) == 0:
+            return True
+        filterForParamNamesThatExist = [(paramName,v) for paramName,v in filter.items() if self.hasParam(paramName)]
+        #if not a single filter matches return False
+        if len(filterForParamNamesThatExist) == 0:
+            return False
+        
+        addFeaturesOfDataID = True
+        
+        if isinstance(filter,dict) and len(filter) > 0:
+            for paramName,v in filterForParamNamesThatExist:
+                if isinstance(v,list): 
+                    if len(v) == 0 or self.getParam(paramName) not in v:
+                        addFeaturesOfDataID = False
+                elif isinstance(v,str):
+                    if self.getParam(paramName) != v:
+                        addFeaturesOfDataID = False
+                
+        return addFeaturesOfDataID 
+
+
+class DatasetCollection:
+
+    def __init__(self,dbManager,*args,**kwargs):
+
+        self.dbManager = dbManager
+        self.collection= OrderedDict()
+
+    def __contains__(self,dataID) -> bool:
+        ""
+        return dataID in self.collection
+
+    def __getitem__(self,dataID) -> Dataset:
+        ""
+        return self.collection.get(dataID)
+
+    def __len__(self) -> int:
+        "Returns the number of datasets"
+        return len(self.collection)
+
+    def __str__(self) -> str:
+        ""
+        return f"Total number of datasets : {self.getNumberOfDatasets()} - hash : ${self.__hash__()}"
+
+    def items(self) -> List[Tuple[str,Dataset]]:
+        "Returns the items (dataID, Dataset)"
+        return self.collection.items() 
+
+    def addDataset(self, dataID : str, paramPath : str, dataPath: str) -> None:
+        "Adds a dataframe."
+        if os.path.exists(dataPath) and os.path.exists(paramPath):
+
+            data = pd.read_csv(dataPath,sep="\t",index_col="Key")
+            params = json.load(open(paramPath))
+            self.collection[dataID] = Dataset(dataID, data, params, self.dbManager)
+
+    def getDataIDs(self) -> List[str]:
+        "Returns the dataIDs"
+        return list(self.collection.keys())
+
+    def getDataIDsByFilter(self, filter : dict) -> List[str]:
+        "Returns dataIDs that match a filter."
+        return [dataID for dataID,dataset in self.items() if dataset.matchesFilter(filter)]
+
+    def getDataIDsThatContainFeature(self, featureID : str, filter : dict) -> List[str]:
+        """"""
+        return [dataID for dataID,dataset in self.items() if dataset.matchesFilter(filter) and dataset.isFeatureInDataset(featureID)]
+
+    def getNumberOfDatasets(self) -> int:
+        "Returns the number of datasets"
+        return len(self.collection)
+
+    def getUniqueFeatures(self) -> np.ndarray:
+        "Returns unique features in all datasets. Order is not stable."
+        return np.unique(np.concatenate([dataset.getFeatures() for dataset in self.values()]).astype(str))
+
+    def keys(self) -> List[str]:
+        "Returns a list of dataIDs"
+        return list(self.collection.keys())
+
+    def values(self) -> List[Dataset]:
+        ""
+        return list(self.collection.values())
+
+
 class Data(object):
+
     def __init__(self,pathToData,pathToAPIConfig,dbManager,*args,**kwargs):
         ""
         self.pathToData = pathToData
         self.pathToAPIConfig = pathToAPIConfig 
         self.dbManager = dbManager
+        self.dataCollection = DatasetCollection(dbManager)
         self.dfs = dict() 
         self.__readConfig()
-        self.update()
+        self.__readData()
+        self.__readDataInfo()
+        #self.update()
 
-    def __checkData(self):
-        ""
+    def __checkData(self) -> bool:
+        """
+        Checks if all data are present in the data dict (dfs) that
+        are in the static/dataset folder.
+        Returns bool. 
+        """
         return all(dataID in self.dfs for dataID in self.getDataIDs())
 
     def __readData(self):
-        ""
-       
+        """Read data by scanning through the folder"""
         shortCutFilterValues = []
         param = self.getAPIParam("short-cut-filter-param")
         for dataID in self.getDataIDs():
             paths = self.__getPaths(dataID)
             if paths is not None and dataID not in self.dfs:
                 X = pd.read_csv(paths[1],sep="\t",index_col="Key")
-                idx = X.index.duplicated(keep='first')
-               
+                #load data into dict - dataID is key
                 self.dfs[dataID] = {
                     "params":json.load(open(paths[0])),
-                    "data":X.loc[~idx,:]}
+                    "data":X}
+
+                self.dataCollection.addDataset(dataID,paths[0],paths[1])
             
             if dataID in self.dfs and param is not None and param in self.dfs[dataID]["params"]:
                 filterParamName = self.dfs[dataID]["params"][param]
                 if filterParamName not in shortCutFilterValues:
                     shortCutFilterValues.append(filterParamName)
-    
+        #print(self.dataCollection)
+
         availableColors = self.getAPIParam("short-cut-colors")
         if isinstance(availableColors,list) and len(availableColors) > 0:
             self.shortcutFilterColors = dict([(filterName,availableColors[n % len(availableColors)]) for n,filterName in enumerate(sorted(shortCutFilterValues))])
        
 
     def __readDataInfo(self):
-        ""
+        """"""
         columnNames = self.getAPIParam("data-presentation")
         sortByColumnNames = [colName for colName in self.getAPIParam("data-presentation-sort-by") if colName in columnNames]
         r = []
@@ -189,6 +582,7 @@ class Data(object):
         self.dataSummary = pd.DataFrame(r).sort_values(by=sortByColumnNames)
 
     def __readConfig(self):
+        """Loads the config file."""
         pathToDocs = os.path.join(self.pathToAPIConfig,"api_docs_config.json")
         if os.path.exists(pathToDocs):
             self.config = json.load(open(pathToDocs))
@@ -196,86 +590,55 @@ class Data(object):
             APIpassword = config("mitocube-pw")
             self.config["pw"] = APIpassword
 
-    def __getPaths(self,dataID):
+    def __getPaths(self,dataID) -> Tuple[str,str]:
         ""
         paramFilePath = os.path.join(self.pathToData,dataID,"params.json")
         dataFilePath = os.path.join(self.pathToData,dataID,"data.txt")
         if all(os.path.exists(filePath) for filePath in [paramFilePath,dataFilePath]):
             return paramFilePath,dataFilePath
+        return None, None
 
-    def getDataSummary(self):
+    def getDataSummary(self) -> pd.DataFrame:
+
         "Return da data frame containing a summary for data in the database"
-
         if hasattr(self,"dataSummary"):
             return self.dataSummary
         else:
             return pd.DataFrame(columns=self.getAPIParam("data-presentation"))
 
-    def getExpressionColumns(self,dataID):
-        "Limited to two groupings."
-        if dataID in self.dfs:
-            groupings = self.getParam(dataID,"groupings") 
-            firstGroupingName = self.dfs[dataID]["params"]["groupingNames"][0]
-            expressionColumnNames = np.array([i for v in groupings[firstGroupingName].values() for i in v ]).flatten().tolist() 
-            
-            if len(self.dfs[dataID]["params"]["groupingNames"]) > 1:
-                groupMapper = self.getGroupingMapper(dataID)
-               # print(groupMapper)
-                secondGroupingName = self.dfs[dataID]["params"]["groupingNames"][1]
-                groupDataFrame = pd.DataFrame({
-                    "SampleName" : expressionColumnNames, 
-                    "Grouping1": [groupMapper[firstGroupingName][colName] for colName in expressionColumnNames],
-                    "Grouping2" : [groupMapper[secondGroupingName ][colName] for colName in expressionColumnNames]})
+    def getDataset(self, dataID) -> Dataset:
+        """Returns Dataset"""
+        if dataID in self.dataCollection:
+            return self.dataCollection[dataID]
 
-                sortGrouping1Dict = dict([(groupName,n) for n,groupName in enumerate(groupings[firstGroupingName].keys())])
-                groupDataFrame["Grouping1Factorized"] = groupDataFrame["Grouping1"].map(sortGrouping1Dict)          
-                sortGrouping2Dict = dict([(groupName,n) for n,groupName in enumerate(groupings[secondGroupingName].keys())])
-                groupDataFrame["Grouping2Factorized"] = groupDataFrame["Grouping2"].map(sortGrouping2Dict)
-
-                #print(groupDataFrame)
-                groupDataFrameSorted = groupDataFrame.sort_values(by=["Grouping1Factorized","Grouping2Factorized"],kind="stable")
-                
-                expressionColumnNames = groupDataFrameSorted["SampleName"].values.tolist()
-
-            return expressionColumnNames
+    def getExpressionColumns(self,dataID) -> List[str]:
+        "Returns sorted expression columns by dataID."
+        if dataID in self.dataCollection:
+            return self.dataCollection[dataID].getExpressionColumns()
 
     def getFilterColors(self):
         ""
-        
         if hasattr(self,"shortcutFilterColors"):
             return self.shortcutFilterColors
         
 
-    def getGroupingMapper(self,dataID):
+    def getGroupingMapper(self,dataID) -> Dict[str,dict]:
         ""
-        groupingMapper = OrderedDict() 
-        if dataID in self.dfs:
-            groupings = self.getParam(dataID,"groupings") 
-            for groupingName, grouping in groupings.items():
-                groupingMapper[groupingName] = dict([(v,k) for k,vs in grouping.items() for v in vs])
-        return groupingMapper 
+        if dataID in self.dataCollection:
+            return self.dataCollection[dataID].getGroupingMapper()
+        
 
-    def getGroupingColorMapper(self,dataID):
-        if dataID in self.dfs:
-            groupings = self.getParam(dataID,"groupings") 
-            groupingNames = list(groupings.keys())
-            groupingColormaps = self.getParam(dataID,"groupingCmap")
-            colorsForGroupings = OrderedDict([(groupingName,sns.color_palette(groupingColormaps[groupingName],
-                                            n_colors=len(groupings[groupingName]),desat=0.75).as_hex()) for groupingName in groupingNames if groupingName in groupingColormaps])
-            groupingColorMapper = OrderedDict([(groupingName, OrderedDict([(groupName,colorsForGroupings[groupingName][n]) for n,groupName in enumerate(groupings[groupingName].keys())])) for groupingName in groupingNames])
-            
-            
-            return groupingColorMapper
+    def getGroupingColorMapper(self,dataID) -> Dict[str,dict]:
+        if dataID in self.dataCollection:
+            return self.dataCollection[dataID].getGroupingColorMapper() 
+        
 
-    def getDataIDs(self):
+    def getDataIDs(self) -> List[str]:
         "Datasets are stored in separate folders. Function returns dataID (=folder name)"
         return [x for x in os.listdir(self.pathToData) if os.path.isdir(os.path.join(self.pathToData,x))]
 
-
-
     def getMedianExpression(self,featureIDs,dataID,returnDataQuantiles=False):
         ""
-        
         if dataID in self.dfs:
             idxIntersection = self.dfs[dataID]["data"].index.intersection(featureIDs)
             expColumns = self.getExpressionColumns(dataID)
@@ -306,24 +669,26 @@ class Data(object):
    
         return distributionByFeatureID
 
+    def dataIDExists(self,dataID):
+        ""
+        return dataID in self.dataCollection
 
-
-    def update(self):
+    def update(self) -> None:
         "Updates data and checks for new ones"
+        return
         if not self.__checkData():
             self.__readData()
             self.__readDataInfo()
 
-
     def getParams(self,dataID):
         ""
-        if dataID in self.dfs:
-            return self.dfs[dataID]["params"]
+        if dataID in self.dataCollection:
+            return self.dataCollection[dataID].getParams()
 
-    def getParam(self,dataID,param):
+    def getParam(self,dataID,paramName):
         ""
-        if dataID in self.dfs:
-            return self.dfs[dataID]["params"][param]
+        if dataID in self.dataCollection:
+            return self.dataCollection[dataID].getParam(paramName)
 
     def getConfigParam(self,k):
         ""
@@ -334,61 +699,20 @@ class Data(object):
         if k in self.config["api"]:
             return self.config["api"][k]
 
-    def getSummary(self):
-        "Returns a summary of all available datasets"
-        return {"ID":"1231","descirption":"This dataset is cool."}
 
+    def getExperimentalInformation(self, dataID) -> Tuple[bool,list]:
+        """Return experimental information which are defined in the API params"""
+        if dataID in self.dataCollection:
+            paramNames = self.getAPIParam("experiment-procedure-params")
+            return self.dataCollection[dataID].getExperimentalInformation(paramNames)
+        return False, ["DataID not found."]
 
-    def getExperimentalInformation(self, dataID):
-        
-        dataParams = self.getParams(dataID)
-        if dataParams is None:
-            return False, "Data ID not found"
-        else:
-            paramKeywords = self.getAPIParam("experiment-procedure-params")
-            if paramKeywords is not None:
-                if isinstance(paramKeywords,str):
-                    paramKeywords = [paramKeywords]
-                if not any(pKey in dataParams for pKey in paramKeywords):
-                    return False, "param keywords not in dataID specific configuration file."
-                
-                experimentalInfo = []
+    def getDataForFeatures(self,dataID,featureIDs,addGroupings=True, zscore_transform = False) -> pd.DataFrame:
+        "Return melted data."
+        if dataID in self.dataCollection:
+            return self.dataCollection[dataID].getMeltedData(featureIDs, addGroupings=addGroupings, zscore_transform = zscore_transform)
 
-                for pKey in paramKeywords:
-                    if pKey in dataParams:
-                        if isinstance(dataParams[pKey],str):
-                            experimentalInfo.append({"title":pKey,"details":dataParams[pKey]})
-                        elif isinstance(dataParams[pKey],list):
-                            experimentalInfo.extend(dataParams[pKey])
-                        else:
-                            experimentalInfo.append(dataParams[pKey])
-                return True, experimentalInfo 
-            else:
-                return False, "api-config misses param 'experiment-procedure-params"
-
-    def getDataForFeatures(self,dataID,featureIDs,addGroupings=True, zscore_transform = False):
-        ""
-        if dataID in self.dfs:
-            boolIdx = self.dfs[dataID]["data"].index.isin(featureIDs)
-            expColumns = self.getExpressionColumns(dataID)
-            data = self.dfs[dataID]["data"].loc[boolIdx]
-            data.loc[:,"idx"] = data.index
-            if zscore_transform:
-
-                data[expColumns] =  zscore(data[expColumns].values,axis=1,nan_policy="omit")
-
-            meltedData = data.melt(value_vars=expColumns, id_vars = ["idx"])
-            
-            if addGroupings:
-
-                groupingMapper = self.getGroupingMapper(dataID)
-                for groupingName, mapper in groupingMapper.items():
-
-                    meltedData[groupingName] = meltedData["variable"].map(mapper)
-           
-            return meltedData
-        return None
-    
+        return pd.DataFrame()
 
     def getFeatureDBInfo(self,featureIDs,*args,**kwargs):
         ""
@@ -396,66 +720,10 @@ class Data(object):
         if dbInfoColumns  is not None:
            return self.dbManager.getDBInfoForFeatureList(featureIDs,dbInfoColumns,*args,**kwargs)
 
-    def getCorrelatedFeatures(self,dataID,featureIDs,scale=True, N = 20):
+    def getCorrelatedFeatures(self, dataID :  str,featureIDs : list ,scale : bool =True, N : int = 20):
         ""
-        if dataID in self.dfs:
-            boolIdx = self.dfs[dataID]["data"].index.isin(featureIDs)
-            if np.any(boolIdx):
-                expColumns = self.getExpressionColumns(dataID)
-                expColumnsWithNonNan = self.dfs[dataID]["data"].loc[boolIdx,expColumns].dropna(axis=1).columns.values
-                
-                if expColumnsWithNonNan.size > 5:
-                    Y = self.dfs[dataID]["data"].loc[boolIdx,expColumnsWithNonNan]
-                    #filter other features to have overlapping non NaN columns (n=4)
-                    X = self.dfs[dataID]["data"].dropna(subset=expColumnsWithNonNan, thresh=expColumnsWithNonNan.size)
-                    correlation = X.corrwith(pd.Series(Y.values.T.flatten(),index=expColumnsWithNonNan),axis=1).dropna().sort_values(ascending=False)
-                    corrHead = correlation.head(N)
-                    XX = self.dfs[dataID]["data"].loc[corrHead.index,]
-                    values = XX.loc[:,expColumns].values                
-                    
-                    if scale:
-                        Zvalues = zscore(values,axis=1,nan_policy="omit")
-                        maxValue = np.nanmax(np.abs(Zvalues.flatten()))
-                        Zvalues = pd.DataFrame(Zvalues).replace({np.nan: None}).values
-                        colorPalette = sns.color_palette("RdBu_r",n_colors=5).as_hex()
-                        colorValues = np.linspace(-maxValue,maxValue,num=5).flatten().tolist()
-                    
-                    groupingMapper = self.getGroupingMapper(dataID)
-                    groupingColorMapper = self.getGroupingColorMapper(dataID)
-
-                    groupColorValues = []
-
-                    for groupingName, groupingMapper in groupingMapper.items():
-                        hexColorValues = [groupingColorMapper[groupingName][groupingMapper[colName]] for colName in expColumns]
-                        groupColorValues.append(hexColorValues)
-                    IDsOfCorrFeatures = corrHead.index.values
-                    featureNames = self.dbManager.getDBInfoForFeatureListByColumnName(IDsOfCorrFeatures).values.flatten().tolist()
-                    corrCoeff = corrHead.values.flatten().tolist()
-                    
-                    corrDataForHeatmap = {
-                    
-                            "values"          :   Zvalues.tolist(), 
-                            "columnNames"     :   expColumns,
-                            "colorPalette"    :   colorPalette,
-                            "colorValues"     :   colorValues,
-                            "corrCoeff"       :   corrCoeff,
-                            "groupingColors"  :  groupColorValues,
-                            "groupingLegend"  :  groupingColorMapper,
-                            "featureNames"    :  featureNames,
-                            "downloadData"    : [OrderedDict([(expColumns[n],v) for n,v in enumerate(vv)] + 
-                                    [("Feature Name",featureNames[m])] + 
-                                    [("FeatureID",IDsOfCorrFeatures[m])] + 
-                                    [("CorrCoeff to {}".format(featureIDs[0]),corrCoeff[m])] + [("raw-{}".format(expColumns[nRawIdx]),vraw) for nRawIdx,vraw in enumerate(values[m,:].flatten())]) for m,vv in enumerate(Zvalues)]
-                            }
-
-                    
-                    return  corrDataForHeatmap
-            #find columns with no nan 
-            else:
-                print("Not in index.")
-        else:
-            print("Data ID not found")
-
+        if dataID in self.dataCollection:
+            return self.dataCollection[dataID].getCorrelatedFeatures(featureIDs,scale,N)
 
     def getFiltersOptions(self):
         ""
@@ -470,11 +738,10 @@ class Data(object):
             filterOptions[h] = pd.Series(availableOptions).unique().tolist() 
         return filterOptions
 
-    def getGroupingDetails(self,dataID, expColumns):
-        ""
+    def getGroupingDetails(self,dataID : str, expColumns : list):
+        """"""
         groupings = self.getParam(dataID,"groupings") 
-        
-            
+
         groupingNames = list(groupings.keys())
         groupingMapper = self.getGroupingMapper(dataID)
         groupingColorMapper = self.getGroupingColorMapper(dataID)
@@ -544,10 +811,6 @@ class Data(object):
                 N = len(idxs)
                 N_sig = sigIdx.size
 
-               # XX = X.loc[sigIdx,expColumns]
-
-
-
                 if N_sig > 0:
                    
                     pathwaySigs.append( 
@@ -585,7 +848,7 @@ class Data(object):
             for pathwayName, idxs in pathwayIDMatch.items():
                 geneNames = mitoGeneNames.loc[idxs]
                 #print(self.getDataForCard(dataID,idxs[0],{})["chart"])
-                boxplotData = self._getBoxplotDataForMultipleFeatures(dataID,idxs,title=pathwayName)
+                boxplotData = self._getBoxplotDataForMultipleFeatures(dataID,idxs)
                 pathwayIntensities[pathwayName] = boxplotData#self.getDataForCard(dataID,idxs[0],{})["chart"]
                 #sort features by significance
                 pathwayIDMatches[pathwayName] = sorted([{"name" : geneNames.iloc[n], "idx":idx, "sig" : idx in boolIdx.values} for n,idx in enumerate(idxs)], key=lambda d: d["sig"], reverse=True)           
@@ -600,7 +863,7 @@ class Data(object):
         return False, "DataID not found."
 
     
-    def _getBoxplotDataForMultipleFeatures(self,dataID,featureIDs,title=""):
+    def _getBoxplotDataForMultipleFeatures(self, dataID : str,featureIDs : list) -> dict:
         ""
         meltedData = self.getDataForFeatures(dataID,featureIDs,zscore_transform=True)
         
@@ -612,7 +875,7 @@ class Data(object):
         groupingNames = list(groupings.keys())
        
         minValue, maxValue = meltedData["value"].quantile(q=[0,1]).values
-        marginRange = np.sqrt((maxValue- minValue)**2) * 0.05
+        marginRange = getChartMarginFromMinMaxValues(minValue,maxValue) 
         
         groupedData = meltedData.groupby(by = groupingNames,sort=False) #level_X == quantile due to reset_index
         boxplotData = groupedData.quantile(q=[0,0.25,0.5,0.75,1]).reset_index() 
@@ -620,9 +883,6 @@ class Data(object):
         boxplotData[quantileColumnName] = boxplotData[quantileColumnName].replace([0,0.25,0.5,0.75,1],["min","q25","m","q75","max"])
 
         v, legendTitle, legendData, tickLabel, legendItems = self._getDataForBoxplot(boxplotData,groupedData,groupings,groupingNames,groupingColorMapper,quantileColumnName)
-        #print(legendData)
-        
-        #print(v)
 
         chartData = {"graphType":{"1":"boxplot"},
                         "graphData":{
@@ -639,26 +899,21 @@ class Data(object):
                             }, 
                         
             }
-
-       # print(chartData)
-
         return chartData 
 
 
-    def _checkOneWayANOVADetails(self, anovaDetails):
+    def _checkOneWayANOVADetails(self, anovaDetails : dict) -> Tuple[bool,str]:
         ""
-        if "pvalue" not in anovaDetails:
-                return False, "No p-value cutoff found."
-        if "anovaType" not in anovaDetails:
-                return False, "No anovaType found."
-        if "grouping1" not in anovaDetails:
-                return False, "Grouping 1 not found"
+        for feature in ["pvalue","anovaType","grouping1"]:
+            if feature not in anovaDetails:
+                return False, f"No value for {feature} found"
+       
         return True, ""
 
-    def _checkTwoWayANOVADetails(self, anovaDetails, groupingNames):
+    def _checkTwoWayANOVADetails(self, anovaDetails : dict, groupingNames) -> Tuple[bool,str]:
         ""
         if "grouping2" not in anovaDetails:
-                    return False, "2nd Grouping for ANOVA not provided."
+            return False, "2nd Grouping for ANOVA not provided."
         grouping2 = anovaDetails["grouping2"]
         if grouping2 == anovaDetails["grouping1"]:
             return False, "Grouping1 equals Grouping2"
@@ -671,7 +926,7 @@ class Data(object):
 
         return True, grouping2
 
-    def _getOneWayANOVASignificanceHits(self,anovaDetails):
+    def _getOneWayANOVASignificanceHits(self,anovaDetails : dict):
         ""
         anovaType = anovaDetails["anovaType"]
         anovaCutoff = anovaDetails["pvalue"]
@@ -679,7 +934,7 @@ class Data(object):
         
         return anovaType, anovaCutoff, grouping1
 
-    def _performOneWayANOVA(self,X,groupings,grouping1,anovaCutoff):
+    def _performOneWayANOVA(self,X,groupings,grouping1,anovaCutoff : float):
         ""
         results = pd.DataFrame(index = X.index)
         testGroupData = [X[columnNames].values for columnNames in groupings[grouping1].values()]
@@ -692,7 +947,7 @@ class Data(object):
 
         return boolIdx, selectionpvalues, pvalueNames
 
-    def _performTwoWayANOVA(self,X,expColumns,anovaDetails,groupings,grouping1,grouping2,anovaCutoff):
+    def _performTwoWayANOVA(self,X,expColumns,anovaDetails : dict,groupings : dict, grouping1 : str,grouping2 : str,anovaCutoff : float):
         ""
         cutoffPValueColumn = anovaDetails["pvalueType"]
         anovaGrouping = OrderedDict([(k,v) for k,v in groupings.items() if k in [grouping1,grouping2]])
@@ -706,7 +961,7 @@ class Data(object):
 
         return boolIdx,selectionpvalues,pvalueNames
 
-    def getHeatmapData(self,dataID,anovaDetails={"pvalue":0.0001}):
+    def getHeatmapData(self,dataID : str, anovaDetails={"pvalue":0.0001}):
         ""
         if dataID in self.dfs:
 
@@ -826,14 +1081,11 @@ class Data(object):
                 }
 
             }
-    #        n : 5,
-    # values : [[-1,2,3,4],[2,2,3,4,1,-3,-3,4,5,2],[1,2,1,-1],[1,2,1,-1],[1,2,1,-1]],
-    # nValuesInCluster : [3,400,5,6,6],
-    # clusterColors : ["red","green","blue","yellow","orange"]
+   
             return True, out
         return False, "Unknwon error."
 
-    def getVolcanoData(self,dataID,grouping):
+    def getVolcanoData(self,dataID : str, grouping : dict):
         ""
        
         if dataID in self.dfs:
@@ -869,7 +1121,6 @@ class Data(object):
                
             #get highlight column data 
             highlightFeatures = OrderedDict() 
-            highlightMenuBuilder = OrderedDict() 
             if len(highlightColumns) > 0:
                 
                 data = data.join([self.dbManager.getDBInfoForFeatureListByColumnName(d.index,colName,checkShape=False).fillna("-") for colName in highlightColumns])
@@ -894,9 +1145,12 @@ class Data(object):
             diff["y"] = (-1)*np.log10(p)
             diff["s"] = boolIdx
             
-            diff = diff.join(data[filterColumns + [annotationColumn]])
+            diff = pd.concat([diff,data[filterColumns + [annotationColumn]]],axis=1)
             
             diff = diff.reset_index()
+            
+            diff = diff.rename({"index":"Key"})
+
             # print(self.dbManager.getDBInfoForFeatureListByColumnName(X.index,annotationColumn,checkShape=False).values.flatten())
             #diff = diff.join(pd.Series(self.dbManager.getDBInfoForFeatureListByColumnName(X.index,annotationColumn,checkShape=False).values.flatten(), 
              #               name="l"))
@@ -967,71 +1221,40 @@ class Data(object):
 
         return v, legendTitle, legendData, tickLabel, legendItems
 
-    def getDataForCard(self,dataID,featureID,filterName):
-        ""
-        meltedData = self.getDataForFeatures(dataID = dataID, featureIDs=[featureID])
-       # groupingMapper = self.getGroupingMapper(dataID)
-        groupingColorMapper = self.getGroupingColorMapper(dataID)
-        groupings = self.getParam(dataID,"groupings") 
+    def getDataForCard(self, dataID : str,featureID : list, filterName : str) -> Dict[str,Any]:
+        """Extracts data for boxplot visualization"""
+
+        dataset = self.getDataset(dataID)
+        if dataset is None : return {"success" : False}
+
+        meltedData = dataset.getMeltedData([featureID])
+        groupingColorMapper = dataset.getGroupingColorMapper()
+        groupings, groupingNames = dataset.getGroupingsAndNames()
         
-        if groupings is None: return {}
-        groupingNames = list(groupings.keys())
-       
         minValue, maxValue = meltedData["value"].quantile(q=[0,1]).values
-        marginRange = np.sqrt(maxValue**2 - minValue**2) * 0.05
+        marginRange = getChartMarginFromMinMaxValues(minValue,maxValue) 
+        # group data on groupingNames meltedData function adds them
         groupedData = meltedData.groupby(by = groupingNames,sort=False) #level_X == quantile due to reset_index
-        boxplotData = groupedData.quantile(q=[0,0.25,0.5,0.75,1]).reset_index() 
+        quantileData = groupedData.quantile(q=[0,0.25,0.5,0.75,1]).reset_index() 
         quantileColumnName = "level_{}".format(len(groupingNames)) # get name for quantile
-        boxplotData[quantileColumnName] = boxplotData[quantileColumnName].replace([0,0.25,0.5,0.75,1],["min","q25","m","q75","max"])
+        quantileData[quantileColumnName] = quantileData[quantileColumnName].replace([0,0.25,0.5,0.75,1],["min","q25","m","q75","max"])
         try:
             statsData = anova(meltedData,dv="value",between=groupingNames)
             statsData.columns = [pingouinColumn[colName] if colName in pingouinColumn else colName for colName in statsData.columns]
-        # ´handle data extraction depending on the number of groupings
         except:
             statsData = pd.DataFrame(["ANOVA could not be calculated."], columns=["Error"])
-
-        v, legendTitle, legendData, tickLabel, legendItems = self._getDataForBoxplot(boxplotData,groupedData,groupings,groupingNames,groupingColorMapper,quantileColumnName)
-        # v = []
-        # if len(groupingNames) == 1:
-        #     tickLabel = [""]
-        #     for groupName,groupData in boxplotData.groupby(groupingNames,sort=False):
-        #         groupData.loc[:,"value"] = groupData["value"].replace({np.nan: None})
-        #         N = groupedData.get_group(groupName).dropna(subset=["value"]).index.size
-        #         vv = dict([(idx,value) for idx,value in groupData.loc[:,[quantileColumnName,"value"]].values])
-        #         vv["fillColor"] = groupingColorMapper[groupingNames[0]][groupName]
-        #         vv["n"] = N
-        #         v.append(vv)
-        #     legendTitle = groupingNames[0]
-        #     legendData = groupingColorMapper[legendTitle]
-        #     v = [v]
-        #     #return {"success":True,"download":meltedData.to_json(orient="records"),"chart":chartData,"statsData":statsData.to_json(orient="records")}
-        # elif len(groupingNames) == 2:
-        #     tickLabel = [group for group in groupings[groupingNames[0]].keys()]
-        #     #calculate statistics
-
-        #     groupedBoxData = boxplotData.groupby(groupingNames,sort=False)
-        #     for groupName1 in groupings[groupingNames[0]].keys():
-        #         vi = []
-        #         for groupName2 in groupings[groupingNames[1]].keys():
-                    
-        #             groupData = groupedBoxData.get_group((groupName1,groupName2))
-        #             N = groupedData.get_group((groupName1,groupName2)).dropna(subset=["value"]).index.size
-        #             groupData.loc[:,"value"] = groupData["value"].replace({np.nan: None})
-
-        #             vv = dict([(idx,value) for idx,value in groupData.loc[:,[quantileColumnName,"value"]].values])
-        #             vv["fillColor"] = groupingColorMapper[groupingNames[1]][groupName2]
-        #             vv["n"] = N  
-        #             vi.append(vv)
-        #         v.append(vi)
-        #     legendTitle = groupingNames[1]
-        #     legendData = groupingColorMapper[legendTitle]
-                    
-               # if len(groupings) == 1:
-                
-                    
-            #print(v)
+        jsonStatsData = statsData.to_json(orient="records")
+        v, legendTitle, legendData, tickLabel, legendItems = self._getDataForBoxplot(
+                                                                    quantileData,
+                                                                    groupedData,
+                                                                    groupings,
+                                                                    groupingNames,
+                                                                    groupingColorMapper,
+                                                                    quantileColumnName)
+        
             
-        chartData = {"graphType":{"1":"boxplot"},
+        chartData = {"graphType":{
+                    "1":"boxplot"},
                         "graphData":{
                             "1":{
                                 "minValue" : minValue - marginRange,
@@ -1043,10 +1266,16 @@ class Data(object):
                                 "legendTitle" : legendTitle,
                                 "legendItems" : legendItems
                             }
-                            }, 
-                        
-            }
-        
-        #print(chartData)
+                            }
+                }
 
-        return {"success":True,"download":meltedData.to_json(orient="records"),"chart":chartData,"statsData":statsData.to_json(orient="records")}
+        return {
+            "success":True,
+            "download":meltedData.to_json(orient="records"),
+            "chart":chartData,
+            "statsData":jsonStatsData
+            }
+
+
+
+

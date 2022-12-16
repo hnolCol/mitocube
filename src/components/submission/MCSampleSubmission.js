@@ -1,27 +1,16 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 
 import axios from "axios";
-import { Alert, Button, ButtonGroup, Code, EditableText, InputGroup, NumericInput, Position } from "@blueprintjs/core";
+import { Alert, Button, ButtonGroup, Code, EditableText, InputGroup, NumericInput } from "@blueprintjs/core";
 import { MCCombobox } from "../utils/components/MCCombobox";
-import { saveSubmission, getSavedSubmission, extractNamePrefix } from "../utils/Misc";
+import { saveSubmission, getSavedSubmission, extractNamePrefix, downloadJSONFile } from "../utils/Misc";
 import _, { isObject } from "lodash";
 import { MCGroupingTable } from "./MCGroupingTable";
 import { DateInput2 } from "@blueprintjs/datetime2";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Text } from "@visx/text";
 
-const icon = {
-    hidden: {
-        pathLength: 0,
-        fill: "rgba(255, 255, 255, 0)"
-    },
-    visible: {
-        pathLength: 1,
-        fill: "rgba(255, 255, 255, 1)",
-        transition: { duration: 4 }
-    }
-};
+
 const initAlert = {
     isOpen:false,
     children:null,
@@ -54,7 +43,8 @@ export function MCSampleSubmission (props) {
     useEffect(() => {
 
         let s = getSavedSubmission()
-        if ( s!==null&&s!==undefined&&isObject(s)&&Object.keys(s).includes("id")&&Object.keys(s).includes("time")){
+        let submissionHeaders = isObject(s)?Object.keys(s):[]
+        if (submissionHeaders.includes("id")&&submissionHeaders.includes("time")){
                     
             setSubmission(s)   
 
@@ -62,20 +52,29 @@ export function MCSampleSubmission (props) {
         else {
         axios.get('/api/data/submission/id',{params:{token:props.token}}).then(response => {
                 if (response.status === 200 & response.data["success"]){
-                        console.log(response.data)
                         setSubmission({
                             id:response.data["id"],
                             time:response.data["time"],
-                            details:
-                               submission.details
-                            ,
-                            groupingTable:initSubmission.groupingTable}) }
+                            details:submission.details,
+                            groupingTable: initSubmission.groupingTable
+                        })
+                }
                 else {
                     console.log("API ERROR")    
                 }
             })}
       }, []);
 
+    useEffect(() => {
+        axios.get('/api/data/submission/details',{params:{token:props.token}}).then(response => {
+                if (response.status === 200 & response.data["success"]){
+                    setDetails(response.data.details)
+                }
+                else {
+                    setDetails([])
+                }
+            })
+      }, [props.token]);
 
     
     const saveSubmissionValue = (detailName,value,minValue = undefined) => {
@@ -128,14 +127,15 @@ export function MCSampleSubmission (props) {
     }
 
     const resetForm = () => {
-
+  
+        let detailsWithDefault = Object.fromEntries(details.filter(detailItem => detailItem.default!== undefined && detailItem.default !== "").map(detailItem => [detailItem.name, detailItem.default]))  
         setSubmission(prevValues => {
-            return { ...prevValues, "details":{}, "groupingTable":initSubmission["groupingTable"]}})
+            return { ...prevValues, "details": detailsWithDefault, "groupingTable":initSubmission["groupingTable"]}})
         saveSubmission(null)
     }
 
     const saveSubmissionDetailsToLocalStorage = () =>{
-       
+        
         saveSubmission(submission)
     }
 
@@ -160,7 +160,6 @@ export function MCSampleSubmission (props) {
         columnNames[columnIndex]  = value 
         tableData.columnNames = columnNames
 
-        console.log(tableData)
         setSubmission(prevValues => {
             return { ...prevValues, "groupingTable":tableData}})
     }
@@ -180,14 +179,26 @@ export function MCSampleSubmission (props) {
                     'Content-Type': 'application/json'
                 }}, 
             ).then(response => {
-                
+                    console.log(response.data)
                     if (!response.data.success) {
                         setAlertDetails(prevValues => {
                             return { ...prevValues, "isOpen":true,"children":<div>{response.data.msg}</div>,"icon":"issue"}})
                     }
                     else {
                         setAlertDetails(prevValues => {
-                            return { ...prevValues, "isOpen":true,"children":<div>Submission complete. You will receive a confirmation email.</div>,"icon":"tick","intent":"success"}})
+                            return {
+                                ...prevValues, "isOpen": true, "children":
+                                    <div>
+                                        Submission complete. You will receive a confirmation email.
+                                        <Button
+                                            text="Download summary."
+                                            icon="download"
+                                            intent="primary"
+                                            onClick={e => downloadJSONFile(response.data.paramsFile, `params-${response.data.paramsFile.dataID}`)} minimal={true} />
+                                    </div>,
+                                "icon": "tick", "intent": "success"
+                            }
+                        })
                     }
                 }
                 )
@@ -198,13 +209,14 @@ export function MCSampleSubmission (props) {
         setAlertDetails(initAlert)
     }
 
-    const handleTemplateInput = (columnNames,dataTable,nReplicates,nSamples) => {
+    const handleTemplateInput = (columnNames,dataTable,nReplicates,nSamples,nGroupings) => {
         // handle templete input (e.g. loaded from a txt file)
         
         let tableData = {columnNames:columnNames,data:dataTable}
         let subDetails = submission.details
         subDetails["n_samples"] = nSamples
         subDetails["n_replicates"] = nReplicates
+        subDetails["n_groupings"] = nGroupings
 
         //update
         setSubmission(prevValues => {
@@ -213,6 +225,7 @@ export function MCSampleSubmission (props) {
  
   
     const onScroll = (e) => {
+        // handle scroll
         const currentScrollY = e.target.scrollTop;
         const h = e.target.scrollHeight-e.target.clientHeight
         
@@ -247,15 +260,17 @@ export function MCSampleSubmission (props) {
                                 width:`${200*scrollPosition}px`}}
        />
 
-
             </div>
             <div>
                 <h2>Sample submission</h2>
                 <h3>{submission.id}</h3> 
                 <Code>{submission.time}</Code>
-                <p>Please fill out all fields below regarding your proteomics sample submisison.</p>
+                <p>
+                    Please fill out all fields below regarding your proteomics sample submisison. An E-Mail will be sent to the provided email below.
+                    Noteworthy, you can enter multiple E-Mails if required separated by a comma. Emails about the state of the project will be send to all adresses
+                    Example: name1@email.de,name2@email.com</p>
             </div>
-            <div style={{height : "77vh", overflowY : "scroll", paddingRight:"1rem"}} onScroll={onScroll}>
+            <div style={{height : "75vh", overflowY : "scroll", paddingRight:"1rem",marginTop:"0.7rem",marginBottom:"0.7rem"}} onScroll={onScroll}>
                 <MCSubmissionDetails 
                     token = {props.token} 
                     submission = {submission.details} 
@@ -276,7 +291,7 @@ export function MCSampleSubmission (props) {
                 </div>
             </div>
             <ButtonGroup minimal={false}>
-                <Link to="/"><Button text = {"Cancel"} intent="danger" /></Link>
+                <Link to="/"><Button text = {"Back"} intent="danger" /></Link>
                 <Button text={""} onClick={resetForm} icon="refresh"/>
                 <Button text={""} onClick={saveSubmissionDetailsToLocalStorage} icon="floppy-disk"/>
                 <Button text={"Submit"} intent="primary" icon="send-to" onClick={submitExperiment}/>
@@ -313,17 +328,7 @@ function checkDetailInput(submission,details) {
 
 
 function MCSubmissionDetails (props) {
-    const {submission,saveSubmissionValue, details, setDetails, date} = props
-    useEffect(() => {
-        axios.get('/api/data/submission/details',{params:{token:props.token}}).then(response => {
-                if (response.status === 200 & response.data["success"]){
-                    setDetails(response.data.details)
-                }
-                else {
-                    console.log("API ERROR")    
-                }
-            })
-      }, []);
+    const {submission,saveSubmissionValue, details, date} = props
 
 
     return(
@@ -372,14 +377,14 @@ function MCSubmissionDetails (props) {
 
 
 function MCDateInput(props) {
-    const {q,field, detailName, cb, initValue } = props 
+    const {detailName, cb, initValue } = props 
     const [dateValue, setDateValue] = useState()
 
     const valueToShow = dateValue === undefined && initValue !== undefined && initValue.length === 8? `${initValue.substring(0,4)}-${initValue.substring(4,6)}-${initValue.substring(6)}` :dateValue
 
     useEffect(()=>{
-
-        if (initValue !== "") {
+        // save default 
+        if (initValue !== "" && _.isFunction(cb)) {
             // save default 
             cb(props.detailName,valueToShow)
            
@@ -398,13 +403,13 @@ function MCDateInput(props) {
     return(
         <div style={{width:"100%",minHeight:"2.5rem",maxHeight:"2.5rem",paddingTop:"0.5rem"}}>
         <DateInput2 
-                                parseDate={str => str.split(" ")[0].replace("-","").replace("-","")}
-                                onChange = {handleDateChange}
-                                placeholder="YYYYMMDD" 
-                                formatDate={date => `${date.getFullYear()}-${date.getMonth()+1>9?"":"0"}${date.getMonth()+1}-${date.getDate()+1>9?"":"0"}${date.getDate()}`} 
-                                closeOnSelection={true} 
-                                fill={true}
-                                value = {valueToShow}/>
+            parseDate={str => str.split(" ")[0].replace("-","").replace("-","")}
+            onChange = {handleDateChange}
+            placeholder="YYYYMMDD" 
+            formatDate={date => `${date.getFullYear()}-${date.getMonth()+1>9?"":"0"}${date.getMonth()+1}-${date.getDate()+1>9?"":"0"}${date.getDate()}`} 
+            closeOnSelection={true} 
+            fill={true}
+            value = {valueToShow}/>
         </div>
     )
 }
@@ -425,7 +430,7 @@ function MCTextFieldInput(props) {
         <div style={{width:"100%",minHeight:"7rem",maxHeight:"7rem",marginTop:"10px",backgroundColor:"white"}}>
             {title!==undefined?<div style={{fontSize:"0.85rem",fontWeight:"bold"}}>{title}</div>:null}
             <div style={{overflowY:"hidden",overflowX:"hidden",height:"5rem",marginTop:"2px",marginRight:"2px"}}>
-            <EditableText {...rest} onChange={value => props.cb(props.detailName,value)} multiline={true} minLines={6}/>
+            <EditableText {...rest} onChange={value => props.cb(props.detailName,value)} multiline={true} minLines={8}/>
             </div>
         </div> 
     )

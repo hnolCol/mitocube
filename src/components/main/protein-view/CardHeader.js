@@ -1,4 +1,4 @@
-import { ButtonGroup, Menu, MenuItem } from "@blueprintjs/core";
+import { Button, ButtonGroup, Menu, MenuItem } from "@blueprintjs/core";
 import { Popover2 } from "@blueprintjs/popover2";
 import { MCIndicatorCircle, MCMenuIcon } from "./Layout";
 import { downloadTxtFile, arrayOfObjectsToTabDel, downloadSVGAsText } from "../../utils/Misc";
@@ -47,7 +47,7 @@ export function MCCardHeader(props){
                                 />:null}
                             {props.dataID !== null?
                             <Link style={{ textDecoration: 'none' }} to={`/dataset/${props.dataID}`} target="_blank" rel="noopener noreferrer"> 
-                                <MenuItem icon={"satellite"} minimal={"true"} intent={"danger"} text = {"Explore dataset"}/> 
+                                <Button fill={true} icon={"satellite"} minimal={"true"} intent={"danger"} text = {"Explore dataset"}/> 
                             </Link>:null}
                             <MenuItem text="Save image" icon={"graph"} onClick={() => {
                                             saveSvgAsPng.saveSvgAsPng(document.getElementById(`${props.id}`), `MitoCubeImg(${props.label}-${props.dataID}).png`, imageOptions)}}/>

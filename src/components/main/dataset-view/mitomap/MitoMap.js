@@ -8,23 +8,20 @@ import { MCAnimatedPercentage } from "../../../utils/components/MCSVGUtils";
 import { MCDoubleMembrane, MCPathwayItems, MCSVGBackgroundGradient } from "./utils";
 import {MCClusterANOVASelection} from "../MCScaledHeatmap";
 import { MCSpinner } from "../../../spinner/MCSpinner";
-import { MCMinimalBoxplot } from "../../charts/types/MCMinimalBoxplot";
 import {MCSVGFrame} from "../../charts/AxisContainer"
 import _ from "lodash";
-import { Link } from "react-router-dom";
+
 export function MCMitoMap(props) {
 
     const {token, dataID,groupingNames, mitoMapData, setMitoMapData, setMitoMapANOVADetails} = props
     
-    //const [mitomapPathways, setMitomap] = useState({main:{},second:{},pathwayIDMatch:{}})
-    //const [pathwayDetails, setPathwayDetails] = useState({title:undefined,items:[],metricName:""})
     const mitomapPathways = mitoMapData.mitomapPathways
     const pathwayDetails = mitoMapData.selectedPathway
-   
 
     useEffect(() => {
-
+        // handles data loading
         if (Object.keys(mitoMapData.mitomapPathways).length !== 0) return 
+        if (!_.isFunction(setMitoMapData)) return 
 
         if (mitoMapData.anovaDetails===undefined  ||  Object.keys(mitoMapData.anovaDetails).length === 0) return 
         
@@ -42,12 +39,22 @@ export function MCMitoMap(props) {
                     pathwayIntensities  :  response.data.data.pathwayIntensities
                 }
                 setMitoMapData(prevValues => {
-                    return { ...prevValues,"mitomapPathways":data,"isLoading":false,"msg":`${response.data.data.numberProteins} of the MitoCarta 3.0 were detected.`}
+                    return {
+                        ...prevValues,
+                        "mitomapPathways": data,
+                        "isLoading": false,
+                        "msg": `${response.data.data.numberProteins} of the MitoCarta 3.0 were detected.`
+                    }
                   })
             }
             else if (response.data === undefined) {
                 setMitoMapData(prevValues => {
-                    return { ...prevValues,"mitomapPathways":{},"isLoading":false,"msg":"API did not return any data. Please contact the website admin."}
+                    return {
+                        ...prevValues,
+                        "mitomapPathways": {},
+                        "isLoading": false,
+                        "msg": "API did not return any interpretable data. Please contact the website admin."
+                    }
                   })
             }
             else {
@@ -58,7 +65,7 @@ export function MCMitoMap(props) {
             }
             }
         )
-      }, [token,dataID, mitoMapData.anovaDetails]);
+      }, [token, dataID, mitoMapData.anovaDetails]);
 
 
 

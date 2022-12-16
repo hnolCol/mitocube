@@ -24,14 +24,13 @@ function MCMinimalClusterView(props) {
         }
     )
 
-   
+    const heightGroupingRect = 13
     const minXValue = xscale(-0.5)
     const midPoint = 0+margin.left+(width-margin.right)/2
     const barWidth = xscale.bandwidth()
-
     const yscale = scaleLinear(        {
                 domain : [maxValue, -maxValue],
-                range : [0+margin.top,height-margin.bottom-groupingNames.length*barWidth]
+                range : [0+margin.top,height-margin.bottom-groupingNames.length*heightGroupingRect]
             })
         
     const minYValue = yscale(-maxValue)
@@ -41,12 +40,12 @@ function MCMinimalClusterView(props) {
             
             <rect x = {0} y = {0} width={width} height={height} fill="#f2f2f2"/>
             <rect x = {midPoint-40} y = {2} width={80} height={10} fill={selected?mouseOverColor:"transparent"}/>
-            <Text x = {midPoint} y = {4} fontWeight={selected?500:350} textAnchor={"middle"} verticalAnchor={"start"} fontSize={9}>{`Cluster ${clusterIndex} `}</Text>
+            <Text x = {midPoint} y = {4} fontWeight={selected?500:350} textAnchor={"middle"} verticalAnchor={"start"} fontSize={9}>{`C(${clusterIndex})`}</Text>
             <Text x = {width-margin.right} y = {0} verticalAnchor="start" textAnchor="end" fontSize={10}>{`${mouseOverText}`}</Text>
             <line x1 = {0+margin.left} x2={width-margin.right} y1={yscale(0)} y2={yscale(0)} stroke="black" strokeWidth={selected?0.75:0.25}/>
             <line x1 = {0+margin.left} x2={0+margin.left} y1={minYValue} y2={yscale(maxValue)} stroke="black" strokeWidth={selected?0.75:0.25}/>
             {vs.map((p,i) => {
-                const barX = xscale(i);
+                const barX = xscale(i );
                 // const barY = maxValue - barHeight;
                 const barGoesDown = p < 0 
                 const barHeight = barGoesDown?yscale(p)-yscale(0):yscale(0)-yscale(p)
@@ -65,21 +64,30 @@ function MCMinimalClusterView(props) {
                             onMouseEnter={e => setMouseOverBarIndex(i)}
                             onMouseLeave={e => setMouseOverBarIndex(undefined)}/>
 
-                    {mouseOver || selected?groupingNames.map((groupingName,ii) => {
+                    {mouseOver || selected ? groupingNames.map((groupingName, ii) => {
+                       
                         let n = hoverColorAndGroups[i][0][ii]
                         let hexColor = hoverColorAndGroups[i][1][ii]
-                        let labelOnRightSide = barX / width < 0.55
+                        let labelOnRightSide = barX / width < 0.50
                         let xtext = labelOnRightSide?barX + barWidth+5:barX-5
                         let widthtext = labelOnRightSide? width - xtext - margin.right : xtext 
                         
                             return(
                                 <g key = {`${ii} - legen bars label`}>
-                                <rect x = {barX} y = {yscale(-maxValue)+5 + barWidth * ii} width={barWidth} height={barWidth*0.85} fill={hexColor} stroke="black" strokeWidth={0.5} 
-                                opacity={mouseOverBarIndex===undefined?1:mouseOverBarIndex===i?1:0.2}/>
+                                    <rect
+                                        x={barX}
+                                        y={yscale(-maxValue) + 5 + heightGroupingRect * ii}
+                                        width={barWidth}
+                                        height={heightGroupingRect}
+                                        fill={hexColor}
+                                        stroke="black"
+                                        strokeWidth={0.5} 
+                                        opacity={mouseOverBarIndex === undefined ? 1 : mouseOverBarIndex === i ? 1 : 0.2}
+                                    />
                                 {mouseOverBarIndex!==undefined&&mouseOverBarIndex===i?
                                     <Text 
                                                 x = {xtext} 
-                                                y = {yscale(-maxValue)+5 + barWidth * ii + barWidth/2} 
+                                                y = {yscale(-maxValue)+5 + heightGroupingRect * ii + heightGroupingRect/2} 
                                                 textAnchor={labelOnRightSide?"start":"end"}
                                                 verticalAnchor="middle" 
                                                 fontSize={10}
@@ -101,10 +109,7 @@ function MCMinimalClusterView(props) {
                 )
             })}
                 
-            {/* <polyline points = {`${vs.map((p,i) => ' ' + xscale(i) + ',' + yscale(p))}`} 
-                                fill={"transparent"} 
-                                stroke={mouseOver || selected?mouseOverColor:"black"} 
-                                strokeWidth={mouseOver || selected?2:0.9}/> */}
+        
             {mouseOver?<Text x={minXValue+5} y={minYValue-5} fontSize={8}>{mouseOverText}</Text>:null}
         </g>
     )
@@ -157,23 +162,34 @@ export function MCClusterOverview(props) {
     }
     return (
 
-        <div style={{flexDirection:"row",flexWrap:"wrap",display:"flex",minWidth:"200px",maxWidth:"400px",height:"85vh",overflowY:"scroll",marginTop:"2rem"}}>
+        <div style={
+            {
+                flexDirection: "row",
+                flexWrap: "wrap",
+                display: "flex",
+                minWidth: "80px",
+                maxWidth: "400px",
+                height: "85vh",
+                overflowY: "scroll",
+                marginTop: "2rem"
+            }}>
             {clusterIndexValues.map((clusterIndex, idx) => {
                 const selectedCluster = clusterIndexToShow.includes(clusterIndex)
+                let widthForGroupings = 80+groupingNames.length*30
                 return(
-                    <div key={`clust${clusterIndex}`} style={{width:"200px"}}>
-                        <svg width={180} height={110} 
+                    <div key={`clust${clusterIndex}`} >
+                        <svg width={widthForGroupings+10} height={110} 
                             onMouseUp={e => handleClusterSelection(e,clusterIndex)} 
                             onMouseEnter={e => setMouseOverIndex(clusterIndex)} 
                             onMouseLeave={e => setMouseOverIndex()}>
                                 
-                            <rect x = {0} y = {0} width={180} height={110} fill="#efefef" />
+                            <rect x = {0} y = {0} width={widthForGroupings} height={110} fill="#efefef" />
                             <MCMinimalClusterView 
                                 vs = {values[idx]} 
-                                width = {170} 
+                                width = {widthForGroupings} 
                                 height={100} 
                                 clusterIndex = {clusterIndex} 
-                                mouseOverText = {`n=${nValuesInCluster[idx]}`} 
+                                mouseOverText = {`${nValuesInCluster[idx]}`} 
                                 mouseOverColor = {clusterColors[clusterIndex]}
                                 mouseOver = {clusterIndex===mouseOverIndex}
                                 groupingColorMapper = {groupingColorMapper}
@@ -183,44 +199,6 @@ export function MCClusterOverview(props) {
                                 hoverColorAndGroups = {hoverColorAndGroups}
                                 />
                     
-                    
-                    
-                    {/* {groupingNames.map((groupingName,groupingIndex) => {
-                        return(
-
-                            <g key={`${groupingName}-groupHeader`}>
-                            
-                            {_.range(nColumns).map(columnIndex => {
-                                
-
-                                
-                                const bgColor = groupColorValues[groupingName][columnIndex]
-                                // groupingColorMapper[groupingNames[groupIndex]][groupItem]
-                                return(
-                                    <rect 
-                                            key={`heat-rect-group-${columnIndex}-${groupingName}-${groupingIndex}`}
-                                            x = {columnIndex*binHeight+binHeight+5} 
-                                            y={groupingIndex*binHeight+15} 
-                                            width={binHeight} 
-                                            height = {binHeight} 
-                                            fill = {bgColor} 
-                                            stroke="black" 
-                                            strokeWidth={0.1}/>
-                                )
-                            })}
-                            <Text  
-                                    x = {(nColumns+1)*binHeight+binHeight/4+5} 
-                                    y={groupingIndex*binHeight+binHeight/2+15} 
-                                    fontSize={10} 
-                                    textAnchor={"start"} 
-                                    verticalAnchor={"middle"}>
-                                        {`${groupingName}`}
-                                </Text>
-                            </g>
-                        )
-                        
-
-                    })} */}
                         </svg>
                     </div>
                 )

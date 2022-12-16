@@ -11,11 +11,19 @@ const FAQ =   [
             and MitoCube graphs styles are inspired by the software output.</p>
     },
     {
+        q:"How to inspect experimental information?",
+        a:
+            <p>Each result card allows you to open a context menu in the right top corner of the <Link to="/help/cards/header">card's header menu icon</Link>.
+                Once the menu is open, select 'Experimental info' and a new window will open on the right side of the screen. 
+            </p>
+    },
+    {
         q:"How to save the graph?",
         a:
             <p>You can download the graph using the <Link to="/help/cards/header">menu icon</Link>. You can choose between the .png and .svg format. Using 
             svg (scallable vector graphic) allows you to open the graph in software tools such as Adobe illustrator or Coreldraw to adapt the graph to your needs.</p>
-    }
+    },
+    
 ]                  
     
 
@@ -37,7 +45,7 @@ export const helpDetails = {
                             whole proteome experiments.
                         </p></li>
                         <li><p>Median intensity represented as in a boxplot.</p></li>
-                        <li>Analysis of variance (N-way ANOVA) depending on the number of groupings available.</li>
+                        <li>Analysis of variance (N-way ANOVA) depending on the number of groupings available. At the moment, analysis is limited to two groups.</li>
                     </ol>
                     <p>Please see the image below of the summary card.</p>
                 </div>,
@@ -94,5 +102,13 @@ export const helpDetails = {
                     )})}
 
                 </div>        
-    
+    ,
+    "API-config":
+                <div>
+                    <h2>Application Programming Interface</h2>
+            <p>Customizing the MitoCube Web Application is mainly driven by 
+                adjusting the main-configure file. Additionally, you need to provide an annotation
+                data base. The <a href="https://github.com/hnolcol/mitocube">GitHub page</a>contains more information.
+                    </p>
+                </div>
 }

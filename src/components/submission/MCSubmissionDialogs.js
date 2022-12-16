@@ -3,8 +3,6 @@ import React from 'react'
 import { useState, useEffect } from 'react'
 import {InputGroup, Dialog, Button, ButtonGroup, Menu, MenuItem, TextArea, H6, H5} from '@blueprintjs/core'
 import _ from "lodash"
-import { MCAddButton } from '../utils/components/MCAddButton'
-import { MCAdminUserView } from '../main/admin/User'
 import { Popover2 } from '@blueprintjs/popover2'
 
 
@@ -130,7 +128,7 @@ export function MCMethodEditingDialog (props) {
                     )
                 })}
                 </div>
-
+                
                 <ButtonGroup >
                     <Button text="Edit" onClick={submitChanges} intent="primary"/>
                    
@@ -156,7 +154,7 @@ export function MCGroupingNameDialog (props) {
         const renameDict = Object.fromEntries(groupingNames.map(v=>[v,v]))
         setRenameDict(renameDict)
     
-    }, [])
+    }, [groupingNames])
 
 
     const handleInputChange = (detailName, value) => {

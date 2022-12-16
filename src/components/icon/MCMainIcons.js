@@ -37,8 +37,8 @@ export const MCNeoNtermiomicsIcon = (props) => {
             d="M37.9,54.9c-1.4,0-2.6,1.1-2.6,2.6v2c0,1.4,1.1,2.6,2.6,2.6h11.7v-7.1H37.9z"/>
 
         {/* <circle style={{stroke:"#000000",strokeWidth:0.4,strokeMiterlimit:10}} fill={"#C3931C"} cx="54.5" cy="16.6" r="3.3" opacity={mouseIn?1:0.3}/> */}
-        <circle style={{stroke:"#000000",strokeWidth:0.4,strokeMiterlimit:10}} fill={"#C3931C"} cx="70.9" cy="53.2" r={"3.3"} opacity={mouseIn?1:0.3}/>
-        <polygon style={{fill:"#C3341C",stroke:"#000000",strokeWidth:0.4,strokeMiterlimit:10}} points="70.1,31.8 68.2,28.4 70.1,25 74.1,25 76.1,28.4 74.1,31.8 " opacity={mouseIn?1:0.3}/>
+        <circle style={{stroke:"#000000",strokeWidth:0.4,strokeMiterlimit:10}} fill={"#C3931C"} cx="70.9" cy="53.2" r={"3.3"} opacity={mouseIn?1:0.0}/>
+        <polygon style={{fill:"#C3341C",stroke:"#000000",strokeWidth:0.4,strokeMiterlimit:10}} points="70.1,31.8 68.2,28.4 70.1,25 74.1,25 76.1,28.4 74.1,31.8 " opacity={mouseIn?1:0.0}/>
         {/* //<polygon style={{fill:"#C3341C",stroke:"#000000",strokeWidth:0.4,strokeMiterlimit:10}} points="83.8,67.8 81.8,64.3 83.8,60.9 87.8,60.9 89.7,64.3 87.8,67.8 "opacity={mouseIn?1:0.3}/> */}
         <motion.g fill="#DEDEDE" 
                         strokeWidth={0.3} 

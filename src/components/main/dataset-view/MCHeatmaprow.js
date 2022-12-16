@@ -7,15 +7,15 @@ function MCHeatmapRow(props) {
     const {binHeight, 
             rowData, 
             rowIndex, 
-            nColumns,
+            nColumns, // column numbers of expression columns - next is key
             nExtraColumns,
             clusterColors,
             handleHighlightedItems,
             colorScale,
-            opacity} = props 
-
+            opacity } = props 
+    
     return(
-
+        
         <g 
                     opacity={opacity} 
                     onMouseEnter = {e => handleHighlightedItems(rowData[nColumns])}>
@@ -73,24 +73,31 @@ function MCHeatmapRow(props) {
     the same result as passing prevProps to render,
     otherwise return false
     */
-   
+
    // check first if data changed 
-   if (prevProps.rawData === undefined) {
+   if (prevProps.rowData === undefined && nextProps.rowData !== undefined) {
     return false
    }
-   // check if name changed
-   if (prevProps.rawData[prevProps.nColumns] !== nextProps.rawData[nextProps.nColumns]) {
+      
+   if (prevProps.rowIndex !== nextProps.rowIndex) {
+    return false
+   }
+   // check if column number changed
+      if (prevProps.rowData[prevProps.nColumns] !== nextProps.rowData[nextProps.nColumns]) {
+       
     return false
    }
    //deep comparision of data array
-   if (!_.isEqual(prevProps.rawData,nextProps.rawData)){
+   if (!_.isEqual(prevProps.rowData,nextProps.rowData)){
     return false
    }
    // check opacity change
    if (prevProps.opacity !== nextProps.opacity) {
     return false
    }
-   
+      
+    
+      
    return true
 
   }

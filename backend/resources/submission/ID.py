@@ -34,7 +34,7 @@ class DataID(Resource):
             
             return {"success":True,"id":ID,"time":date.today().strftime("%Y%m%d")}
 
-
+## put this in the configuration file...
 details = [
     {"field":"text-input","q":"State","opts":None,"default":"Submitted","placeholder":"State of your project.","name":"State", "disabled" : True},
     {"field":"date-input","q":"Date of Sample Submission","opts":None,"default":date.today().strftime("%Y%m%d"),"placeholder":"Enter data of sample collection.","name":"Creation Date"},
@@ -46,11 +46,11 @@ details = [
     {"field":"textfield-input","q":"Research Aim","placeholder":"Please provide a short description of your project and it's research aims.","name":"Research Aim","title":"Research Aim"},
     {"field":"combo-input","q":"Organism","items":["Homo sapiens (Human)", "Mus musculus (Mouse)", "Caenorhabditis elegans (Worm)", "Saccharomyces cerevisiae (Baker's Yeast)","Other (Specify in Additional Info)"],"name":"Organism","text":"Organism"},
     {"field":"combo-input","q":"Experiment type","items":["Whole proteome","Neo N-term enrichment","Phophoproteome","Pulse-SILAC","Immunoprecipitation","Whole proteome & Neo N-term enrichment","Whole proteome & Phosphoproteomic","Other (Specify in Additional Info)"],"name":"Type","text":"Experiment Type"},
-    {"field":"numeric-input","q":"Number of samples","min":1,"max":999,"minorStepSize":1,"defaultValue":2,"placeholder":"Number of samples.","name":"n_samples"},
-    {"field":"numeric-input","q":"Number of replicates","min":1,"max":999,"minorStepSize":1,"defaultValue":2,"placeholder":"Number of replicate per group.","name":"n_replicates"},
     {"field":"text-input","q":"Material","placeholder":"Material used (HeLa,Liver,..)","name":"Material"},
     {"field":"textfield-input","q":"Experimental procedure","placeholder":"Please provide details about the experimental procedure of cell culture / treatments. In addition, provide the cell culture media and supplements. Please enter SILAC labelling information here as well.","name":"Experimental Info","title":"Experimental procedure"},
     {"field":"textfield-input","q":"Notes","placeholder":"Please provide additional information if required. Examples might be about a bias in sample preparation. Experimental errors.  Batch effects.","name":"Add. Info","title":"Additional Information"},
+    {"field":"numeric-input","q":"Number of samples","min":1,"max":999,"minorStepSize":1,"defaultValue":2,"placeholder":"Number of samples.","name":"n_samples"},
+    {"field":"numeric-input","q":"Number of replicates","min":1,"max":999,"minorStepSize":1,"defaultValue":2,"placeholder":"Number of replicate per group.","name":"n_replicates"},
     {"field":"numeric-input","q":"Number of groupings","min":1,"max":999,"minorStepSize":1,"defaultValue":2,"placeholder":"Number of groupings (Genotype, Treatment, ..).","name":"n_groupings"},
 ]
 
@@ -128,13 +128,13 @@ class DataSubmissionDetails(Resource):
             ok, msg = self.submission.delete(dataID)
             return {"success":ok,"msg":msg}
 
-    def post(self):
-        "Returns JSON object"
-        print("STARTING")
+    def post(self) -> dict:
+        "Handles sample submission - should be probably be moved to submission helper."
+        
         if request.data != b'':
             data = json.loads(request.data, strict=False)
-            print("HALLO!")
-            print(data)
+            if "token" not in data:
+                return {"success":False,"error":"Token not found.."}
             token = data["token"]
             
             if token == "None" or not self.token.isValid(token):
@@ -172,7 +172,6 @@ class DataSubmissionDetails(Resource):
                         {"title":"Sample Preperation", "details":submission["details"]["Experimental Info"]}
                         ]  
 
-                    print(submission["groupingTable"]["data"])
                     groupingDf = pd.DataFrame().from_dict(submission["groupingTable"]["data"])
                     groupingDf = groupingDf.dropna(axis=1,how="any")
                     if groupingDf.index.size != int(float(submission["details"]["n_samples"])):
@@ -195,15 +194,16 @@ class DataSubmissionDetails(Resource):
 
                     #extracting the replicates
                     if "Replicate" in groupingDf.columns:
-                        print(groupingDf)
                         sampleSubmission["replicates"] = OrderedDict ([(replicate,runName) for runName, replicate in groupingDf[["Run","Replicate"]].values])
                     
                     if self.submission.add(sampleSubmission):
-
+                        emailSubmission = [sampleSubmission["Email"]] if "," not in sampleSubmission["Email"] else sampleSubmission["Email"].split(",")
                         self.email.sendEmail(title="MitoCube - Submission Complete {}".format(sampleSubmission["dataID"]), 
                                             html= createEmailSummaryForProject(sampleSubmission), 
-                                            recipients = [sampleSubmission[submissionSaveName]] + self.submission.data.getConfigParam("email-cc-submission-list"))
-                        return {"success":True}
+                                            recipients = emailSubmission + self.submission.data.getConfigParam("email-cc-submission-list"))
+                        return {"success":True,"msg":"Confirmation email was sent.","paramsFile":self.submission.getParamFile(sampleSubmission["dataID"])}
+                    else:
+                        return {"success": False, "msg":"DataID exists already. Please contact the administrator, if you want to make changes."}
                 except Exception as e:
                     print(e)
                     return {"success":False,"msg":"There was an error extracting the submission details."}
@@ -217,17 +217,21 @@ class DataSubmissions(Resource):
         self.token = kwargs["token"]
         self.submission = kwargs["submission"]
 
-    def get(self):
-
-
-        token = request.args.get('token', default="None", type=str)
-        print(self.token.isAdminToken(token))
-        # if token == "None" or not self.token.isAdminToken(token):
-        #     return {"success":False,"error":"Token is not valid."}
+    def get(self) -> dict:
         
-
+        token = request.args.get('token', default="None", type=str)
+        if token == "None" or not self.token.isAdminToken(token):
+            return {"success":False,"error":"Token is not valid."}
+        
         submissions, submissionStates = self.submission.getSubmission()
-        return {"success":True,"submissions":submissions,"states":submissionStates}
+        submissionSummaryColumns = self.submission.getSummaryColumns() #submissionSummaryColumns,
+        searchColumns = self.submission.getSearchColumns()
+        return {
+            "success":True,
+            "submissions":submissions,
+            "states":submissionStates,
+            "searchColumns" : searchColumns,
+            "submissionSummaryColumns" : submissionSummaryColumns}
 
 # {
 #     "Creation Date": "20220105 15:54:49",

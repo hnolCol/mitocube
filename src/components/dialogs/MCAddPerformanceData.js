@@ -12,7 +12,7 @@ function MCTextInput(props) {
     return(
         <div style={{minHeight:"3rem",maxHeight:"3rem", width:"100%"}}>
             <div style={{minHeight:"0.8rem",fontSize:"0.6rem"}}>
-                {metricName==="Date"?`${metricName} (YYYYMMDD)`:metricName}
+                {metricName==="Date"?`${metricName} (YYYY-MM-DD)`:metricName}
             </div>
         <InputGroup {...rest}  fill={true}  onChange={(e) => cb(header,metricName,e.target.value)}/> 
         </div>
@@ -37,7 +37,7 @@ MCMetric.defaultProps = {
 
 function MCQuantileInput(props) {
     const {distName, values, callback, openQuantileCalc, intent, missingFields} = props
-    const qsHeader = [["Min","0"],["25% Quantile","0.25"],["Median","0.5"],["75% Quantile","0.75"],["Max","1"]]
+    const qsHeader = [["Min","0"],["25% Quantile","0.25"],["Median","0.5"],["75% Quantile","0.75"],["Max","1"],["N","N"]]
     return(
         <div>
         <H6>{distName}</H6>
@@ -70,6 +70,7 @@ function MCQuantileDialog (props) {
     const [removeOutlier, setRemoveOutlier] = useState(true)
     const [data,setData] = useState({"array":[],"qs":[],"n_removed":0})
     const [nIQR, setNIQRT] = useState(1.8)
+
     const handleDataChange = (textString) => {
 
         const array = textString.split("\n").map(v=> parseFloat(v))
@@ -77,7 +78,7 @@ function MCQuantileDialog (props) {
             calculateQs(array,nIQR,removeOutlier)
         }
         else {
-            setData({"array":[],"qs":[],"n_removed":0})
+            setData({"array":[],"qs":[],"n_removed":0,"N":0})
         }
         
     }
@@ -85,7 +86,7 @@ function MCQuantileDialog (props) {
     const calculateQs = (array,nIQR = 1.8,removeOutlier = true) => {
        
         const qsAndNOutlier = quantile(array,[0,0.25,0.5,0.75,1.0],nIQR,removeOutlier)
-        
+        console.log(qsAndNOutlier)
         setData({"array":array,...qsAndNOutlier})
     }
 
@@ -123,7 +124,7 @@ function MCQuantileDialog (props) {
             <div style={{margin:"1rem"}}>
             <p>{`In total, ${data["n_removed"]} datapoints were considered as outliers (IRQ * ${nIQR}) and removed prior quantile calculation.`}</p>
             <p>Quantiles: {_.join(data.qs," ")}</p>
-            <Button text={`Submit for ${distName}`} minimal={true} intent={data.array.length > 0 ? "primary": "none"} rightIcon={data.qs.length === 5?"tick":undefined} fill={true} onClick={e => handleQuantileCalc(distName,data.qs)}/>
+            <Button text={`Submit for ${distName}`} minimal={true} intent={data.array.length > 0 ? "primary": "none"} rightIcon={data.qs.length === 5?"tick":undefined} fill={true} onClick={e => handleQuantileCalc(distName,data.qs, data.N)}/>
             </div>
         </Dialog>
     )
@@ -153,8 +154,14 @@ export function MCAddPerformanceDialog (props) {
     const qcPeptidesMetricesEntered = peptidesFound && _.isObject(performanceData["QC-Peptides"]) && _.compact(Object.values(performanceData["QC-Peptides"])).length > 0
    
     //check if renders every time, useMemo useless? 
-    const distrubtionArray = distributionsFound?performanceDetails["performanceHeaders"]["Distributions"]:[]
-    const distributionsHeader = useMemo(() => _.uniq(distrubtionArray.map(v=>_.split(v,"_",1)[0])),[distrubtionArray])
+    //const distrubtionArray = distributionsFound?performanceDetails["performanceHeaders"]["Distributions"]:[]
+    
+    const distributionsHeader = useMemo(() => {
+        const distrubtionArray = distributionsFound?performanceDetails["performanceHeaders"]["Distributions"]:[]
+        
+        return (_.uniq(distrubtionArray.map(v=>_.split(v,"_",1)[0])))
+        
+        }, [performanceDetails, distributionsFound])
     
 
     useEffect(() => {
@@ -220,14 +227,20 @@ export function MCAddPerformanceDialog (props) {
         const qcps = {...performanceData["QC-Peptides"], ...qcPeptideByUser}
         setPerformanceData(prevValues => {return {...prevValues, "QC-Peptides" : qcps}})
     }
+
+    const handleCommentAddition = (e) => {
+        let commentText = e.target.value
+        setPerformanceData(prevValues => {return {...prevValues, "Comment" : commentText}})
+    }
     
 
-    const handleQuantileCalc = (distName,qs) => {
+    const handleQuantileCalc = (distName,qs, N) => {
       
         closeQuantileCalculator() 
         const qSuffix = ["0","0.25","0.5","0.75","1"]
         let copiedSelection = {...performanceData["Distributions"]}
         _.forEach(qs, (v,i) => copiedSelection[`${distName}_${qSuffix[i]}`] = v)
+        copiedSelection[`${distName}_N`] = N
         setPerformanceData(prevValues => {return {...prevValues, "Distributions" : copiedSelection}})
     }
 
@@ -237,7 +250,6 @@ export function MCAddPerformanceDialog (props) {
     }
 
     const onSubmit= () => {
-        console.log(performanceData)
         setMarkMissingItems({items:[],informationText:"Checking for missing information.",loading:true})
         let mainHeaders = Object.keys(performanceData)
         let missingProps = _.flatten(mainHeaders.map(header => Object.keys(performanceData[header]).map(propHeader => {return({"header" : header,"name" : propHeader, "missing" : performanceData[header][propHeader] === undefined})}))).filter(v => v.missing && v.header !== "QC-Peptides")
@@ -268,14 +280,12 @@ export function MCAddPerformanceDialog (props) {
                             informationText:response.data["msg"],
                             loading : false})
                     }
-                })
-
-        
+                })        
     }}
 
     return(
 
-        <Dialog {...rest} isCloseButtonShown={true} onClose={onClose}>
+        <Dialog {...rest} isCloseButtonShown={true} onClose={onClose} style={{width:"80vh",maxWidth:"800px"}}>
             <MCQuantileDialog {...quantileCalculator}/>
             <MCAddQCPeptideDialog 
                     cb = {handleQCPeptideAddition}
@@ -283,7 +293,7 @@ export function MCAddPerformanceDialog (props) {
                     peptides = {qcPeptidesNames} 
                     onClose={e => handleQCPeptideDialog(e,false)} 
                     {...qcPeptideDialog}/>
-            <div style={{margin:"1rem"}}>
+            <div style={{margin:"1rem",maxHeight:"90vh",overflow:"scroll", fontSize:"0.75rem"}}>
                 
                 <div style={{marginLeft:"1rem",overflowY:"scroll",maxHeight:"80vh",paddingRight:"1.1rem"}}>
 
@@ -303,6 +313,7 @@ export function MCAddPerformanceDialog (props) {
 
                 {propertiesFound?<div>
                     <H5>Properties</H5>
+                    <p>Properties are used to group performance runs and the performance data are split based on unique combinations of the selected properties.</p>
                     <div className= "performance-run-prop-div">
                     {performanceDetails["performanceHeaders"]["Properties"].map(v => <MCCombobox key={v} items={performanceDetails["uniqueProperties"][v]} 
                                         placeholder = {performanceData["Properties"][v]===undefined?`Select ${v}`:performanceData["Properties"][v]}  
@@ -320,6 +331,7 @@ export function MCAddPerformanceDialog (props) {
                                             key= {v} 
                                             metricName={v} 
                                             cb = {saveDataInput} 
+                                            returnString={true}
                                             value = {"Metrices" in performanceData?performanceData["Metrices"][v]===undefined?"":performanceData["Metrices"][v]:""}
                                             header="Metrices" 
                                             intent={markMissingItems.items.includes(v) && performanceData["Metrices"][v] === undefined?"danger":"none"}/>)}
@@ -356,12 +368,18 @@ export function MCAddPerformanceDialog (props) {
                     </div>
 
                 </div>:null}
+
+                <div>
+                    <H5>Comment</H5>
+                    <div className= "performance-run-prop-div">
+                        <TextArea value={performanceData["Comment"]===undefined?"":performanceData["Comment"]} fill={true} placeholder="Add a comment to this particula performance run.." onChange = {handleCommentAddition}/>
+                    </div>
+                </div>
             </div>
             <p>{markMissingItems.informationText}</p>
             <Button fill={true} text = "Submit" minimal={true} intent="primary" rightIcon="upload" onClick={onSubmit} loading={markMissingItems.loading}/>
             </div>
             
-        
         </Dialog>
 
     )

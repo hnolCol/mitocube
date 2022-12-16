@@ -138,7 +138,6 @@ export function MCAdminLogin(props) {
                             if (e.code === "Enter") {
                               e.preventDefault();
                               loginAttempt()
-                              // tried all this stuff, but nothing stops the future OK button from handling the event!
                               ;}}}
                           />
                 

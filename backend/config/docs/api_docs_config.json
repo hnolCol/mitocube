@@ -12,7 +12,7 @@
         "MAIL_USE_SSL": 1,
         "MAIL_DEFAULT_SENDER" : "support@mitocube.com"
     },
-    "email-cc-submission-list" : ["dominique.diehl@age.mpg.de","hendrik.nolte@age.mpg.de"],
+    "email-cc-submission-list" : ["hendrik.nolte@age.mpg.de"], 
     "email-pw": "email-pw",
     "side-menu" : {
         "main" : [
@@ -118,24 +118,40 @@
         "short-cut-filter-param" : "Type",
         "short-cut-colors" : ["#365072","#6e5b7b","#b66476","#e8696e","#eaac89","#8c7f77"],
         "submission-states" : ["Submitted","Processed","Measuring","Data analysis","Done"],
+        "submission-search-columns" : ["shortDescription","Material","Organism","dataID","Title","Email","Type","Experimentator"],
         "token-valid(h)" : 48,
         "share-token-valid(h)" : 3000,
         "performance-runs" : {
-            "General" : ["Date","Researcher"],
-            "Properties" : ["Instrument","Acquisition Mode","Column Length"],
-            "Metrices" : ["Identified Peptides", "Identified Proteins"],
-            "Distributions" : ["CScore","Retention length"],
+            "General" : ["Date","Researcher","Raw file"],
+            "Properties" : ["Mass Spectrometer","Liquid Chromatography","Acquisition Mode","Column Length","FAIMS CV"],
+            "Metrices" : ["Precursors.Identified", "Proteins.Identified","FWHM.RT","Median.Mass.Acc.MS2","MS2.Mass.Instability"],
+            "Distributions" : ["CScore","Peak length","Median.Fragmentation.Correlation"],
             "QC-Peptides" : {
                 "name" : ["LGGNEQVTR","YILAGVENSK","GTFIIDPGGVIR","GTFIIDPAAVIR","GAGSSEPVTGLDAK","TPVISGGPYEYR","VEATFGVDESNAK","TPVITGAPYEYR","DGLDAASYYAPVR","ADVTPADFSEWSK","LFLQFGAQGSPFLK"],
-                "metrices" : ["Retention time","Peak width"]
-         }
+                "metrices" : ["Retention time","Peak length"]
+            },
+            "Miscs" : ["Comment"] 
+            
         },
         "performancePropertyOptions" : {
-            "Instrument" : ["Exploris 480 #1","QExactive #1"],
-            "Column Length" : ["40cm","30cm","15cm"],
-            "Material" : ["HeLa digest"],
-            "Acquisition Mode" : ["DDA","DIA"]
-        }
+            "Mass Spectrometer" : ["Exploris 480 #1","E1","E2","T1"],
+            "Liquid Chromatography" : ["nanoLC 1200","Neo","Evo"],
+            "Column Length" : ["40cm","30cm","25cm","15cm","8cm","50cm"],
+            "Column Type" : ["In-House","Performance, Aurora"],
+            "Material" : ["HeLa digest (Pierce)","In-house"],
+            "Acquisition Mode" : ["DDA","DIA"],
+            "Gradient Length" : ["60min","120min"],
+            "FAIMS CV" : ["None","-50 V", "-45 V"]
+        },
+        "performance-main-group" : "Mass Spectrometer",
+        "performance-metrices-colors" : {
+            "Precursors.Identified" : "#5d7490",
+            "Proteins.Identified" : "#73908d",
+            "FWHM.RT" : "#d59f78",
+            "Median.Mass.Acc.MS2" : "blue",
+            "MS2.Mass.Instability" : "green"
+        },
 
+        "submission-summary-short" : ["Creation Date","State","dataID","Title","Experimentator","Type","Material","SampleNumber","Organism","shortDescription","groupingNames"]
     } 
 }

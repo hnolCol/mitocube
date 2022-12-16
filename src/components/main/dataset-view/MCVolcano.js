@@ -12,6 +12,7 @@ import { Button, ButtonGroup, Dialog, FileInput, InputGroup, Menu, MenuItem } fr
 import { MCGroupingSelection } from "./MCDataset";
 import { Popover2, Popover2InteractionKind } from "@blueprintjs/popover2";
 import MCScatterPoint from "./MCScatterPoint";
+import ParentSize from "@visx/responsive/lib/components/ParentSizeModern";
 
 function MCCreateList(props) {
 
@@ -219,18 +220,24 @@ export function MCVolcanoLoader(props) {
             }
             else {
                 volcanoProps.setVolcanoData(response.data.params)
-                //setData(response.data.params)
             }
         })
       }, []);
 
       return (
           <div>
-              {data!==undefined && Object.keys(data).length > 0?
-                <MCVolcano  
-                    dataID = {dataID} 
-                    {...volcanoProps}
-                    {...data}/>
+              {data !== undefined && Object.keys(data).length > 0 ?
+                  <ParentSize>
+                      {parent => (
+                        
+                          <MCVolcano
+                              width = {parent.width}
+                              dataID={dataID}
+                              {...volcanoProps}
+                              {...data} />
+                      )}
+                    </ParentSize>
+                
                 :
                 errorMsg!==undefined?<p>{errorMsg}</p>:<MCSpinner/>}
           </div>
@@ -298,14 +305,13 @@ export function MCVolcano(props) {
     // filter points to show based on some values
     var pointsToShow = useMemo(() => {
         var pps = []
-
             if (zoomActive.xDomain!==undefined){
                 pps = _.filter(points, o => o[0] > zoomActive.xDomain[0] && o[0] < zoomActive.xDomain[1] && o[1] > zoomActive.yDomain[1] && o[1] < zoomActive.yDomain[0])
             }
             else {
                 pps = zoomActive.active?zoomActive.filteredPoints:points
             }
-
+            //filter the points that are in zoom
             if (filterIndex !== undefined){
                 pps = _.filter(pps, o => o[filterIndex] !== "-")   
             }
@@ -314,7 +320,11 @@ export function MCVolcano(props) {
             }
         return pps
             
-        },[zoomActive.xDomain,zoomActive.yDomain,zoomActive.active,filterIndex,highlightIndex[0]])
+        },[zoomActive.xDomain,
+            zoomActive.yDomain,
+            zoomActive.active,
+            filterIndex,
+            highlightIndex[0]])
     
     if (zoomActive.xDomain!==undefined) {
         minDistanceX = (zoomActive.xDomain[1] - zoomActive.xDomain[0])*0.01
@@ -327,7 +337,7 @@ export function MCVolcano(props) {
         const re = new RegExp(_.escapeRegExp(search), 'i')
         const isMatch = result => [3,4].map(testIndex => re.test(result[testIndex])).some(a => a) // a===true if at least one index matches
         return searchWordActive?_.filter(pointsToShow, isMatch):[]
-    }, [searchWordActive, search])
+    }, [search ,pointsToShow])
 
     
     // const re = new RegExp(_.escapeRegExp(search), 'i')
@@ -393,12 +403,16 @@ export function MCVolcano(props) {
         if (zoomActive.active === false & zoomActive.x===undefined) {
             return
         }
-        if (zoomActive.width < 0) {
+        if (zoomActive.width < 20) {
             setZoomActive(initZoomState) 
             return
         }
-        const xDomain = [xscale.invert(zoomActive.x),xscale.invert(zoomActive.x+zoomActive.width)]
-        const yDomain = [yscale.invert(zoomActive.y),yscale.invert(zoomActive.y+zoomActive.height)]
+        const xDomain = [
+                xscale.invert(zoomActive.x),
+                xscale.invert(zoomActive.x+zoomActive.width)]
+        const yDomain = [
+                yscale.invert(zoomActive.y),
+                yscale.invert(zoomActive.y+zoomActive.height)]
         
         setZoomActive(
             prevValues => {
@@ -591,8 +605,7 @@ export function MCVolcano(props) {
         </div>
         
         </div>
-        
-        
+            
         <svg 
             width={width} 
             height={height} 
@@ -757,6 +770,7 @@ export function MCVolcano(props) {
                         dy={-3} {...fontProps}>
                             {p[4]}
                     </Text>
+                    
                     <circle  cx={xscale(p[0])} cy={yscale(p[1])} 
                         r = {defaultRadius} 
                         fill={p[2]?p[0]>0?"#ea563c":"#7894a2":defaultCircleFill} 

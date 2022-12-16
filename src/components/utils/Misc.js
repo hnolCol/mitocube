@@ -1,42 +1,97 @@
 import { useLocation } from "react-router-dom"
-import { useMemo, useState, useCallback, useEffect, useLayoutEffect, useRef  } from "react";
+import { useMemo, useState, useCallback } from "react";
 import {isObject, join } from "lodash";
 import _ from "lodash"
 
+export function getMonthName(monthNumber) {
+    const date = new Date();
+    date.setMonth(monthNumber - 1);
+  
+    return date.toLocaleString('en-US', { month: 'long' });
+  }
+export function groupby(array,extractGroupFn){
 
+    const uniqueValues = _.uniq(array.map(v => extractGroupFn(v)))
+    const groupby = Object.fromEntries(uniqueValues.map(groupName => [groupName,[]]))
+    _.forEach(array, v => groupby[extractGroupFn(v)].push(v) )
+    return groupby
+}
+
+export function createEnum(values) {
+    const enumObject = {};
+    for (const val of values) {
+      enumObject[val] = val;
+    }
+    return Object.freeze(enumObject);
+  }
+  
+
+export function sortDates (data) {
+    return(data.sort((a, b) => a.x - b.x))}
+
+function getAverage (data) {
+    return(data.reduce((acc, val) => acc + val.y, 0) / data.length)}
+
+export function computeMovingAverage(data, period, dataIsSorted = false){
+  const movingAverages = [];
+    
+  const sortedData =  dataIsSorted?data:sortDates(data);
+
+  // if the period is greater than the length of the dataset
+  // then return the average of the whole dataset
+  // returns right sided dates (e.g.)
+  if ( sortedData.pop() === undefined) {
+    return [{x : undefined, y: undefined}]
+  }
+  if (period > sortedData.lengt) {
+    return [{y : getAverage(data), x : sortedData.pop().x}];
+  }
+  for (let x = 0; x + period - 1 < sortedData.length; x += 1) {
+    let d = sortedData.slice(x, x + period)
+    movingAverages.push({
+            y : getAverage(d),
+            x : new Date().setTime(_.sum(d.map(v => v.x.getTime()))/d.length)
+        })
+    }
+  return movingAverages;
+}
+
+export function getDomainFromArray(array,relMargin=0.02){
+
+    let minValue = _.min(array)
+    let maxValue = _.max(array)
+    let margin = Math.sqrt(Math.pow(maxValue,2) - Math.pow(minValue,2)) * relMargin
+    return [maxValue+margin,minValue-margin]
+}
 
 export function quantile (array,qs=[0,0.25,0.5,0.75,1.0],NIQR = 1.8, removeOutlier = true) {
     // remove falsly numbers (includes 0!)
-    let sortedFilteredArray = _.filter(array,Boolean).sort()
-    console.log(sortedFilteredArray)
-    console.log(removeOutlier)
-    console.log(qs)
+    let sortedFilteredArray = _.sortBy(_.filter(array,Boolean))
     let N = sortedFilteredArray.length
     if (removeOutlier){
-                let idxsForIQR = [0.25,0.5,0.75].map(q => (N-1) * q)
-                const generousIQR = idxsForIQR.map(idx => {
-                    let b = Math.floor(idx)
-                    let r = idx - b 
-                    if (sortedFilteredArray[b+1]!==undefined) {
-                        return sortedFilteredArray[b] + r * (sortedFilteredArray[b + 1] - sortedFilteredArray[b]);
-                    }
-                    else {
-                        return sortedFilteredArray[b]
-                    }
-                })
-                // get min and max values
-                const IQR = generousIQR[2] - generousIQR[0]
-                const maxValue = generousIQR[1] + NIQR * IQR
-                const minValue = generousIQR[1] - NIQR * IQR
-                
-                //overwrite array and calculate distribution again
-                sortedFilteredArray = sortedFilteredArray.filter(x => x <= maxValue && x >= minValue)
+            //remove outlier before calculating quantiles
+            let idxsForIQR = [0.25,0.5,0.75].map(q => (N-1) * q)
+            const generousIQR = idxsForIQR.map(idx => {
+                let b = Math.floor(idx)
+                let r = idx - b 
+                if (sortedFilteredArray[b+1]!==undefined) {
+                    return sortedFilteredArray[b] + r * (sortedFilteredArray[b + 1] - sortedFilteredArray[b]);
+                }
+                else {
+                    return sortedFilteredArray[b]
+                }
+            })
+            // get min and max values
+            const IQR = generousIQR[2] - generousIQR[0]
+            const maxValue = generousIQR[1] + NIQR * IQR
+            const minValue = generousIQR[1] - NIQR * IQR
+            
+            //overwrite array and calculate distribution again
+            sortedFilteredArray = sortedFilteredArray.filter(x => x <= maxValue && x >= minValue)
         }
-    console.log(sortedFilteredArray)
     let filteredN = sortedFilteredArray.length
     let idxs = qs.map(q => (filteredN-1) * q)
     const numberOutliers = N - filteredN 
-    console.log(numberOutliers)
     // return filtered quantiles 
     const caluclatedQuantiles =  idxs.map(idx => {
         let b = Math.floor(idx)
@@ -48,8 +103,7 @@ export function quantile (array,qs=[0,0.25,0.5,0.75,1.0],NIQR = 1.8, removeOutli
             return sortedFilteredArray[b]
         }
     })    
-    console.log(caluclatedQuantiles)
-    return {qs:caluclatedQuantiles, n_removed:numberOutliers}
+    return {qs:caluclatedQuantiles, n_removed:numberOutliers, N: sortedFilteredArray.length}
 }   
 
 function capitalizeString(s)

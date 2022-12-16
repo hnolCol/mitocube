@@ -1,14 +1,14 @@
 import { MenuItem, Button } from "@blueprintjs/core";
-import { Suggest2, Select2 } from "@blueprintjs/select";
+import { Select2 } from "@blueprintjs/select";
 import _ from "lodash";
 import { useState } from "react";
 
 export function MCSuggest (props) {
 
     const {items, itemKey, searchKeys, handleSelection} = props
-    const [currentItems,setCurrentItems] = useState(items)
+    //const [currentItems,setCurrentItems] = useState(items)
     const [selectedItem, setSelectedItem] = useState(undefined)
-    const [query, setQuery] = useState("")
+    //const [query, setQuery] = useState("")
 
     const itemRender = (item,props) => {
         const selected = selectedItem!==undefined && item.name === selectedItem.name
@@ -49,7 +49,7 @@ export function MCSuggest (props) {
         <div style={{minWidth:"200px"}}>
         <Select2 
             
-            items={currentItems} 
+            items={items} 
             itemRenderer={itemRender} 
             onItemSelect = {itemSelection}
             itemListPredicate = {filterItemsByQuery}
