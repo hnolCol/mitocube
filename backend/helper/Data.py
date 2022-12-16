@@ -542,9 +542,11 @@ class Data(object):
         param = self.getAPIParam("short-cut-filter-param")
         for dataID in self.getDataIDs():
             paths = self.__getPaths(dataID)
-            if paths is not None and dataID not in self.dfs:
+            if all(path is not None for path in paths) and dataID not in self.dfs:
+                print(paths)
                 X = pd.read_csv(paths[1],sep="\t",index_col="Key")
                 #load data into dict - dataID is key
+                
                 self.dfs[dataID] = {
                     "params":json.load(open(paths[0])),
                     "data":X}
