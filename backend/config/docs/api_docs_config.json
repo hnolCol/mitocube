@@ -107,6 +107,7 @@
         "filter-params" : ["Type","Organism","Material"],
         "annotation-colum" : "Gene names  (primary )",
         "extra-colums-in-dataset-heatmaps" : ["MitoCarta3.0_List","MitoCoP"],
+        "default-number-clusters-heatmap" : 12,
         "filters-in-volcano-plots" : ["MitoCarta3.0_List","MitoCoP"],
         "highlight-in-volcano-plots" : ["MitoCarta3.0_SubMitoLocalization","MitoCarta3.0_MitoPathways"],
         "highlight-in-volcano-plots-sep-cat-by" : {
@@ -117,8 +118,9 @@
         "experiment-procedure-params" : ["Creation Date","Material","Publication","Experimental Info","Experimentator"],
         "short-cut-filter-param" : "Type",
         "short-cut-colors" : ["#365072","#6e5b7b","#b66476","#e8696e","#eaac89","#8c7f77"],
-        "submission-states" : ["Submitted","Processed","Measuring","Data analysis","Done"],
+        "submission-states" : ["Submitted","Processed","Measuring","Data analysis","Done"], 
         "submission-search-columns" : ["shortDescription","Material","Organism","dataID","Title","Email","Type","Experimentator"],
+        "submission-summary-short" : ["Creation Date","State","dataID","Title","Experimentator","Type","Material","SampleNumber","Organism","shortDescription","groupingNames","daysFromCreationToLastState"],
         "token-valid(h)" : 48,
         "share-token-valid(h)" : 3000,
         "performance-runs" : {
@@ -150,8 +152,6 @@
             "FWHM.RT" : "#d59f78",
             "Median.Mass.Acc.MS2" : "blue",
             "MS2.Mass.Instability" : "green"
-        },
-
-        "submission-summary-short" : ["Creation Date","State","dataID","Title","Experimentator","Type","Material","SampleNumber","Organism","shortDescription","groupingNames"]
+        }
     } 
 }

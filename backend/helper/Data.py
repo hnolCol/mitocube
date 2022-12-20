@@ -43,7 +43,7 @@ DB_ENTRY_COLUMN = "Entry"
 
 def getChartMarginFromMinMaxValues(minValue, maxValue, marginFraction = 0.05):
     ""
-    return np.sqrt(maxValue ** 2 - minValue **2) * marginFraction
+    return np.sqrt(abs(maxValue ** 2 - minValue **2)) * marginFraction
 
 
 class DBFeatures:
@@ -152,20 +152,19 @@ class Dataset:
         return boolIdx, np.any(boolIdx)
 
 
-    def getCorrelatedFeatures(self, featureIDs : list, scale : bool = True, N : int = 20) -> Dict[str,Any]:
+    def getCorrelatedFeatures(self, featureIDs : list, scale : bool = True, N : int = 20, minValidValues : int = 4) -> Dict[str,Any]:
         """"""
         boolIdx, featureDetected = self.getIsInMask(featureIDs)
+        
         if featureDetected:
-
             expColumns = self.getExpressionColumns()
             #remove columns with only NaN
             expColumnsWithNonNan = self.data.loc[boolIdx,expColumns].dropna(axis=1).columns.values
             if expColumnsWithNonNan.size > 4:
                 featureDataTransposed = pd.Series(self.data.loc[boolIdx,expColumnsWithNonNan].values.T.flatten(),index=expColumnsWithNonNan)
-                dataWhereFeatureIsNotNaN = self.data.dropna(subset=expColumnsWithNonNan, thresh=3)
-                corrCoeff = dataWhereFeatureIsNotNaN.corrwith(featureDataTransposed,axis=1).dropna().sort_values(ascending=False)
-
-                corrHead = corrCoeff.head(N)
+                dataWhereFeatureIsNotNaN = self.data.dropna(subset=expColumnsWithNonNan, thresh=minValidValues)
+                corrCoeff = dataWhereFeatureIsNotNaN.corrwith(featureDataTransposed, axis=1).dropna().sort_values(ascending=False) # correlated, drop NaN and sort values.
+                corrHead = corrCoeff.head(N) # take top N correlated features
                 corrFeaturesIndex = corrHead.index.values
                 correlatedFeaturesData = self.data.loc[corrFeaturesIndex,]
                 values = correlatedFeaturesData.loc[:,expColumns].values  
@@ -483,6 +482,9 @@ class DatasetCollection:
 
             data = pd.read_csv(dataPath,sep="\t",index_col="Key")
             params = json.load(open(paramPath))
+            if not ("PTM" in params and params["PTM"]):
+                data = data.loc[~data.index.duplicated(keep='first'),:]
+
             self.collection[dataID] = Dataset(dataID, data, params, self.dbManager)
 
     def getDataIDs(self) -> List[str]:
@@ -543,10 +545,9 @@ class Data(object):
         for dataID in self.getDataIDs():
             paths = self.__getPaths(dataID)
             if all(path is not None for path in paths) and dataID not in self.dfs:
-                print(paths)
                 X = pd.read_csv(paths[1],sep="\t",index_col="Key")
                 #load data into dict - dataID is key
-                
+                X = X.loc[~X.index.duplicated(keep='first'),:]
                 self.dfs[dataID] = {
                     "params":json.load(open(paths[0])),
                     "data":X}
@@ -767,20 +768,23 @@ class Data(object):
                 return False, msg
 
             X = self.dfs[dataID]["data"]
-            mitoColumns = ["Functional MitoCoP classification","MitoCarta3.0_MitoPathways"]
+            mitoColumns = ["Functional MitoCoP classification","MitoCarta3.0_MitoPathways"] #should be defined in config.
             mitoPaths = self.dbManager.getDBInfoForFeatureListByColumnName(X.index,mitoColumns[-1],checkShape=False).replace("0",np.nan).dropna()
             mitoGeneNames = self.dbManager.getDBInfoForFeatureListByColumnName(X.index,"Gene names  (primary )",checkShape=False).dropna()
             expColumns = self.getExpressionColumns(dataID)
             groupings, groupingNames, groupingMapper, groupingColorMapper, groupColorValues, groupingItems = self.getGroupingDetails(dataID,expColumns)
 
-            X  = X.loc[mitoPaths.index]
+            X  = X.loc[mitoPaths.index,:].dropna(subset=expColumns)
           
-            anovaType, anovaCutoff, grouping1 = self._getOneWayANOVASignificanceHits(anovaDetails)
+            propsDetected, properties = self._getOneWayANOVASignificanceHits(anovaDetails)
+            if not propsDetected:
+                return False, "Not all required ANOVA properties detected."
+            anovaType, anovaCutoff, grouping1 = properties
             
             if grouping1 not in groupingNames:
                 return False, "Grouping 1 not found in the dataset."
 
-            X = self.dfs[dataID]["data"].dropna(subset=expColumns)
+            #X = self.dfs[dataID]["data"].dropna(subset=expColumns)
 
             if anovaType == "1-way ANOVA":
                 boolIdx, selectionpvalues, pvalueNames = self._performOneWayANOVA(X,groupings,grouping1,anovaCutoff)
@@ -878,7 +882,6 @@ class Data(object):
        
         minValue, maxValue = meltedData["value"].quantile(q=[0,1]).values
         marginRange = getChartMarginFromMinMaxValues(minValue,maxValue) 
-        
         groupedData = meltedData.groupby(by = groupingNames,sort=False) #level_X == quantile due to reset_index
         boxplotData = groupedData.quantile(q=[0,0.25,0.5,0.75,1]).reset_index() 
         quantileColumnName = "level_{}".format(len(groupingNames)) # get name for quantile
@@ -928,22 +931,24 @@ class Data(object):
 
         return True, grouping2
 
-    def _getOneWayANOVASignificanceHits(self,anovaDetails : dict):
+    def _getOneWayANOVASignificanceHits(self,anovaDetails : dict, propNames : list =["anovaType","pvalue","grouping1"]):
         ""
-        anovaType = anovaDetails["anovaType"]
-        anovaCutoff = anovaDetails["pvalue"]
-        grouping1 = anovaDetails["grouping1"]
+        allPropNamesInDict = all(propName in anovaDetails for propName in propNames)
+
+        properties = [anovaDetails.get(propName) for propName in propNames]
         
-        return anovaType, anovaCutoff, grouping1
+        return allPropNamesInDict, properties
 
     def _performOneWayANOVA(self,X,groupings,grouping1,anovaCutoff : float):
         ""
         results = pd.DataFrame(index = X.index)
         testGroupData = [X[columnNames].values for columnNames in groupings[grouping1].values()]
         F,p = f_oneway(*testGroupData,axis=1)
-        oneWayANOVAColumnName = "p-1WANOVA({})".format(grouping1)
-        results[oneWayANOVAColumnName] = p
+        oneWayANOVAColumnName = f"p-1WANOVA({grouping1})"
+        results.loc[X.index,oneWayANOVAColumnName] = p
         boolIdx = results.index[results[oneWayANOVAColumnName] < anovaCutoff]
+        print(X.index)
+        print(pd.Series(results.loc[:,oneWayANOVAColumnName].values, name=oneWayANOVAColumnName, index=X.index))
         selectionpvalues = [pd.Series(results.loc[X.index,oneWayANOVAColumnName].values, name=oneWayANOVAColumnName, index=X.index).loc[boolIdx].reset_index()]
         pvalueNames = [oneWayANOVAColumnName]
 
@@ -963,7 +968,7 @@ class Data(object):
 
         return boolIdx,selectionpvalues,pvalueNames
 
-    def getHeatmapData(self,dataID : str, anovaDetails={"pvalue":0.0001}):
+    def getHeatmapData(self,dataID : str, anovaDetails : dict = {}):
         ""
         if dataID in self.dfs:
 
@@ -974,10 +979,15 @@ class Data(object):
             expColumns = self.getExpressionColumns(dataID)
             annotationColumn = self.getAPIParam("annotation-colum")
             extraColumns = self.getAPIParam("extra-colums-in-dataset-heatmaps")
+            nClusters = self.getAPIParam("default-number-clusters-heatmap")
             groupings, groupingNames, groupingMapper, groupingColorMapper, groupColorValues, groupingItems = self.getGroupingDetails(dataID,expColumns)
 
-            anovaType, anovaCutoff, grouping1 = self._getOneWayANOVASignificanceHits(anovaDetails)
+            propsDetected, properties = self._getOneWayANOVASignificanceHits(anovaDetails)
             
+            if not propsDetected:
+                return False, "Not all required ANOVA properties detected."
+            anovaType, anovaCutoff, grouping1 = properties
+            print(anovaType,anovaCutoff, grouping1)
             if grouping1 not in groupingNames:
                 return False, "Grouping 1 not found in the dataset."
 
@@ -985,7 +995,6 @@ class Data(object):
 
             if anovaType == "1-way ANOVA":
                 boolIdx, selectionpvalues, pvalueNames = self._performOneWayANOVA(X,groupings,grouping1,anovaCutoff)
-                
                 
             elif anovaType == "2-way ANOVA":
                 ok, ds = self._checkTwoWayANOVADetails(anovaDetails,groupingNames)
@@ -1004,14 +1013,18 @@ class Data(object):
             values = X.loc[:,expColumns].values   
             values = zscore(values,axis=1,nan_policy="omit")
             maxValue = np.nanmax(np.abs(values.flatten()))
-           # print(values)
+           
             colorPalette = sns.color_palette("RdBu_r",n_colors=5).as_hex()
             colorValues = np.linspace(-maxValue,maxValue,num=5).flatten().tolist()
             rowLinkage = fastcluster.linkage(values, method = "complete", metric = "euclidean")   
             maxD = 0.75*max(rowLinkage[:,2])
             Z_row = sch.dendrogram(rowLinkage, orientation='left', color_threshold= maxD, 
                                     leaf_rotation=90, ax = None, no_plot=True)
-            clusters = sch.fcluster(rowLinkage,16,'maxclust')
+            if "ncluster" in anovaDetails and isinstance(anovaDetails["ncluster"],int):
+                    nClusters = anovaDetails["ncluster"]
+                    print("ncluster default overwritten.")
+    
+            clusters = sch.fcluster(rowLinkage,nClusters,'maxclust')
            
             vvs = pd.DataFrame(values,columns=expColumns)
            

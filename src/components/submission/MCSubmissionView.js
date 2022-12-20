@@ -428,7 +428,7 @@ export function MCSubmissionAdminView(props) {
     }
 
 
-    const downloadProjectSummary = (notThisState = undefined) => {
+    const downloadProjectSummary = (event, notThisState = undefined) => {
 
         let submissions = submissionDetails.submissions
         if (submissions.length > 0) {
@@ -441,7 +441,7 @@ export function MCSubmissionAdminView(props) {
         }
     }
 
-    const downloadNotLastStateProjects = (e) => {
+    const downloadNotLastStateProjects = (event) => {
         
         let notThisState = submissionDetails.states.slice(-1)[0]
         if (notThisState !== undefined) {
@@ -522,7 +522,7 @@ export function MCSubmissionAdminView(props) {
                                 intent="warning"
                                 minimal={true}
                                 rightIcon={"download"}
-                                onClick={() => downloadProjectSummary()} />
+                                onClick={downloadProjectSummary} />
                         </Tooltip2>
                         <MenuDivider/>
                         <Button text={"Filter : "} minimal={true} small={true} />

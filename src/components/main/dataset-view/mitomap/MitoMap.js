@@ -30,7 +30,7 @@ export function MCMitoMap(props) {
           })
 
         axios.get('/api/data/mitomap', {params:{dataID:dataID,token:token,anovaDetails:mitoMapData.anovaDetails}}).then(response => {
-            console.log(response.data.data)
+            
             if (response.status === 200 && Object.keys(response.data).includes("success") && response.data["success"]) {
                 const data = {
                     main:response.data.data.pathwaySignificantIDs,
@@ -77,7 +77,7 @@ export function MCMitoMap(props) {
     }
 
     const togglePathwayNames = (e) => {
-        console.log("toggle")
+        
         setMitoMapData(prevValues => {
             return { ...prevValues,"showNames":!prevValues.showNames}
           })
@@ -94,7 +94,6 @@ export function MCMitoMap(props) {
 
     const handleClickOnPathway = (metricName) => {
 
-        
         const matchedPathways = Object.keys(mitomapPathways.pathwayIDMatch).filter(v => v.endsWith(metricName))
         if (matchedPathways.length > 0){
             const pathwayName = matchedPathways[0]
@@ -112,7 +111,7 @@ export function MCMitoMap(props) {
             
         {mitoMapData.anovaDetails===undefined || Object.keys(mitoMapData.anovaDetails).length === 0  ? 
             
-            <MCClusterANOVASelection buttonText="Show MitoMap" groupingNames={groupingNames} setANOVASettings={setMitoMapANOVADetails}/>:
+                <MCClusterANOVASelection buttonText="Show MitoMap" groupingNames={groupingNames} setANOVASettings={setMitoMapANOVADetails} askForNumberClusters={false} />:
 
             mitoMapData.isLoading ? <MCSpinner />:
         
@@ -133,8 +132,6 @@ export function MCMitoMap(props) {
                                         <motion.div whileHover={{scale:1.05}} key={v.name} className={v.sig?"mitomap-item-sig":"mitomap-item"}>
                                             {v.name}{` (${v.idx})`}
                                         </motion.div>)}
-
-                                    
                                     </div>
                                 </div>
                                 <div className="mitomap-extra-chart">
@@ -175,9 +172,9 @@ export function MCMitoMap(props) {
                                         extraText = {`${N_sig}/${N}`} 
                                         metricName = {name} 
                                         clicked = {(pathwayDetails!==undefined && pathwayDetails.metricName === name) || mitoMapData.showNames } 
-                                        fontSizeMetric={9} 
-                                        width={95} 
-                                        height={110} 
+                                        fontSizeMetric={11} 
+                                        width={105} 
+                                        height={120} 
                                         handleClick = {handleClickOnPathway}/>
                                 )
                             })}
@@ -198,9 +195,9 @@ export function MCMitoMap(props) {
                                                     extraText = {`${N_sig}/${N}`}
                                                     perc = {frac} 
                                                     metricName = {name} 
-                                                    fontSizeMetric={9} 
-                                                    width={95} 
-                                                    height={110} 
+                                                    fontSizeMetric={10} 
+                                                    width={100} 
+                                                    height={120} 
                                                     handleClick = {handleClickOnPathway}/>
                                             )
                                         })}

@@ -3,6 +3,7 @@ import { useState } from "react";
 import _ from "lodash";
 import { scaleLinear, scaleBand } from "@visx/scale";
 import { Text } from "@visx/text";
+import { getLuma } from "../../utils/Misc";
 
 
 
@@ -26,7 +27,7 @@ function MCMinimalClusterView(props) {
 
     const heightGroupingRect = 13
     const minXValue = xscale(-0.5)
-    const midPoint = 0+margin.left+(width-margin.right)/2
+    
     const barWidth = xscale.bandwidth()
     const yscale = scaleLinear(        {
                 domain : [maxValue, -maxValue],
@@ -34,17 +35,23 @@ function MCMinimalClusterView(props) {
             })
         
     const minYValue = yscale(-maxValue)
-
+    //when dark background color, use white as txt color.
+    const textColor = getLuma(mouseOverColor) > 180?"black":"white"
+      
+           
     return (
         <g>
             
-            <rect x = {0} y = {0} width={width} height={height} fill="#f2f2f2"/>
-            <rect x = {midPoint-40} y = {2} width={80} height={10} fill={selected?mouseOverColor:"transparent"}/>
-            <Text x = {midPoint} y = {4} fontWeight={selected?500:350} textAnchor={"middle"} verticalAnchor={"start"} fontSize={9}>{`C(${clusterIndex})`}</Text>
-            <Text x = {width-margin.right} y = {0} verticalAnchor="start" textAnchor="end" fontSize={10}>{`${mouseOverText}`}</Text>
+            <rect x = {0} y = {0} width={width} height={height} fill="#f2f2f2"/> 
+            
+            <rect x={margin.left+1} y={2} width={40} height={12} fill={selected ? mouseOverColor : "transparent"} />
+            <Text x={margin.left + 21} y={4} fill={selected?textColor:"black"} fontWeight={selected?500:350} textAnchor={"middle"} verticalAnchor={"start"} fontSize={11}>{`C(${clusterIndex})`}</Text>
+            
+            <Text x={width - margin.right} y={0} verticalAnchor="start" textAnchor="end" fontSize={11}>{`${mouseOverText}`}</Text>
             <line x1 = {0+margin.left} x2={width-margin.right} y1={yscale(0)} y2={yscale(0)} stroke="black" strokeWidth={selected?0.75:0.25}/>
             <line x1 = {0+margin.left} x2={0+margin.left} y1={minYValue} y2={yscale(maxValue)} stroke="black" strokeWidth={selected?0.75:0.25}/>
-            {vs.map((p,i) => {
+            
+            {vs.map((p, i) => {
                 const barX = xscale(i );
                 // const barY = maxValue - barHeight;
                 const barGoesDown = p < 0 
@@ -90,7 +97,7 @@ function MCMinimalClusterView(props) {
                                                 y = {yscale(-maxValue)+5 + heightGroupingRect * ii + heightGroupingRect/2} 
                                                 textAnchor={labelOnRightSide?"start":"end"}
                                                 verticalAnchor="middle" 
-                                                fontSize={10}
+                                                fontSize={11}
                                                 width = {widthtext}
                                                 scaleToFit = {"shrink-only"}
                                                >

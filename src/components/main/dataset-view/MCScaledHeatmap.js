@@ -30,7 +30,7 @@ export function MCClusterANOVASelection(props) {
 
     const {groupingNames, setANOVASettings, buttonText,  askForNumberClusters } = props 
     const [anovaType,setANOVAType] = useState("1-way ANOVA")
-    const [groupingSelection, setGroupingSelection] = useState({pvalue:0.001, ncluster:6})
+    const [groupingSelection, setGroupingSelection] = useState({pvalue: 0.001, ncluster: 12})
     const oneWayANOVA = anovaType === "1-way ANOVA" || groupingNames.length === 1
 
     const saveGroupingSelection = (groupingKey,groupingValue) => {
@@ -169,6 +169,7 @@ export function MCHeatmapWrapper(props) {
         if (Object.keys(responseData.data).length !== 0) return 
         if (!_.isFunction(saveHeatmapData)) return 
         if (responseData.anovaDetails===undefined  ||  Object.keys(responseData.anovaDetails).length === 0) return 
+        
         saveHeatmapData(prevValues => {
             return { ...prevValues,"isLoading":true}
           })
@@ -186,7 +187,6 @@ export function MCHeatmapWrapper(props) {
                 signal: controller.signal
             }).then(response => {
                 
-            console.log(response.data)
             if ("success" in response.data && response.data["success"]) {
                 if (response.data.params === undefined) {
                     

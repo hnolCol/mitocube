@@ -279,7 +279,7 @@ class Submission(object):
                     today = date.today() 
                     deltaDays = today - creationDate
                     
-                    paramsFile["daysFromCreationToDone"] = deltaDays.days
+                    paramsFile["daysFromCreationToLastState"] = deltaDays.days
                 additionalInfo = "You will be notified if the project's state will change again." if paramsFile["State"] != states[-1] else "The results will be delivered in another email or using the network attached server."
                 
                 emailAdresses = [paramsFile["Email"]] if "," not in paramsFile["Email"] else paramsFile["Email"].split(",")

@@ -22,8 +22,9 @@ class DatasetsMitoMap(Resource):
         dataID = request.args.get('dataID', default="None", type=str)
         anovaDetails = json.loads(request.args.get("anovaDetails",default="{}",type=str))
         success, details = self.data.getMitoMapData(dataID,anovaDetails)
+      
         if not success:
-            return jsonify({"success":success,"error":details})
+            return {"success":success,"error":details}
         else:
-            return jsonify({"success":success,"data":details})
+            return {"success":success,"data":details}
        
