@@ -3,13 +3,14 @@ import { useState, useEffect } from "react"
 import axios from "axios";
 import { Alert, Button, ButtonGroup, Code, EditableText, InputGroup, NumericInput } from "@blueprintjs/core";
 import { MCCombobox } from "../utils/components/MCCombobox";
-import { saveSubmission, getSavedSubmission, extractNamePrefix, downloadJSONFile, isStringNumber } from "../utils/Misc";
+import { saveSubmission, getSavedSubmission, extractNamePrefix, downloadJSONFile, isStringNumber, makeRepeatedArray } from "../utils/Misc";
 import _, { isNumber, isObject } from "lodash";
 import { MCGroupingTable } from "./MCGroupingTable";
 import { DateInput2 } from "@blueprintjs/datetime2";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { MCHeader } from "../utils/components/MCHeader";
+import { tab } from "@testing-library/user-event/dist/tab";
 
 
 const initAlert = {
@@ -135,8 +136,22 @@ export function MCSampleSubmission (props) {
         saveSubmission(submission)
     }
 
-    const handleDataEditing = (value, rowIndex, columnIndex) => {
+    const handleFillSeries = () => {
+        //handles the replicate column filling.
+        let tableData = submission.groupingTable //.data. dataID, date
+        let sampleNumber = tableData.data.length
+        let numReplicates = submission.details["Number Replicates"]
+        let replicates = makeRepeatedArray(_.range(1, numReplicates + 1), _.round(sampleNumber / numReplicates + 0.5))
+        let slicedReplicates = replicates.slice(0,sampleNumber)
+        _.range(sampleNumber).forEach(rowIdx => tableData.data[rowIdx]["Replicate"] = slicedReplicates[rowIdx])
 
+        setSubmission(prevValues => {
+            return { ...prevValues, "groupingTable":tableData,"rerender":Math.random()}})
+    }
+
+    const handleDataEditing = (value, rowIndex, columnIndex) => {
+        console.log(value, rowIndex, columnIndex)
+       
         let tableData = submission.groupingTable
         
         if (tableData.data.length === 0 || !_.isObject(tableData.data[0])) {
@@ -144,25 +159,28 @@ export function MCSampleSubmission (props) {
                 return
         }//no samples added yet 
         
-        if (_.isObject(tableData.data[rowIndex]) && tableData.columnNames[columnIndex] === "Replicate") {
-                    
-                const { isNumber } = isStringNumber(value)
+        if (_.isObject(tableData.data[rowIndex]) && tableData.columnNames[columnIndex] === "Replicate" && _.isString(value)) {
+                
+            const { isNumber } = isStringNumber(value)
+               
+            if (!isNumber) {
+                setSubmission(prevValues => { return { ...prevValues, "rerender": Math.random() } })
+                console.log("return")
+                return
+            }
+        }
+
+        if (_.isArray(rowIndex)) {
+       
+            rowIndex.forEach(rowIdx => tableData.data[rowIdx][tableData.columnNames[columnIndex]] = value)
             
-                if (!isNumber) {
-                    setSubmission(prevValues => { return { ...prevValues, "rerender": Math.random() } })
-                    console.log("return")
-                    return
-                }
-            
-        if (_.isArray(rowIndex)){
-            rowIndex.forEach(v => tableData.data[v][tableData.columnNames[columnIndex]] = value)
         }
         
         else {
                     tableData.data[rowIndex][tableData.columnNames[columnIndex]] = value
                 }
-        }
         
+       
        // console.log(value,rowIndex,columnIndex)
         setSubmission(prevValues => {
             return { ...prevValues, "groupingTable":tableData,"rerender":Math.random()}})
@@ -239,7 +257,7 @@ export function MCSampleSubmission (props) {
         _.range(0, dataTable.length).forEach((v, ii) => dataTable[v]["Run"] = buildRunName(submission.time, submission.details["Experimentator"], submission.dataID, 0, ii))
         let tableData = {columnNames:columnNames, data: dataTable}
         
-        console.log(tableData)
+        //console.log(tableData)
         //update
         setSubmission(prevValues => {
             return { ...prevValues, "groupingTable":tableData,"rerender":Math.random()}})  
@@ -309,7 +327,8 @@ export function MCSampleSubmission (props) {
                             rerender = {submission.rerender}
                             columnNames = {submission.groupingTable.columnNames}
                             numReplicates = {submission.details["Number Replicates"]!==undefined?submission.details["Number Replicates"]:1}
-                            handleDataEditing = {handleDataEditing}
+                            handleDataEditing={handleDataEditing}
+                            handleFillSeries = {handleFillSeries}
                             handleTemplateInput = {handleTemplateInput}
                             handleColumnNameEditing  = {handleColumnNameEditing }/>
                             <p>{submission.groupingTable.data.length===0?"Adjust number of samples to assign groupings.":"0000 is a placeholder for the facility project id and will be assigned after acceptance of your project. Measured raw files will be named as shown here."}</p>

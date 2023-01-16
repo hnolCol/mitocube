@@ -2,7 +2,7 @@
 
     "welcome-text" : "Welcome to the MitoCube API docs.",
     "base-url" : "https://mitocube.com/api/",
-    "pw": "",
+    "website-pw": "mitocube-pw",
     "email-sever-settings" : {
         "MAIL_SERVER": "mail.privateemail.com", 
         "MAIL_PORT": 465, 
@@ -11,7 +11,7 @@
         "MAIL_USE_SSL": 1,
         "MAIL_DEFAULT_SENDER" : "support@mitocube.com"
     },
-    "email-cc-submission-list" : ["hendrik.nolte@age.mpg.de"], 
+    "email-cc-submission-list" : ["hendrik.nolte@age.mpg.de","Dominique.Diehl@age.mpg.de"], 
     "email-pw": "email-pw",
     "api":{
         "entries": [
@@ -210,6 +210,14 @@
                 "q" : "Research Aim",
                 "default" : "",
                 "placeholder" : "Please provide a short description of your project and it's research aims."
+            },
+            {
+                "field" : "text-input",
+                "name" : "Protein of Interest",
+                "title" : "Protein of Interest",
+                "q" : "Protein of Interest",
+                "default" : "",
+                "placeholder" : "Please provide the protein of interest (knockout line, OMA1, YME1l1)."
             },
             {
                 "field" : "combo-input",

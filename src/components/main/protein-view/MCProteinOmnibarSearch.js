@@ -71,10 +71,11 @@ export function MCProteinSearch(props) {
             { headers: { 'Content-Type': 'application/json' } }).then(response => 
             {
                 if (response.status === 200 && MCSimpleResponseCheck(response.data)) {
+                    console.log(response.data)
                     setFeatureDetails(prevValues => {
                         return {
                             ...prevValues,
-                            "items": response.data.features,
+                            "items": _.isArray(response.data.features)?response.data.features:[],
                             "featureLabels": response.data.featureLabels,
                             "sortBy" : response.data.sortBy,
                         }
@@ -128,7 +129,6 @@ export function MCProteinSearch(props) {
           }
 
     if (featureDeatails.items === undefined) return <div></div>
-    
     return (
 
         <Omnibar

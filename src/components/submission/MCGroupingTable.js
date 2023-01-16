@@ -85,7 +85,7 @@ function getRowsAsArray(region){
 
 export function MCGroupingTable(props) {
 
-    const {data, columnNames, handleDataEditing, numReplicates, handleColumnNameEditing, handleTemplateInput, rerender} = props
+    const {data, columnNames, handleDataEditing, numReplicates, handleColumnNameEditing, handleTemplateInput, handleFillSeries, rerender} = props
     const [groupings,setGroupings] = useState({})
     const [addGroup,setAddGroup] = useState({})
     const [editGrouping,setEditGrouping] = useState({})
@@ -152,6 +152,8 @@ export function MCGroupingTable(props) {
         handleDataEditing(v+1,getRowsAsArray(r.regions),columnIndex)
     }
 
+ 
+
     const closeDialog = () => {
         setAddGroup({isOpen:false})
     }
@@ -171,7 +173,8 @@ export function MCGroupingTable(props) {
             
             return(
                 <Menu>
-                    <MenuItem text="Replicate" disabled={true}/>
+                    <MenuItem text="Replicate" disabled={true} />
+                    {_.isFunction(handleFillSeries)?<MenuItem text={`Fill series: 1-${numReplicates}`} onClick={handleFillSeries} />:null}
                     <MenuDivider />
                     {_.range(numReplicates).map(v => <MenuItem key = {v} text={v+1} onClick={e => handleReplicateChange(v,r,columnIndex)}/>)}
                 </Menu>

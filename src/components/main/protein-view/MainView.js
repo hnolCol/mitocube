@@ -77,7 +77,7 @@ export function ProteinMainView(props) {
     } 
 
     const showDataInTable = (data,columnNames,title,fileNameID) => {
-      
+      console.log(data,columnNames)
       setDataForTable({isOpen:true,data:data,columnNames:columnNames,title:title,fileNameID:fileNameID})
 
     }

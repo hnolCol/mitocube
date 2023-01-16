@@ -19,7 +19,7 @@ class AdminUsers(object):
     def __initMainUser(self):
         ""
         email = generate_password_hash(config("email-admin"))
-        pw = generate_password_hash(config("admin-pw"))
+        pw = generate_password_hash(config("pw-admin"))
        
         superAdminEmailFound = [userEmailHash for userEmailHash in self.users.keys() if check_password_hash(userEmailHash,config("email-admin"))]
       
@@ -27,16 +27,16 @@ class AdminUsers(object):
             raise ValueError("Something is wrong.")
         if len(self.users) == 0:
            
-            email = generate_password_hash(config("email-admin"))
-            pw = generate_password_hash(config("admin-pw"))
+            email = generate_password_hash(config("email-admin")) 
+            pw = generate_password_hash(config("pw-admin"))
 
             #print(check_password_hash(email,"h.nolte@age.mpg.de"))
             self.users[email] = {"pw":pw,"super-admin":True}
 
-        elif len(superAdminEmailFound) > 0 and not check_password_hash(self.users[superAdminEmailFound[0]]["pw"],config("admin-pw")): #pw changed of admin from env file - update!! 
+        elif len(superAdminEmailFound) > 0 and not check_password_hash(self.users[superAdminEmailFound[0]]["pw"],config("pw-admin")): #pw changed of admin from env file - update!! 
             for sAdminFound in superAdminEmailFound:
                 del self.users[sAdminFound]
-            self.users[email] = {"pw":generate_password_hash(config("admin-pw")),"super-admin":True}
+            self.users[email] = {"pw":generate_password_hash(config("pw-admin")),"super-admin":True}
         
 
     def __readUsers(self):

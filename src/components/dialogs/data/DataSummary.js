@@ -8,7 +8,7 @@ import { MCSpinner } from "../../spinner/MCSpinner"
 import { MCCSVDownload } from  "../../utils/components/MCCSVDownload" 
 
 export function  MCDataSummary (props) {
-    
+    console.log(props)
     const [dataSummary, setDataSummary] = useState({isLoading:true,data:[],columnNames:[],infoText:""})
     
     const cellRenderer = (rowIndex,columnIndex) => {
@@ -26,9 +26,9 @@ export function  MCDataSummary (props) {
     useEffect(() => {
 
         axios.get('/api/data/summary',{params:{token:props.token}}).then(response => {
-            
-                if (response.status === 200 & response.data["success"]){
-                    const dataSummary = JSON.parse(response.data["data"])
+            console.log(response.data)
+                if (response.status === 200 && response.data["success"] && _.isArray(response.data["datasets"])){
+                    const dataSummary = response.data["datasets"]
                     
                     if (dataSummary.length > 0)
                     {

@@ -2,6 +2,7 @@ from requests import delete
 from flask import request, jsonify
 from flask_restful import Resource
 from werkzeug.security import generate_password_hash, check_password_hash
+
 import json
 from ..utils.html import * 
 
@@ -24,7 +25,7 @@ class LoginWebsite(Resource):
         self.token = kwargs["token"]
         self.data = kwargs["data"]
         
-        self.pwHash = generate_password_hash(self.data.getConfigParam("pw"))
+        self.pwHash = generate_password_hash(self.data.getWebsitePassword())
         
     def post(self):
         "Returns features in data"

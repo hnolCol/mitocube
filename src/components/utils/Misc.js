@@ -4,6 +4,9 @@ import {isObject, join } from "lodash";
 import _ from "lodash"
 
 
+export function makeRepeatedArray(arr, repeats) {
+    return [].concat(...Array.from({ length: repeats }, () => arr));
+}
 export function isStringNumber(str) {
     if (typeof str != "string") return false 
     let isNumber = !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...

@@ -72,6 +72,9 @@ class DBFeatures:
 
     def __getFiles(self):
         ""
+        if not os.path.exists(self.pathToDB):
+            print("Warning:: Path to Database not found. data/static/dbs/uniprot/")
+            return []
         return [os.path.join(self.pathToDB,x) for x in os.listdir(self.pathToDB) if x.endswith(".txt")]
 
     def _findMatchingColumns(self,columnNames):
@@ -612,23 +615,30 @@ class Data(object):
         return foundMissing
 
     def __readDataInfo(self):
-        """"""
+        """
+        Creates an easy access summary dataframe to to be shown as a summary (hence the name).
+        Check for existance of datasets, if not creates an empy dataframe with required columns.
+        """
         columnNames = self.getAPIParam("dataset-presentation")
         sortByColumnNames = [colName for colName in self.getAPIParam("dataset-presentation-sort-by") if colName in columnNames]
         r = []
         
-        for dataID, dataset in self.dataCollection.items():
-            
-           # print(data["params"])
-            params = dataset.getParams()
-            v = dict([(k,params[k]) for k in columnNames if k in params])
-            features = dataset.getFeatures()
-            N = features.size 
-            v["dataID"] = dataID
-            v["#Features"] = N
-            r.append(v)
-            
-        self.dataSummary = pd.DataFrame(r).sort_values(by=sortByColumnNames)
+        if len(self.dataCollection) == 0:
+            print("No data found.")
+            self.dataSummary = pd.DataFrame(columns = columnNames)
+        else:
+            for dataID, dataset in self.dataCollection.items():
+                
+            # print(data["params"])
+                params = dataset.getParams()
+                v = dict([(k,params[k]) for k in columnNames if k in params])
+                features = dataset.getFeatures()
+                N = features.size 
+                v["dataID"] = dataID
+                v["#Features"] = N
+                r.append(v)
+                
+            self.dataSummary = pd.DataFrame(r).sort_values(by=sortByColumnNames)
 
     def __readConfig(self):
         """Loads the config file."""
@@ -636,8 +646,8 @@ class Data(object):
         if os.path.exists(pathToDocs):
             self.config = json.load(open(pathToDocs))
             
-            APIpassword = config("mitocube-pw")
-            self.config["pw"] = APIpassword
+            #APIpassword = config("mitocube-pw")
+            #self.config["pw"] = APIpassword
 
     def __getPaths(self,dataID : str, checkExistance : bool = True) -> Tuple[str,str]:
         ""
@@ -825,6 +835,11 @@ class Data(object):
     def getAPIParams(self,paramNames : List[str]) -> List[str]:
         """"""
         return [self.getAPIParam(paramName) for paramName in paramNames]
+
+    def getWebsitePassword(self):
+        """Returns the plain string of the pw, should be here -relocate"""
+        envName = self.getConfigParam("website-pw")
+        return config(envName)
 
     def getExperimentalInformation(self, dataID : str, *args, **kwargs) -> Tuple[bool,list]:
         """Return experimental information which are defined in the API params"""

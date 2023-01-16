@@ -55,7 +55,7 @@ export function MCCardHeader(props){
                                 onClick = {() => requestCorrelatedFeatures(dataID,props.featureID)}
                                 />:null}
                             {dataID !== null?
-                            <Link style={{ textDecoration: 'none' }} to={`/dataset/${dataID}/summary`} target="_blank" rel="noopener noreferrer"> 
+                            <Link style={{ textDecoration: 'none' }} to={`/dataset/${dataID}?type=summary`} target="_blank" rel="noopener noreferrer"> 
                                 <Button fill={true} icon={"satellite"} minimal={"true"} intent={"danger"} text = {"Explore dataset"}/> 
                             </Link>:null}
                             <MenuItem text="Save image" icon={"graph"} onClick={() => {
