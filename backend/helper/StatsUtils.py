@@ -19,24 +19,6 @@ def calculateTTest(X : pd.DataFrame, columNamesGroup1 : List[str], columNamesGro
     tTestDifference["s"] = boolIdx
     return tTestDifference
 
-        # boolIdx, p_adj, _, _ = multipletests(p,alpha=0.05,method="fdr_tsbky")
-        # # print(p_adj)
-        # diff = pd.DataFrame(pd.Series(d.loc[:,columnNames1].mean(axis=1) - d.loc[:,columnNames2].mean(axis=1), name="x"))
-        # diff["y"] = (-1)*np.log10(p)
-        # diff["s"] = boolIdx
-        
-        # diff = pd.concat([diff,data[filterColumns + [annotationColumn]]],axis=1)
-        
-        # diff = diff.reset_index()
-        
-        # diff = diff.rename({"index":"Key"})
-
-        # # print(self.dbManager.getDBInfoForFeatureListByColumnName(X.index,annotationColumn,checkShape=False).values.flatten())
-        # #diff = diff.join(pd.Series(self.dbManager.getDBInfoForFeatureListByColumnName(X.index,annotationColumn,checkShape=False).values.flatten(), 
-        #     #               name="l"))
-        # diff[annotationColumn] = diff[annotationColumn].fillna("-")
-        # diff = diff.dropna(subset=["x","y"])
-        # # print(diff[filterColumns[0]].unique())
 
 def calculateOneWayANOVA(X : pd.DataFrame, groupings : Dict[str,Dict[str,list]], groupingName : str, anovaCutoff : float = 0.05):
     """

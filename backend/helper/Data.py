@@ -18,7 +18,7 @@ import scipy.cluster.hierarchy as sch
 from scipy.stats import f_oneway,ttest_ind
 import fastcluster
 import itertools
-from .Stats import TwoWAyANOVA, calculateOneWayANOVA, calculateTTest
+from .StatsUtils import TwoWAyANOVA, calculateOneWayANOVA, calculateTTest
 from .Misc import buildRegex, matchValueRangeToColors
 from collections import OrderedDict
 from typing import List, Tuple, Dict, Any, Iterable, Callable
