@@ -2,6 +2,7 @@
   "name": "mitocube",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "dependencies": {
     "@blueprintjs/core": "^4.5.1",
     "@blueprintjs/datetime": "^4.3.1",
@@ -31,6 +32,7 @@
     "react-grid-layout": "^1.3.1",
     "react-json-to-csv": "^1.0.4",
     "react-json-view": "^1.21.3",
+    "react-query": "^3.39.2",
     "react-router": "^6.2.1",
     "react-router-dom": "6",
     "react-scripts": "5.0.0",

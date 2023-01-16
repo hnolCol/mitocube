@@ -2,20 +2,25 @@ import { useState } from "react";
 import React from "react";
 import { Link, } from "react-router-dom";
 import { Button } from "@blueprintjs/core";
-import { MCIconWithTooltip } from "../utils/components/IconWithTooltip";
-import { MCTagButton } from "../utils/components/MCTagButton";
-import { MCAddButton } from "../utils/components/MCAddButton";
-import OmnibarSearch from "../utils/components/OmnibarSearch"
+
+import { MCIconWithTooltip } from "../../utils/components/IconWithTooltip";
+import { MCTagButton } from "../../utils/components/MCTagButton";
+import { MCAddButton } from "../../utils/components/MCAddButton";
+
+import { MCProteinLayout } from "./Layout";
+import { MCDataFilter } from "../../dialogs/filter/DataFilter";
+import { MCDialog } from "../../dialogs/MCDialog";
+import { MCDataTableDialog } from "../../dialogs/MCDataTableDialog";
+import { MCGetFilterFromLocalStorage } from "../../utils/Misc";
+
+import { MCSpinner } from "../../spinner/MCSpinner";
+import { MCDrawerInformation } from "./DrawerInformation";
+import { MCSettings } from "../../dialogs/setting/MCSettings";
+import { MCDataSummary } from "../../dialogs/data/DataSummary";
+import { MCProteinSearch } from "./MCProteinOmnibarSearch";
+
+import { useToggle } from "../../../hooks/useToggle";
 import _ from "lodash"
-import { MCProteinLayout } from "./protein-view/Layout"
-import { MCDataFilter } from "../dialogs/filter/DataFilter"
-import { MCDialog } from "../dialogs/MCDialog"
-import { MCDataTableDialog } from "../dialogs/MCDataTableDialog";
-import { MCGetFilterFromLocalStorage } from "../utils/Misc";
-import { MCSpinner } from "../spinner/MCSpinner"
-import { MCExpInfoDrawer } from "./protein-view/ExperimentInfo"
-import { MCSettings } from "../dialogs/setting/MCSettings"
-import { MCDataSummary } from "../dialogs/data/DataSummary";
 
 function allObjectsPresent(inArray = [],comArray = []){
   const foundInCom = inArray.map((o) => {
@@ -25,13 +30,13 @@ function allObjectsPresent(inArray = [],comArray = []){
 }
 
 
-
 export function ProteinMainView(props) {
+    const {token} = props
     // const [loading, setLoading] = useState(false)
     const [filterDialogOpen, setFilterDialogOpen] = useState(false)
     const [settingDialogOpen, setSettingDialogOpen] = useState(false)
     const [dataSummaryDialogOpen, setDataSummaryDialogOpen] = useState(false)
-    const [searchOpen, setSearchOpen] = useState(false)
+    const [searchOpen, setSearchOpen] = useToggle()
     const [featureIDs, setfeatureIDs] = useState({items:[],selected:"",invisible:[]}) 
     const [experimentInfo, setExperimentInfo] = useState({isOpen:false,"dataID":undefined,isSummary:false})
     const [dataForTable , setDataForTable] = useState({isOpen:false,data:null,columnNames:[],title:"Data View",fileNameID:"download"})
@@ -164,8 +169,9 @@ export function ProteinMainView(props) {
         </div>
 
         
-    <div style={{marginLeft:"40px",marginTop:"40px",overflowY:"scroll",height:"100%"}}>
-      <OmnibarSearch isOpen={searchOpen} setOpenState = {setSearchOpen} onItemSelect={onItemSelect} filter = {MCGetFilterFromLocalStorage()}/>
+        <div style={{ marginLeft: "40px", marginTop: "40px", overflowY: "scroll", height: "100%" }}>
+          <MCProteinSearch token={token} isOpen={searchOpen} onItemSelect={onItemSelect} filter = {MCGetFilterFromLocalStorage()} onClose = {setSearchOpen}/>
+      {/* <OmnibarSearch isOpen={searchOpen} setOpenState = {setSearchOpen} onItemSelect={onItemSelect} filter = {MCGetFilterFromLocalStorage()}/> */}
       <MCDataTableDialog 
                 isOpen={dataForTable.isOpen} 
                 title={dataForTable.title}  
@@ -175,14 +181,14 @@ export function ProteinMainView(props) {
                 fileNameID = {dataForTable.fileNameID}
                 onClose={setOpenOfDataInTable}/>
 
-      <MCExpInfoDrawer 
+      <MCDrawerInformation 
                 isOpen={experimentInfo.isOpen} 
                 dataID={experimentInfo.dataID} 
-                handleExpInfoRequest = {handleExpInfoRequest} 
+                onClose = {() => handleExpInfoRequest(undefined,true)} 
                 isSummary={experimentInfo.isSummary} 
                 featureID={featureIDs["selected"]}
                 title={experimentInfo.isSummary?"Protein Summary":"Experimental Information"}
-                token = {props.token}/>
+                token = {token}/>
 
       <MCDialog children={<MCDataFilter 
                 onClose = {setFilterDialogOpen} 

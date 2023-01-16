@@ -20,11 +20,16 @@ import "react-resizable/css/styles.css"
 
 
 import App from './App';
+import { QueryClientProvider, QueryClient } from "react-query"
+
+const queryClient = new QueryClient();
+
 ReactDOM.render(
- 
+    <QueryClientProvider client={queryClient}>
     <BrowserRouter>
     <App />
     </BrowserRouter>
+    </QueryClientProvider>
   ,
   document.getElementById('root')
 );

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { Responsive, WidthProvider } from "react-grid-layout";
 import axios from "axios";
-import { MCAxisHandler } from "../charts/AxisContainer";
+import { MCCardAxisHandler } from "./charts/MCAxisCardHandler";
 import _ from "lodash"
 
 import { Popover2 } from "@blueprintjs/popover2";
@@ -68,19 +68,19 @@ MCIndicatorCircle.defaultProps = {
 
 export function MCProteinLayout(props) {
 
-   
+    const {token, selectedFeature} = props
     const [layoutAndCards,setLayoutAndCards] = useState({"cards":[],"layout":[],"activeFilter":[],"filter":[],"filterColors":{},"cardData":{}})
     const [removedItems, setRemovedItems] = useState([""])
 
     const onLayoutChangeCallback = (layout,al,s) => {
 
-      if (lastSavedLayout[s.Entry] === undefined && s.Entry === props.selectedFeature.Entry){
-        lastSavedLayout[s.Entry] = layoutAndCards.layout[props.selectedFeature.Entry]
+      if (lastSavedLayout[s.Entry] === undefined && s.Entry === selectedFeature.Entry){
+        lastSavedLayout[s.Entry] = layoutAndCards.layout[selectedFeature.Entry]
    
       }
      
 
-      if (layoutAndCards.layout[props.selectedFeature.Entry][breakpoint]!==undefined&&layoutAndCards.layout[props.selectedFeature.Entry][breakpoint].length!== layout.length) {
+      if (layoutAndCards.layout[selectedFeature.Entry][breakpoint]!==undefined&&layoutAndCards.layout[selectedFeature.Entry][breakpoint].length!== layout.length) {
         const missingLayoutItem = _.differenceWith(lastSavedLayout[s.Entry][breakpoint],layout,_.isEqual)
         activeFilterLayoutItems = _.unionBy(missingLayoutItem,activeFilterLayoutItems,"i")     
       }
@@ -88,7 +88,7 @@ export function MCProteinLayout(props) {
       lastSavedLayout[s.Entry] = al
       
       const l = layoutAndCards.layout
-      l[[props.selectedFeature.Entry]] = al
+      l[[selectedFeature.Entry]] = al
     
       setLayoutAndCards(
           prevValues => {
@@ -130,7 +130,7 @@ export function MCProteinLayout(props) {
       if (props.featureIDItems.length === 0) {
         return;
       }
-      if (props.token === null) {
+      if (token === null) {
         return 
       }
       
@@ -143,7 +143,7 @@ export function MCProteinLayout(props) {
       }
       
       axios.post('/api/features/cards' ,
-            {featureIDs:props.featureIDItems,filter:{},columnNumber:columnNumbers,token:props.token}, 
+            {featureIDs:props.featureIDItems,filter:{},columnNumber:columnNumbers,token:token}, 
             {headers : {'Content-Type': 'application/json'}}).then(response => {
               
               if (response.status === 200){
@@ -159,11 +159,11 @@ export function MCProteinLayout(props) {
               }
               
         })
-    }, [props.featureIDItems,layoutAndCards.layout,props.token, resetAuthStatus]);
+    }, [props.featureIDItems,layoutAndCards.layout,token, resetAuthStatus]);
     
-    // console.log(layoutAndCards.layout[props.selectedFeature.Entry])
-    const dynamicLayout = layoutAndCards.layout[props.selectedFeature.Entry]
-    // lastSavedLayout[props.selectedFeature.Entry]===undefined?layoutAndCards.layout[props.selectedFeature.Entry]:lastSavedLayout[props.selectedFeature.Entry]
+    // console.log(layoutAndCards.layout[selectedFeature.Entry])
+    const dynamicLayout = layoutAndCards.layout[selectedFeature.Entry]
+    // lastSavedLayout[selectedFeature.Entry]===undefined?layoutAndCards.layout[selectedFeature.Entry]:lastSavedLayout[selectedFeature.Entry]
     
     const localMitoCubeFilter = MCGetFilterFromLocalStorage()
     
@@ -171,7 +171,7 @@ export function MCProteinLayout(props) {
         
         <div style = {{paddingBottom:"50px"}}>
           <div className="shortcut-filter-div">
-          {layoutAndCards.filter[props.selectedFeature.Entry]!==undefined?layoutAndCards.filter[props.selectedFeature.Entry].map(filterName => {
+          {layoutAndCards.filter[selectedFeature.Entry]!==undefined?layoutAndCards.filter[selectedFeature.Entry].map(filterName => {
             return (
                 <MCIndicatorCircle 
                     key={filterName} 
@@ -183,9 +183,9 @@ export function MCProteinLayout(props) {
           }):null}
           </div>
           {
-            layoutAndCards.cards.length === 0 || dynamicLayout===undefined || layoutAndCards.cards[props.selectedFeature.Entry] === undefined?null:
+            layoutAndCards.cards.length === 0 || dynamicLayout===undefined || layoutAndCards.cards[selectedFeature.Entry] === undefined?null:
               <ResponsiveGridLayout
-                onLayoutChange={(l,al) => onLayoutChangeCallback(l,al,props.selectedFeature)} 
+                onLayoutChange={(l,al) => onLayoutChangeCallback(l,al,selectedFeature)} 
                 className="layout"
                 layouts={dynamicLayout}
                 breakpoints={{ lg: 1200 , md: 996, sm: 768, xs: 480, xxs: 0}}
@@ -197,12 +197,12 @@ export function MCProteinLayout(props) {
 
                 {Object.keys(layoutAndCards.cards).map(featureKey => {
                   
-                  if (featureKey !== props.selectedFeature.Entry){return null} 
+                  if (featureKey !== selectedFeature.Entry){return null} 
                   return(
                     layoutAndCards.cards[featureKey].map(v => {
                       
                       const heightFilter = _.filter(dynamicLayout[breakpoint],["i",v.id])
-                      const cardHidden = v.Entry !== props.selectedFeature.Entry || 
+                      const cardHidden = v.Entry !== selectedFeature.Entry || 
                                   layoutAndCards.activeFilter.includes(v.filterName) || 
                                   removedItems.includes(v.id) || 
                                   (v.filterName!=="Summary"&&localMitoCubeFilter!==null&&!localMitoCubeFilter["Type"].includes(v.filterName))
@@ -210,7 +210,7 @@ export function MCProteinLayout(props) {
                       return(
                       <div className="card-frame" key={`${v.id}`} style={{visibility:cardHidden?"hidden":"visible"}}>
                       
-                      <MCAxisHandler 
+                      <MCCardAxisHandler
                           height = {heightFilter.length === 0?[{"h":1}]:heightFilter} 
                           featureProps = {v} 
                           id = {v.id} 
@@ -225,34 +225,15 @@ export function MCProteinLayout(props) {
                           handleExpInfoRequest = {props.handleExpInfoRequest}
                           isSummary = {v.filterName === "Summary"}
                           resetAuthStatus = {resetAuthStatus}
-                          token = {props.token}
-                          label = {props.selectedFeature["Gene names  (primary )"]}/>
+                          token = {token}
+                          label = {selectedFeature["Gene names  (primary )"]}/>
                       
                   </div>
                     )})
                   )
                   
                 })}
-                {/* {layoutAndCards.cards[props.selectedFeature.Entry].map(v => {
-                    
-                    return(
-                          <div className="card-frame" key={v.id} style={
-                            {
-                            visibility:activeShortcutFilter.includes(v.filterName) || removedItems.includes(v.id)?"hidden":"visible"
-                            }}>
-                          
-                          <MCAxisHandler 
-                              height = {_.filter(dynamicLayout[breakpoint],["i",v.id])} featureProps = {v} id = {v.id} 
-                                indicatorTooltipStr = {v.filterName} 
-                                indicatorColor = {v.filterColor} handleRemoveRequest = {handleRemoveRequest} dataID = {v.dataID}
-                                handleExpInfoRequest = {props.handleExpInfoRequest}
-                                isSummary = {v.filterName === "Summary"}
-                                label = {props.selectedFeature["Gene names  (primary )"]}/>
-                          
-                      </div>)
-                }     
-                    )
-                }) */}
+
               </ResponsiveGridLayout>
               }
           

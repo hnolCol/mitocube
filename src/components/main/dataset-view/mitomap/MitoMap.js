@@ -1,15 +1,21 @@
+import { useEffect, useState } from "react";
 import { Button, Switch } from "@blueprintjs/core";
 import { Text } from "@visx/text";
-import axios from "axios";
+
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+
 import { MCCSVDownload } from "../../../utils/components/MCCSVDownload";
 import { MCAnimatedPercentage } from "../../../utils/components/MCSVGUtils";
 import { MCDoubleMembrane, MCPathwayItems, MCSVGBackgroundGradient } from "./utils";
-import {MCClusterANOVASelection} from "../MCScaledHeatmap";
+import { MCClusterANOVASelection } from "../MCANOVASelection";
 import { MCSpinner } from "../../../spinner/MCSpinner";
-import {MCSVGFrame} from "../../charts/AxisContainer"
+import { MCSVGFrame } from "../../protein-view/charts/MCAxisCardHandler"
+
 import _ from "lodash";
+import axios from "axios";
+import { useQuery } from "react-query"
+import { MCSimpleResponseCheck } from "../../../utils/ResponseChecks";
+import { MCHeader } from "../../../utils/components/MCHeader";
 
 export function MCMitoMap(props) {
 
@@ -17,62 +23,42 @@ export function MCMitoMap(props) {
     
     const mitomapPathways = mitoMapData.mitomapPathways
     const pathwayDetails = mitoMapData.selectedPathway
+    
+    const getMitomapData = async () => {
+        //fetch data from API. Only runs when anovaDetails contains data. 
+        const res = await axios.get('/api/data/mitomap',
+            { params: { dataID: dataID, token: token, anovaDetails: mitoMapData.anovaDetails } })
+        return res.data
+    }
 
-    useEffect(() => {
-        // handles data loading
-        if (Object.keys(mitoMapData.mitomapPathways).length !== 0) return 
-        if (!_.isFunction(setMitoMapData)) return 
-
-        if (mitoMapData.anovaDetails===undefined  ||  Object.keys(mitoMapData.anovaDetails).length === 0) return 
-        
-        setMitoMapData(prevValues => {
-            return { ...prevValues,"isLoading":true}
-          })
-
-        axios.get('/api/data/mitomap', {params:{dataID:dataID,token:token,anovaDetails:mitoMapData.anovaDetails}}).then(response => {
-            
-            if (response.status === 200 && Object.keys(response.data).includes("success") && response.data["success"]) {
-                const data = {
-                    main:response.data.data.pathwaySignificantIDs,
-                    second:response.data.data.secondPathwaySignificantIDs,
-                    pathwayIDMatch : response.data.data.pathwayIDMatch,
-                    pathwayIntensities  :  response.data.data.pathwayIntensities
+    const { isLoading, isError, isFetching } = useQuery(["getMitoMapData",], getMitomapData, {
+        onSuccess: (data) => {
+            if (MCSimpleResponseCheck(data) && _.has(data,"data")) { //check for success == true, check for path in data?
+                let mitomapdata = {
+                    main:data.data.pathwaySignificantIDs,
+                    second:data.data.secondPathwaySignificantIDs,
+                    pathwayIDMatch: data.data.pathwayIDMatch,
+                    pathwayIntensities: data.data.pathwayIntensities
                 }
                 setMitoMapData(prevValues => {
                     return {
                         ...prevValues,
-                        "mitomapPathways": data,
-                        "isLoading": false,
-                        "msg": `${response.data.data.numberProteins} of the MitoCarta 3.0 were detected.`
+                        "mitomapPathways": mitomapdata,
+                        "msg": `${data.data.numberProteins} of the MitoCarta 3.0 were detected.`
                     }
                   })
             }
-            else if (response.data === undefined) {
-                setMitoMapData(prevValues => {
-                    return {
-                        ...prevValues,
-                        "mitomapPathways": {},
-                        "isLoading": false,
-                        "msg": "API did not return any interpretable data. Please contact the website admin."
-                    }
-                  })
-            }
-            else {
-                setMitoMapData(prevValues => {
-                    return { ...prevValues,"mitomapPathways":{},"isLoading":false,"msg":response.data["error"]}
-                  })
-
-            }
-            }
-        )
-      }, [token, dataID, mitoMapData.anovaDetails]);
-
+        },
+        refetchOnWindowFocus: false,
+        retry: false,
+        enabled : !(mitoMapData.anovaDetails===undefined  ||  Object.keys(mitoMapData.anovaDetails).length === 0) && (Object.keys(mitoMapData.mitomapPathways).length === 0)
+    })
 
 
     const resetMitoMapData = (e) => {
 
         setMitoMapData(prevValues => {
-            return { ...prevValues,"anovaDetails":{},"isLoading":false}
+            return { ...prevValues,"anovaDetails":{}}
           })
     }
 
@@ -105,15 +91,20 @@ export function MCMitoMap(props) {
         }
         
     }
-    
+
     return(
         <div>
             
         {mitoMapData.anovaDetails===undefined || Object.keys(mitoMapData.anovaDetails).length === 0  ? 
             
                 <MCClusterANOVASelection buttonText="Show MitoMap" groupingNames={groupingNames} setANOVASettings={setMitoMapANOVADetails} askForNumberClusters={false} />:
-
-            mitoMapData.isLoading ? <MCSpinner />:
+            
+                isError ? <div>
+                    <p>API returned an error.</p>
+                    <Button text = "Reset" minimal={true} small={true} intent="danger" onClick={resetMitoMapData}/>
+                </div> : 
+            
+                isLoading || isFetching ? <MCSpinner /> :
         
                 <div style={{paddingLeft:"3rem",paddingTop:"2rem",height:"100vh",overflowY:"hidden"}}>
                 
@@ -140,8 +131,8 @@ export function MCMitoMap(props) {
                             </div>
                             :
                         null}
-                    <div style={{heigth:"20vh"}}>
-                        <h4>Overview of regulations of the MitoCarta pathways.</h4>
+                    <div style={{heigth:"20vh",width:"70vw"}}>
+                        <MCHeader text="Overview of regulations of the MitoCarta pathways"/>
                         <p>{` 
                             The value presents the percentage of proteins of the pathway that was found to be significantly changed. A value of 100 indicates that all proteins are significantly
                             changed of the specific pathway. In the future you will be able to select the circles to view the underyling proteins and direction.`}</p>
@@ -152,8 +143,11 @@ export function MCMitoMap(props) {
                             checked = {mitoMapData.showNames} 
                             label="Show pathway names" 
                             onChange={togglePathwayNames}/>
-                    </div>
-                    <div style={{overflowY:"scroll",height:"65vh"}}>
+                            </div>
+                        <div style={{width:"70vw",marginBottom:"0.4rem"}}>
+                                <hr></hr>
+                        </div>
+                    <div style={{overflowY:"scroll",height:"65vh",width:"70vw",marginTop:"0.5rem"}}>
                     {
                     mitomapPathways.main !==undefined && _.isObject(mitomapPathways) ? 
                     Object.keys(mitomapPathways.main).map(topPath => {
@@ -162,7 +156,7 @@ export function MCMitoMap(props) {
                         return(
 
                             <div key={topPath}>
-                            <h4>{topPath}</h4>
+                                <MCHeader text={topPath} fontSize={"0.85rem"} />
                             {mitopathway.map(pathwayData => {
                                 const {frac, name, N, N_sig} = pathwayData
                                 return(
@@ -206,7 +200,7 @@ export function MCMitoMap(props) {
                                 })
                                 :null
                             }
-
+                            <hr></hr>
                             </div>
                         )
                     })

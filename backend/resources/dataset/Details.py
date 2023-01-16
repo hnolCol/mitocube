@@ -12,9 +12,7 @@ class DatasetDetails(Resource):
         """
         self.data = kwargs["data"]
         self.token = kwargs["token"]
-
-        apiConfig = json.load(open(os.path.join(self.data.pathToAPIConfig,"api_docs_config.json")))
-        self.detailHeaders = apiConfig['api']['detail-params']
+        self.detailHeaders = self.data.getAPIParam('detail-params') 
         
 
     def get(self):
@@ -25,15 +23,49 @@ class DatasetDetails(Resource):
             return {"success":False,"error":"Token is not valid."}
         dataID = request.args.get('dataID', default="None", type=str)
         params = self.data.getParams(dataID)
-       # print(params["groupings"])
-       
-        groupItems = OrderedDict([(groupingName, list(groupingItems.keys())) for groupingName, groupingItems in params["groupings"].items()])
-        #print(groupItems)
+
         if params is not None:
-           
-            details = OrderedDict([("DataID",dataID)] + [(h,params[h]) for h in self.detailHeaders] + [("groupItems",groupItems)])
-            return jsonify({"success":True,"details":details})
-        return jsonify({"success":False,"error":"Parameter file not found."})
+            groupItems = OrderedDict([(groupingName, list(groupingItems.keys())) for groupingName, groupingItems in params["groupings"].items()])
+            numberFeatures, _ = self.data.dataCollection[dataID].getDataShape()
+            details = OrderedDict([("DataID",dataID)] + [(h,params[h]) for h in self.detailHeaders if h in params] + [("groupItems",groupItems)])
+            details["Number of Proteins"] = numberFeatures
+
+            orderedColumnNames = list(details.keys())
+            if "Experimental Info" in orderedColumnNames: #ugly fix
+                orderedColumnNames.remove("Experimental Info")
+                orderedColumnNames.append("Experimental Info")
+                
+
+
+            return {"success":True,"details":details,"names":orderedColumnNames}
+        return {"success":False,"error":"Parameter file not found."}
+
+
+class DatasetSearch(Resource):
+    def __init__(self,*args,**kwargs):
+        """
+        """
+        self.featureFinder = kwargs["featureFinder"]
+        self.token = kwargs["token"]
+
+    def get(self):
+        ""
+        token = request.args.get('token', default="None", type=str)
+        if token == "None" or not self.token.isValid(token):
+            return {"success":False,"msg":"Token is not valid."}
+        featureID = request.args.get('featureID', default="", type=str)
+        if featureID == "":
+            return {"success":False,"msg":"Feature ID must be a Uniprot ID. Found empty string."}
+
+        featureIDDataIDMapper = self.featureFinder.getDatasets([featureID],filter = {"Type":"Whole proteome"}, featureSpecFilter = {})
+        numDatasets = len(featureIDDataIDMapper[featureID])
+        return {
+            "success":True,
+            "msg":f"Database searched. Found in {numDatasets } dataset(s).",
+            "featureIDMapper":featureIDDataIDMapper,
+            "numberOfDatasets" : numDatasets  
+            }
+
 
 class DatasetGroupings(Resource):
     def __init__(self,*args,**kwargs):
@@ -66,18 +98,19 @@ class DatasetExperimentalInfo(Resource):
         self.data = kwargs["data"]
         self.token = kwargs["token"]
 
-    def get(self):
+    def get(self) -> dict:
+        """
+        Returns the experimental information for a specific dataset (dataID)
+        """
         token = request.args.get('token', default="None", type=str)
         if token == "None" or not self.token.isValid(token):
             return {"error":"Token is not valid.","success":False}
         dataID = request.args.get('dataID', default="None", type=str)
-        succes, params = self.data.getExperimentalInformation(dataID=dataID)
+        succes, params = self.data.getExperimentalInformation(dataID=dataID,joinListItems=True)
         if succes:
-            return jsonify({"success":succes,"params":params})
+            return {"success":succes,"params":params}
         else:
-            return jsonify({"success":succes,"error":params})
-
-
+            return {"success":succes,"error":params}
 
 
 class DatasetsHeatmap(Resource):
@@ -88,18 +121,18 @@ class DatasetsHeatmap(Resource):
 
 
     def get(self):
+        ""
         token = request.args.get('token', default="None", type=str)
         if token == "None" or not self.token.isValid(token):
              return {"error":"Token is not valid.","success":False}
         dataID = request.args.get('dataID', default="None", type=str)
         anovaDetails = json.loads(request.args.get("anovaDetails",default="{}",type=str))
-       
         succes, params = self.data.getHeatmapData(dataID,anovaDetails)
         #print(succes)
         if succes:
-            return jsonify({"success":succes,"params":params})
+            return {"success":succes,"params":params}
         else:
-            return jsonify({"success":succes,"error":params})
+            return {"success":succes,"error":params}
 
 
 
@@ -109,16 +142,18 @@ class DatasetsVolcano(Resource):
         self.data = kwargs["data"]
         self.token = kwargs["token"]
 
-
     def get(self):
+
         token = request.args.get('token', default="None", type=str)
         if token == "None" or not self.token.isValid(token):
              return {"error":"Token is not valid.","success":False}
+
         dataID = request.args.get('dataID', default="None", type=str)
+        
         grouping = json.loads(request.args.get('grouping',default="{}",type=str))
 
         succes, params = self.data.getVolcanoData(dataID,grouping)
         if succes:
-            return jsonify({"success":succes,"params":params})
+            return {"success":succes,"params":params}
         else:
-            return jsonify({"success":succes,"error":params})
+            return {"success":succes,"error":params}

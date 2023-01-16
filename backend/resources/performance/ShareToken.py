@@ -15,11 +15,11 @@ class ShareToken(Resource):
         data = json.loads(request.data, strict=False)
         if "token" in data:
             if not self.token.isAdminTokenValidated(data["token"]):
-                return {"success": False, "msg":"Admin token not valid."}
+                return {"success": False, "tokenIsValid" : False, "msg":"Admin token not valid."}
             else:
                 tokenString = self.token.createShareToken()
-                return {"success": True, "msg":"Share token created.","token" : tokenString}
-        return False
+                return {"success": True, "tokenIsValid" : True, "msg":"Share token created.","token" : tokenString}
+        return {"success": False, "msg": "Token not found."}
 
 
 class ShareTokenValid(Resource):

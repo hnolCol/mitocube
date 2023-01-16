@@ -13,17 +13,7 @@ class FeatureFinder(object):
         self.data = kwargs["data"]
         self.DB = kwargs["DB"]
 
-    def __checkDataObject(self):
-        "Updates data and checks if it has a attr dfs and if data are loaded to dfs."
-        if hasattr(self.data,"update"):
-            self.data.update( )
-
-        if not hasattr(self.data,"dfs") or len(self.data.dfs) == 0:
-            return False
-        
-        return True
-
-    def __checkParamByFilterDict(self,paramFile,filter):
+    def __checkParamByFilterDict(self,paramFile : dict,filter : dict) -> bool:
         ""
         addFeaturesOfDataID = True
         
@@ -50,15 +40,17 @@ class FeatureFinder(object):
 
     def getFeatures(self, filter = dict()):
         ""
-        dataIDs = []
-        if not self.__checkDataObject():
-            return [] 
-
+        
+        # if not self.__checkDataObject():
+        #     return [] 
+        #dataIDs = []
         r = []
-        for dataID, X in self.data.dfs.items():
-            if self.__checkParamByFilterDict(X["params"],filter):
-                r.append(pd.Series(X["data"].index.values))
-                dataIDs.append(dataID)
+
+        for dataset in self.data.dataCollection.values():
+            params = dataset.getParams()
+            if self.__checkParamByFilterDict(params,filter):
+                r.append(pd.Series(dataset.getData().index.values))
+                #dataIDs.append(dataID)
 
         if len(r) > 0:
             featureIDs = pd.concat(r,ignore_index=True).unique().flatten()
@@ -66,16 +58,31 @@ class FeatureFinder(object):
 
         return []
 
-    def getFeatureInfoFromDB(self,featureIDs=list(),filter=dict(), DBColumns = ["Entry","Protein names","Gene names","Gene names  (primary )","Organism"]):
-        ""
-        if hasattr(self,"DB"):
+    def getFeatureInfoFromDB(self,featureIDs : List[str] = list(), filter = dict()) -> List[Dict[str,str]]:
+        """
+        Returns database annotations for features in list featureIDs. If an empty list is given
+        all available features are returned of the datasets that match the filter (dict).
+        """
+        
+        if hasattr(self,"DB") and self.DB is not None:
+            annotationColumns = self.data.getAPIParam("db-feature-annotations")
             if len(featureIDs) == 0:
                 featureIDs = self.getFeatures(filter = filter)
-      
-            return self.DB.getDBInfoForFeatureList(featureIDs,requiredColNames = DBColumns)
+            return self.DB.getDBInfoForFeatureList(featureIDs,requiredColNames = annotationColumns)
         return []
+
+    def getFeatureLabels(self) -> Dict[str,str]:
+        ""
+        labelHierarchy = self.data.getAPIParam("feature-item-labels")
+        if labelHierarchy is None:
+            return {}
+        return labelHierarchy
+    
+    def getFeatureSortByColumnName(self) -> str:
+        """Returns the name of the attribute that should be used for sorting by the front-end."""
+        return self.data.getAPIParam("feature-sort-by")
        
-    def getSummaryInformation(self,featureIDs,filter = {"Type" : "Whole proteome"}):
+    def getSummaryInformation(self,featureIDs : List[str],filter = {"Type" : "Whole proteome"}):
         ""
         #get species filter per feature
         organismnByFeature = self.DB.getDBInfoForFeatureList(featureIDs,["Organism"],entryInfoDictAsOutput=True)
@@ -103,7 +110,7 @@ class FeatureFinder(object):
                 summaryInformation[featureID]["totalExpressionDistribution"] = dict([(q,v) for q,v in zip(["min","q25","m","q75","max","fillColor"],expressionDistribution[featureID]["dist"].tolist()+["#efefef"])])
         return summaryInformation
 
-    def getSummaryInformationForCharts(self,featureIDs,summaryInformation):
+    def getSummaryInformationForCharts(self,featureIDs : List[str], summaryInformation : dict) -> Dict[str,dict]:
 
         summaryInformationForCharts = OrderedDict([(featureID,{}) for featureID in featureIDs]) 
         for featureID in featureIDs:
@@ -150,10 +157,10 @@ class FeatureFinder(object):
         Finds datasets that contain the featureIDs, if returnNumberOfData equals True, 
         the number of datasets that match the filter criteria is reported
         All data are reported as dict where featureID is key.
-        To - do: save featureID -> dataID
+        To - do: save featureID -> dataID, rather create a mapping dict at start.
         """
-        if not self.__checkDataObject():
-            return {} 
+        # if not self.__checkDataObject():
+        #     return {} 
 
         if len(featureIDs) == 0:
             return {} 
@@ -171,7 +178,6 @@ class FeatureFinder(object):
             dataIDs = self.data.dataCollection.getDataIDsThatContainFeature(featureID = featureID,filter = filterForFeature)
             numbOfDataFitFilter[featureID] = len(dataIDMatchingFilter)
             dataIDsByFeature[featureID] = dataIDs
-            
 
         if returnNumberOfData:
             return dataIDsByFeature, numbOfDataFitFilter

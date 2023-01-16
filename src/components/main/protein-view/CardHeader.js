@@ -9,10 +9,20 @@ const imageOptions = {
 }
 
 export function MCCardHeader(props){
-    
-    const statsData = props.statsData === undefined?[{Data:"No Stats Data Found."}]:JSON.parse(props.statsData)
-    const columnNames = props.statsData === undefined?["Data"]:Object.keys(statsData[0])
-    // console.log(arrayOfObjectsToCSV(props.downloadData))
+    const {
+        dataID,
+        label, 
+        isSummary,
+        handleExpInfoRequest,
+        handleRemoveRequest,
+        statsData,
+        showDataInTable,
+        correlationShown,
+        indicatorColor,
+        indicatorTooltipStr,
+        requestCorrelatedFeatures } = props //isSummary indicates that it is a summary card instead an experiment shown
+    const statResults = statsData === undefined?[{Data:"No Stats Data Found."}]:JSON.parse(statsData)
+    const columnNames = statsData === undefined ? ["Data"] : Object.keys(statResults[0])
 
     return(
 
@@ -22,48 +32,47 @@ export function MCCardHeader(props){
             </div>
             <div>
             <ButtonGroup vertical={false} minimal={true} >
-            <MCIndicatorCircle size = {20} fillColor={props.indicatorColor} tooltipStr={`${props.indicatorTooltipStr} Card`}/>
+            <MCIndicatorCircle size = {20} fillColor={indicatorColor} tooltipStr={`${indicatorTooltipStr} Card`}/>
                 <Popover2 content={
                         <Menu>
-                            {props.isSummary?<MenuItem text="Protein Info" icon={"info-sign"} onClick={(e) => props.handleExpInfoRequest("",false,true)}/>:null}
+                            {isSummary?<MenuItem text="Protein Info" icon={"info-sign"} onClick={() => handleExpInfoRequest("",false,true)}/>:null}
                             
-                            {props.dataID !== null?
-                            <MenuItem text="Experiment info" icon={"info-sign"} onClick={(e) => props.handleExpInfoRequest(props.dataID,false)}/>:null}
-                            {!props.isSummary & props.dataID !== null?<MenuItem
+                            {dataID !== null && !isSummary?
+                            <MenuItem text="Experiment info" icon={"info-sign"} onClick={() => handleExpInfoRequest(dataID,false)}/>:null}
+                            {!isSummary & dataID !== null?<MenuItem
                                 icon = {"calculator"} 
                                 text = {"ANOVA Statistics"}
                                 intent="success"
                                 minimal = {"true"}
-                                onClick = {() => props.showDataInTable(statsData,columnNames,"ANOVA Statistic",`(${props.label}-${props.dataID})`)}/>:null}
+                                onClick = {() => showDataInTable(statResults,columnNames,"ANOVA Statistic",`(${label}-${dataID})`)}/>:null}
                             
-                            {!props.isSummary & props.dataID !== null?
+                            {!isSummary & dataID !== null?
                             <MenuItem 
-                                icon={props.correlationShown?"stacked-chart":"heat-grid"} 
-                                text = {props.correlationShown?"Boxplot View":"Top20 correlation"}
+                                icon={correlationShown?"stacked-chart":"heat-grid"} 
+                                text = {correlationShown?"Boxplot View":"Top20 correlation"}
                                 intent="primary" 
                                 minimal = {"true"}
-                                // tooltipStr="Toggle between boxplot and correlated features (heatmap)."
-                                onClick = {() => props.requestCorrelatedFeatures(props.dataID,props.featureID)}
+                                onClick = {() => requestCorrelatedFeatures(dataID,props.featureID)}
                                 />:null}
-                            {props.dataID !== null?
-                            <Link style={{ textDecoration: 'none' }} to={`/dataset/${props.dataID}`} target="_blank" rel="noopener noreferrer"> 
+                            {dataID !== null?
+                            <Link style={{ textDecoration: 'none' }} to={`/dataset/${dataID}/summary`} target="_blank" rel="noopener noreferrer"> 
                                 <Button fill={true} icon={"satellite"} minimal={"true"} intent={"danger"} text = {"Explore dataset"}/> 
                             </Link>:null}
                             <MenuItem text="Save image" icon={"graph"} onClick={() => {
-                                            saveSvgAsPng.saveSvgAsPng(document.getElementById(`${props.id}`), `MitoCubeImg(${props.label}-${props.dataID}).png`, imageOptions)}}/>
+                                            saveSvgAsPng.saveSvgAsPng(document.getElementById(`${props.id}`), `MitoCubeImg(${label}-${dataID}).png`, imageOptions)}}/>
                             
                             <MenuItem text="Save svg" icon={"graph"} onClick={() => {
-                                            downloadSVGAsText(document.getElementById(`${props.id}`),`MitoCube(${props.label}-${props.dataID}).svg`)}}/>
-                            
+                                            downloadSVGAsText(document.getElementById(`${props.id}`),`MitoCube(${label}-${dataID}).svg`)}}/>
                             <MenuItem 
                                 text="Download data"
                                 icon={"download"} 
-                                onClick={e => downloadTxtFile(arrayOfObjectsToTabDel(Array.isArray(props.downloadData)?props.downloadData:JSON.parse(props.downloadData),[]),`${props.label}-MitoCube-(${props.dataID}).txt`)}/>
+                                onClick={() => downloadTxtFile(arrayOfObjectsToTabDel(Array.isArray(props.downloadData) ? props.downloadData : JSON.parse(props.downloadData), []),
+                                    `${label}-MitoCube-(${dataID}).txt`)} />
 
-                            <MenuItem text="Remove" icon={"remove"} intent="danger" onClick={(e) => props.handleRemoveRequest(props.id)}/>
-                        </Menu>}>
+                            <MenuItem text="Remove" icon={"remove"} intent="danger" onClick={(e) => handleRemoveRequest(props.id)}/>
+                        </Menu>}
+                    >
                         <MCMenuIcon size={20}/>
-                    {/* <Button icon={<Icon icon="menu" iconSize={12}/>} minimal={true} /> */}
                 </Popover2>
                 
             </ButtonGroup>
@@ -75,9 +84,7 @@ export function MCCardHeader(props){
 MCCardHeader.defaultProps = {
     indicatorColor : "red",
     isSummary : false,
-    id : "none",
     indicatorTooltipStr : "None",
     dataID : undefined,
     label : "Gene 1",
-    // plotIcon : "heat-grid"
 }

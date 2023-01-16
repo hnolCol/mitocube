@@ -1,21 +1,14 @@
 import axios from "axios";
-import _, { filter } from "lodash";
+import _ from "lodash";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { MCHeader } from "../../utils/components/MCHeader";
 import { MCItemContainer } from "./MCItemContainer";
 import { MCPTMSearch } from "./MCPTMSearch";
 import useDebounce from "../../../hooks/useDebounce";
+import {filterArrayBySearchString} from "../../utils/Filter"
+import { MCSimpleResponseCheck } from "../../utils/ResponseChecks";
 
-function filterItems (searchString, array ,searchColumns) {
-    
-    // filter array of objects
-    if (!_.isArray(searchColumns)) return []
-    if (!_.isArray(array)) return []
-    const re = new RegExp(_.escapeRegExp(searchString), 'i')
-    const isMatch = arrayItem => _.filter(searchColumns.map(v => re.test(arrayItem[v]))).length > 0
-    return _.filter(array, isMatch)
-}
 
 // ,
 //                     {
@@ -47,27 +40,21 @@ export function MCPTMView(props) {
     const debounceSearchString = useDebounce(search.searchString,300)
 
     useEffect(() => {
-
+        // use react-query!! 
         setSearch(prevValues => {return {...prevValues,"isLoading" : true}})
         axios.get('api/ptm/items', {params:{token:token}}).then(response => {
             // collect items from API
-            if (_.isObject(response.data) 
-                    && Object.keys(response.data).includes("success") 
-                    && response.data["success"]
-                    )
+            if (MCSimpleResponseCheck(response.data))
             {
                     console.log(response.data)
                     //items are List of objects
                     let searchItems = response.data.searchItems
                     //get all colum headers from the first item
-                    let items = JSON.parse(searchItems.items)
+                    let items = searchItems.items
                     let searchColumnsInPTMItems = items.length > 0? Object.keys(items[0]): []
                     // get available items filters.
                     let comboboxItems = Object.fromEntries(searchItems.categoricalColumns.map(categoricalColumn => [categoricalColumn, _.concat(["None"], _.uniq(items.map(item => item[categoricalColumn])))]))
-                    console.log(comboboxItems)
-                console.log(items)
-                console.log(searchItems.identifierColumn)
-                console.log(searchItems.titleColumn)
+               
                     setSearch(
                         prevValues => {
                             return {...prevValues,
@@ -97,7 +84,7 @@ export function MCPTMView(props) {
         if (ID === undefined) return
         const idColumn = search.identifierColumn
         let items = search.items.map(item => {return {...item, "pinned" : item[idColumn] === ID?item.pinned?false:true:item.pinned}})
-        let filteredItems = filterItems(search.searchStringearchString,items,search.searchColumnsInPTMItems)
+        let filteredItems = filterArrayBySearchString(search.searchStringearchString,items,search.searchColumnsInPTMItems)
         //very bad solution - change
         let pinnedItems = _.filter(items,["pinned" , true])
         let itemsToShow = search.itemsToShow.map(item => {return {...item, "pinned" : item[idColumn] === ID?item.pinned?false:true:item.pinned}})
@@ -161,7 +148,7 @@ export function MCPTMView(props) {
 
     useEffect(() => {
         
-        let filteredItems = filterItems(debounceSearchString,search.items.slice(),search.searchColumnsInPTMItems)
+        let filteredItems = filterArrayBySearchString(debounceSearchString,search.items.slice(),search.searchColumnsInPTMItems)
         var itemsToShow = _.filter(filteredItems,search.filter)
         itemsToShow = addPinnedItems(itemsToShow)
         
@@ -184,7 +171,7 @@ export function MCPTMView(props) {
             
                 <MCHeader text={"Post translational modification (PTM) View"} />
                 <p>Under construction. </p>
-            <MCPTMSearch 
+            {/* <MCPTMSearch 
                 filter = {search.filter} 
                 categoricalColumns = {search.categoricalColumns}
                 comboboxItems = {search.comboboxItems}
@@ -207,7 +194,7 @@ export function MCPTMView(props) {
                 titleColumn={search.titleColumn}
                 annotationColors = {search.annotationColors}
                 handlePinnedChange = {handlePinnedChange} 
-                categoricalColumns={search.categoricalColumns}/>
+                categoricalColumns={search.categoricalColumns}/> */}
         </div>
         </div>
     )

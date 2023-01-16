@@ -1,7 +1,69 @@
-from collections import OrderedDict
+
+
 import numpy as np 
 import pandas as pd 
+
 from scipy import stats
+from statsmodels.stats.multitest import multipletests
+
+from typing import Dict, List
+
+def calculateTTest(X : pd.DataFrame, columNamesGroup1 : List[str], columNamesGroup2 : List[str], multipleTestMethod : str = "fdr_tsbky"):
+    """"""
+    X1, X2 = X.loc[:,columNamesGroup1], X.loc[:,columNamesGroup2]
+    T,p = stats.ttest_ind(X1, X2, nan_policy="omit", axis=1)
+
+    boolIdx, p_adj, _, _ = multipletests(p, alpha=0.05, method=multipleTestMethod)
+    tTestDifference = pd.DataFrame(pd.Series(X1.mean(axis=1) - X2.mean(axis=1), name="x"))
+    tTestDifference["y"] = (-1)*np.log10(p)
+    tTestDifference["s"] = boolIdx
+    return tTestDifference
+
+        # boolIdx, p_adj, _, _ = multipletests(p,alpha=0.05,method="fdr_tsbky")
+        # # print(p_adj)
+        # diff = pd.DataFrame(pd.Series(d.loc[:,columnNames1].mean(axis=1) - d.loc[:,columnNames2].mean(axis=1), name="x"))
+        # diff["y"] = (-1)*np.log10(p)
+        # diff["s"] = boolIdx
+        
+        # diff = pd.concat([diff,data[filterColumns + [annotationColumn]]],axis=1)
+        
+        # diff = diff.reset_index()
+        
+        # diff = diff.rename({"index":"Key"})
+
+        # # print(self.dbManager.getDBInfoForFeatureListByColumnName(X.index,annotationColumn,checkShape=False).values.flatten())
+        # #diff = diff.join(pd.Series(self.dbManager.getDBInfoForFeatureListByColumnName(X.index,annotationColumn,checkShape=False).values.flatten(), 
+        #     #               name="l"))
+        # diff[annotationColumn] = diff[annotationColumn].fillna("-")
+        # diff = diff.dropna(subset=["x","y"])
+        # # print(diff[filterColumns[0]].unique())
+
+def calculateOneWayANOVA(X : pd.DataFrame, groupings : Dict[str,Dict[str,list]], groupingName : str, anovaCutoff : float = 0.05):
+    """
+    Calculate one way anova p values.
+    """
+    if not groupingName in groupings:
+        raise ValueError(f"{groupingName} not found in groupings.")
+    #create empty result data frame   
+    oneWayANOVAColumnName = f"p-1WANOVA({groupingName})"
+    results = pd.DataFrame(index = X.index, columns=[oneWayANOVAColumnName])
+    #create list of values to be tested using anova
+    testGroupData = [X[columnNames].values for columnNames in groupings[groupingName].values()]
+    #returns F-value and p-values
+    F,p = stats.f_oneway(*testGroupData,axis=1)
+    #put values into result dataframe
+    results.loc[X.index,oneWayANOVAColumnName] = p
+    #annotate significant hits.
+    significantBoolIdx = results.index[results[oneWayANOVAColumnName] < anovaCutoff]
+    #create pandas Series with significant p-values
+    selectionpvalues = [pd.Series(
+                        results.loc[X.index,oneWayANOVAColumnName].values, 
+                        name=oneWayANOVAColumnName, index=X.index).loc[significantBoolIdx].reset_index()]
+    pValueColumnName = [oneWayANOVAColumnName]
+
+    return significantBoolIdx, selectionpvalues, pValueColumnName
+
+
 
 class TwoWAyANOVA(object):
 

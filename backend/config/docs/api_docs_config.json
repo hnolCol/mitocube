@@ -1,7 +1,6 @@
 {
 
     "welcome-text" : "Welcome to the MitoCube API docs.",
-    "info-text" : "The MitoCube separtes between feature-specific (e.g. protein or peptide) and data-set specific requests.",
     "base-url" : "https://mitocube.com/api/",
     "pw": "",
     "email-sever-settings" : {
@@ -14,22 +13,6 @@
     },
     "email-cc-submission-list" : ["hendrik.nolte@age.mpg.de"], 
     "email-pw": "email-pw",
-    "side-menu" : {
-        "main" : [
-            "Feature",
-            "Data set"
-        ],
-        "sub" : {
-            "Feature" : [
-
-
-            ],
-            "Data set" : [
-
-            ]
-        }
-        
-    },
     "api":{
         "entries": [
             {
@@ -103,24 +86,215 @@
             }
 
         ],
-        "detail-params" : ["Creation Date","shortDescription","Experimentator","Type","Organism","Material","groupingNames"],
+        
+        
+        "db-feature-annotations" : ["Entry","Protein names","Gene names","Gene names  (primary )","Organism"],
+        "db-summary-params" : [
+                "Gene names",
+                "Subcellular location [CC]",
+                "Function [CC]",
+                "Domain [CC]",
+                "Gene ontology (cellular component)",
+                "Interacts with",
+                "ComplexName",
+                "MitoCarta3.0_List",
+                "MitoCarta3.0_Evidence",
+                "MitoCarta3.0_SubMitoLocalization",
+                "MitoCarta3.0_MitoPathways",
+                "Tissues",
+                "MitoCoP",
+                "MitoCoP disease gene",
+                "MitoCoP disease association",
+                "Functional MitoCoP classification"
+                ],
         "filter-params" : ["Type","Organism","Material"],
         "annotation-colum" : "Gene names  (primary )",
+        "feature-sort-by" : "Gene names  (primary )",
+        "feature-item-labels" : {
+            "main" : "Gene names  (primary )",
+            "id" : "Entry",
+            "sub-main" : "Gene names",
+            "bold-sub-text" : "Organism",
+            "info" : "Protein names"
+        },
         "extra-colums-in-dataset-heatmaps" : ["MitoCarta3.0_List","MitoCoP"],
-        "default-number-clusters-heatmap" : 12,
+        "default-number-clusters-heatmap" : 8,
         "filters-in-volcano-plots" : ["MitoCarta3.0_List","MitoCoP"],
         "highlight-in-volcano-plots" : ["MitoCarta3.0_SubMitoLocalization","MitoCarta3.0_MitoPathways"],
         "highlight-in-volcano-plots-sep-cat-by" : {
             "MitoCarta3.0_MitoPathways" : ">"},
-        "data-presentation" : ["Creation Date","shortDescription","Material","Type","Organism","Experimentator"],
-        "data-presentation-sort-by" : ["Organism","Type","Creation Date"],
-        "db-summary-params" : ["Gene names","Subcellular location [CC]","Function [CC]","Domain [CC]","Gene ontology (cellular component)","Interacts with","ComplexName","MitoCarta3.0_List","Tissues","MitoCarta3.0_Evidence","MitoCarta3.0_SubMitoLocalization","MitoCarta3.0_MitoPathways","MitoCoP","MitoCoP disease gene","MitoCoP disease association","Functional MitoCoP classification","MitoCoP","MitoCoP disease gene"],
-        "experiment-procedure-params" : ["Creation Date","Material","Publication","Experimental Info","Experimentator"],
+
+        "detail-params" : ["Creation Date","Title","Experimentator","Type","Organism","Material","groupingNames","Number Samples","Number Replicates","Number Groupings","Experimental Info"],
+        "dataset-tag-names" : ["Creation Date","Type","Experimentator","Organism","Material","Number Samples","dataID"],
+        "dataset-search-names" : ["Creation Date","Type","Experimentator","Organism","Material","dataID","Title"],
+        "dataset-header" : "Title",
+        "dataset-presentation" : ["Creation Date","Title","Material","Type","Organism","Experimentator","Number Samples"],
+        "dataset-presentation-sort-by" : ["Organism","Type","Creation Date"],
+        
+        "experiment-procedure-params" : ["Creation Date","dataID","Experimentator","Material","Title","Number Samples","Number Replicates","groupingNames","Experimental Info"],
         "short-cut-filter-param" : "Type",
         "short-cut-colors" : ["#365072","#6e5b7b","#b66476","#e8696e","#eaac89","#8c7f77"],
         "submission-states" : ["Submitted","Processed","Measuring","Data analysis","Done"], 
-        "submission-search-columns" : ["shortDescription","Material","Organism","dataID","Title","Email","Type","Experimentator"],
-        "submission-summary-short" : ["Creation Date","State","dataID","Title","Experimentator","Type","Material","SampleNumber","Organism","shortDescription","groupingNames","daysFromCreationToLastState"],
+        "submission-search-columns" : ["Material","Organism","dataID","Title","Email","Type","Experimentator"],
+        "submission-tags" : ["Experimentator","Email","Type","Organism","Material","dataID"],
+        "submission-summary-short" : [
+            "Creation Date",
+            "State",
+            "dataID",
+            "Title",
+            "Experimentator",
+            "Type",
+            "Material",
+            "SampleNumber",
+            "Organism",
+            "Title",
+            "groupingNames",
+            "daysFromCreationToLastState"],
+        "submission-details" : [
+            {
+                "field" : "text-input",
+                "name" : "State",
+                "q" : "State",
+                "default" : "Submitted",
+                "placeholder" : "State of your project.",
+                "disabled" : "True"
+            },
+            {
+                "field" : "date-input",
+                "name" : "Creation Date",
+                "q" : "Date of Sample Submission",
+                "default" : "today",
+                "placeholder" : "Enter date of sample  submission."
+            },
+            {
+                "field" : "text-input",
+                "name" : "Experimentator",
+                "q" : "Name (First and last)",
+                "default" : "",
+                "placeholder" : "Enter your name."
+            },
+            {
+                "field" : "text-input",
+                "name" : "Email",
+                "q" : "Email adress",
+                "default" : "",
+                "placeholder" : "Enter your email adress.",
+                "intent" : "primary",
+                "leftIcon":"envelope"
+            },
+            {
+                "field" : "text-input",
+                "name" : "GroupName",
+                "q" : "Group Name",
+                "default" : "Langer Department",
+                "placeholder" : "Enter the group / principal investigator name."
+            },
+            {
+                "field" : "text-input",
+                "name" : "Title",
+                "q" : "Project Title",
+                "default" : "",
+                "placeholder" : "Enter your project's title."
+            },
+            {
+                "field" : "text-input",
+                "name" : "Research Question",
+                "q" : "Research Question",
+                "default" : "",
+                "placeholder" : "What question would you like to answer with your project."
+            },
+            {
+                "field" : "textfield-input",
+                "name" : "Research Aim",
+                "title" : "Research Aim",
+                "q" : "Research Aim",
+                "default" : "",
+                "placeholder" : "Please provide a short description of your project and it's research aims."
+            },
+            {
+                "field" : "combo-input",
+                "name" : "Organism",
+                "q" : "Organism",
+                "text" : "Organism",
+                "items" : [
+                    "Homo sapiens (Human)", 
+                    "Mus musculus (Mouse)", 
+                    "Saccharomyces cerevisiae (Baker's Yeast)",
+                    "Caenorhabditis elegans", 
+                    "Other/Multiple (Specify in Additional Info)"]
+            },
+            {
+                "field" : "combo-input",
+                "name" : "Type",
+                "q" : "Experiment type",
+                "text" : "Experiment Type",
+                "items" : [
+                    "Whole proteome",
+                    "Neo N-term enrichment",
+                    "Phophoproteome",
+                    "Pulse-SILAC",
+                    "Immunoprecipitation",
+                    "Whole proteome & Neo N-term enrichment",
+                    "Whole proteome & Phosphoproteomic",
+                    "Other (Specify in Additional Info)"]
+            },
+            {
+                "field" : "text-input",
+                "name" : "Material",
+                "q" : "Material",
+                "default" : "",
+                "placeholder" : "Material used (HeLa,Liver,..)"
+            },
+            {
+                "field" : "textfield-input",
+                "name" : "Sample Preparation",
+                "title" : "Sample preparation",
+                "q" : "Sample preparation",
+                "default" : "",
+                "placeholder" : "Please provide details about the experimental procedure of cell culture / treatments. In addition, provide the cell culture media and supplements. Please enter SILAC labelling information here as well."
+            },
+            {
+                "field" : "textfield-input",
+                "name" : "Additional Information",
+                "title" : "Additional Information",
+                "q" : "Notes",
+                "default" : "",
+                "placeholder" : "Please provide additional information if required. Examples might be about a bias in sample preparation. Experimental errors.  Batch effects."
+            },
+            {
+                "field" : "numeric-input",
+                "name" : "Number Samples",
+                "q" : "Number of samples",
+                "default" : "",
+                "placeholder" : "Number of samples.",
+                "min" : 1,
+                "max" : 9999,
+                "defaultValue" : 2,
+                "minorStepSize": 1
+            },
+            {
+                "field" : "numeric-input",
+                "name" : "Number Replicates",
+                "q" : "Number of replicates",
+                "default" : "",
+                "placeholder" : "Number of replicates per group.",
+                "min" : 1,
+                "max" : 9999,
+                "defaultValue" : 2,
+                "minorStepSize": 1
+            },
+            {
+                "field" : "numeric-input",
+                "name" : "Number Groupings",
+                "q" : "Number of groupings",
+                "default" : "",
+                "placeholder" : "Number of groupings (Genotype, Treatment, ..).",
+                "min" : 1,
+                "max" : 9999,
+                "defaultValue" : 2,
+                "minorStepSize": 1
+            }
+        ],
         "token-valid(h)" : 48,
         "share-token-valid(h)" : 3000,
         "performance-runs" : {
@@ -155,3 +329,4 @@
         }
     } 
 }
+

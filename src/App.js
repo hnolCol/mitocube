@@ -10,7 +10,7 @@ import {
 } from "react-router-dom";
 import { MCProtectedRoute} from "./components/utils/components/MCProtectedRoute"
 import {Welcome} from "./components/main/Welcome"
-import { ProteinMainView } from './components/main/Protein';
+import { ProteinMainView } from './components/main/protein-view/MainView';
 import { MCHelpMainView} from "./components/main/Help"
 import { helpDetails } from "./data/help"
 import {helpLinks} from "./components/main/Help"
@@ -18,15 +18,19 @@ import { MCDatasetMainView } from './components/main/Dataset';
 import { getMitoCubeToken } from './components/utils/Misc';
 
 import axios from 'axios';
+
 import { MCDatasetSelection } from './components/main/dataset-view/MCDatasetSelection';
 import { MCSampleSubmission } from './components/submission/MCSampleSubmission';
 import { MCAdminLogin } from './components/main/admin/Login';
 import { getMitoCubeAdminToken } from './components/utils/Misc';
-import { MCSubmissionAdminView  } from './components/submission/MCSubmissionView';
-import {  MCPerformanceView } from "./components/performance/MCPerformanceView"
-import { MCAdminUserView } from './components/main/admin/User';
+import { MCSubmissionAdminView  } from './components/main/admin/submission/MCSubmissionAdminView';
+import { MCPerformanceView } from "./components/performance/MCPerformanceView"
+import { MCAdminUserView } from './components/main/admin/user/User';
 import { removeMitoCubeAdminToken } from "./components/utils/Misc"
 import { MCPTMView } from './components/main/ptm-view/MCPTMView';
+
+
+
 export function MCHelpText(props) {
   return(
     <div className='help-text-div'>
@@ -88,7 +92,6 @@ function App() {
     const tokenString = getMitoCubeAdminToken()
     if (tokenString === undefined) setAdminAuthenticationState({isAuth:false,token:"",superAdmin:false})
    
-
     axios.post('/api/token/admin/valid',
           {token:tokenString}, 
           {headers : {'Content-Type': 'application/json'}}).then(response => {
@@ -184,7 +187,7 @@ function App() {
       <Route path="/admin/submissions" element = {
         <MCProtectedRoute isAuthenthicated={isAdminAuthenthicated.isAuth}> 
             <div>
-              <MCSubmissionAdminView token={isAdminAuthenthicated.token}/>
+              <MCSubmissionAdminView token={isAdminAuthenthicated.token} logoutAdmin = {loggingAdminOut}/>
             </div>
         </MCProtectedRoute>
       }
@@ -202,7 +205,7 @@ function App() {
       <Route path="/admin/users" element = {
         <MCProtectedRoute isAuthenthicated={isAdminAuthenthicated.isAuth}>
             <div>
-              <MCAdminUserView token={isAdminAuthenthicated.token} superAdmin = {isAdminAuthenthicated.superAdmin}/>
+              <MCAdminUserView token={isAdminAuthenthicated.token} superAdmin = {isAdminAuthenthicated.superAdmin} logoutAdmin = {loggingAdminOut}/>
             </div>
         </MCProtectedRoute>
       }

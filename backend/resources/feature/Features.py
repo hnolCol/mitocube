@@ -45,18 +45,18 @@ class FeatureDBInfo(Resource):
     """Returns DB info (e.g. Uniprot) information."""
     def __init__(self,*args,**kwargs) -> None:
         self.data = kwargs["data"]
+        self.token = kwargs["token"]
 
-    def post(self):
+    def get(self):
         ""
-        if request.data != b'':
-            data = json.loads(request.data, strict=False)
-            if "featureIDs" in data:
-                featureIDs = data["featureIDs"]
-                
-                success, DBInfo = self.data.getFeatureDBInfo(featureIDs, plainExport=False)
-               
-                return jsonify({"success":success,"params":DBInfo})
-
+        token = request.args.get('token', default="None", type=str)
+        if not self.token.isValid(token):
+            return {"msg":"Token is not valid.","success":False,"tokenIsValid" : False}
+        featureID = request.args.get("featureID",default= None,type=str)
+        if featureID is None:
+            return {"success" : False, "tokenIsValid" : True, "msg" : "No featureID found."}
+        DBInfo = self.data.getFeatureDBInfo([featureID], plainExport= False)
+        return {"success" : DBInfo is not None, "tokenIsValid" : True, "params" : DBInfo}
 
 class FeatureDetails(Resource):
     def __init__(self,*args,**kwargs):
@@ -66,14 +66,15 @@ class FeatureDetails(Resource):
 
     def post(self):
         "Returns feature information in data"
-        
         featureFilter = getFilterFromRequest(request)
-       # print(featureFilter)
         features = self.featureFinder.getFeatureInfoFromDB(filter=featureFilter)
-       # print(len(features))
-        return jsonify({
+        featureLabels = self.featureFinder.getFeatureLabels()
+        sortByColumnName = self.featureFinder.getFeatureSortByColumnName()
+        return {
             "success":True,
-            "params":features})
+            "features":features,
+            "sortBy" : sortByColumnName,
+            "featureLabels" : featureLabels}
 
 class FeaturesInDatasets(Resource):
     """Find datasets in which the featureID is present"""
@@ -95,6 +96,6 @@ class FeaturesInDatasets(Resource):
                 return jsonify({
                     "success":True,
                     "params":self.featureFinder.getDatasets(featureIDs = featureIDs, filter=featureFilter)})
-        return jsonify({"success":False,"error":"Either featureIDs not found in json data or internal error."})
+        return {"success":False,"error":"Either featureIDs not found in json data or internal error."}
         
 

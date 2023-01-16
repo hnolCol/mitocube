@@ -1,4 +1,4 @@
-import { LinearGradient } from "@visx/gradient"
+
 import { Text } from "@visx/text"
 import _ from "lodash"
 import { motion } from "framer-motion"

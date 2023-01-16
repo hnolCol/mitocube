@@ -3,9 +3,19 @@ from flask import request, jsonify
 from flask_restful import Resource
 from werkzeug.security import generate_password_hash, check_password_hash
 import json
+from ..utils.html import * 
 
 
-
+def createValidationCodeEmail(validationCode):
+    ""
+    html = "</div>"
+    html = addHeader(html,"MitoCube Validation Code")
+    html = addTextElementInNewLine(html,f"Your validation code for MitoCube Login is: {validationCode}")
+    html = addTextElementInNewLine(html, "Enter the code at the login window in your browser and enjoy.")
+    html = addTextElementInNewLine(html,"The MitoCube Team")
+    html += "</div>"
+    
+    return html
 
 class LoginWebsite(Resource):
     def __init__(self,*args,**kwargs):
@@ -50,9 +60,18 @@ class AdminLoginWebsite(Resource):
             self.email.sendEmail(
                 title="Admin Login Validation Code",
                 recipients = [data["email"]],
-                html="<div><h3>MitoCube Validation Code</h3><p>You validation code for MitoCube Login is: {}</p><p>Enter the code at the login window in your browser and enjoy.<br>The MitoCube Team</p></div>".format(validateCode))
-            return {"success":True,"token":adminTokenString,"msg":"Validate code sent via email.","superAdmin":superAdmin}
-        return {"success":False,"token":"","msg":"Input not valid."}
+                html=createValidationCodeEmail(validateCode))
+            return {
+                "success":True,
+                "token":adminTokenString,
+                "msg":"Validate code sent via email.",
+                "superAdmin":superAdmin
+                }
+
+        return {
+            "success":False,
+            "token":"",
+            "msg":"Input not valid. Requires 'email', 'pw' and 'token'."}
 
 
 

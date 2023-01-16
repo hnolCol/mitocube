@@ -10,15 +10,15 @@ function MCHeatmapRow(props) {
             nColumns, // column numbers of expression columns - next is key
             nExtraColumns,
             clusterColors,
-            handleHighlightedItems,
+        handleHighlightedItems,
+            focusView,
             colorScale,
             opacity } = props 
-    
     return(
         
         <g 
                     opacity={opacity} 
-                    onMouseEnter = {e => handleHighlightedItems(rowData[nColumns])}>
+                    onMouseEnter = {focusView?e => handleHighlightedItems(rowData[nColumns]):undefined}>
                     
                     <rect 
                         key = {`cluster-${rowIndex}`}

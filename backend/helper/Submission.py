@@ -56,12 +56,12 @@ class Submission(object):
 
     def getID(self):
         "Generate random string"
-        ID = getRandomString(N=12)
-        if ID in self.data.dfs:
+        dataID = getRandomString(N=12)
+        if self.data.dataIDExists(dataID):
             #highly unlikely 
-            ID = getRandomString(N=12)
+            dataID = getRandomString(N=12)
 
-        return ID
+        return dataID
 
     def getSummaryColumns(self):
         ""
@@ -72,6 +72,11 @@ class Submission(object):
         ""
         searchColumns = self.data.getAPIParam("submission-search-columns")
         return searchColumns if searchColumns is not None else []
+
+    def getTagNames(self):
+        ""
+        tagNames = self.data.getAPIParam("submission-tags")
+        return tagNames if tagNames is not None else []
 
     def _getAllRunsFromGrouping(self,groupings):
         ""

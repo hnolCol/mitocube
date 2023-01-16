@@ -1,8 +1,9 @@
 
-import { Button, ButtonGroup, Dialog, FileInput, HotkeysProvider, InputGroup, Menu, MenuDivider, MenuItem, Text } from "@blueprintjs/core"
+import { Button, ButtonGroup, Dialog, FileInput, HotkeysProvider, InputGroup, Menu, MenuDivider, MenuItem } from "@blueprintjs/core"
 import { Table2, SelectionModes, Column, Cell, EditableCell2 } from "@blueprintjs/table"
-import _, { isArray, template } from "lodash"
+import _, { isArray } from "lodash"
 import { useState } from "react"
+import { readLinesAndColumnNamesFromTxtFile } from "../utils/FileReading"
 import { arrayToTabDel, downloadTxtFile } from "../utils/Misc"
 
 function MCAddGroupDialog(props) {
@@ -198,14 +199,14 @@ export function MCGroupingTable(props) {
 
     const cellRenderer = (rowIndex,columnIndex) => {
        
-        if (data !== undefined && isArray(data)){
-            if (data[rowIndex] === undefined){
+        if (data !== undefined && isArray(data)) {
+            
+            if (data[rowIndex] === undefined || (_.isObject(data[rowIndex]) && !_.has(data[rowIndex],columnNames[columnIndex]))){
                 return (
                     <EditableCell2 
                         value = {""} 
                         rowIndex={rowIndex} 
                         columnIndex={columnIndex}
-                        //onChange={(newValue, rowIndex, columnIndex)  => console.log(newValue, rowIndex, columnIndex)}
                         onConfirm={handleDataEditing}/>
                 )}
             if (columnIndex !== 0) {
@@ -214,8 +215,7 @@ export function MCGroupingTable(props) {
                     <EditableCell2 
                             value = {data[rowIndex][columnNames[columnIndex]]} 
                             rowIndex={rowIndex} 
-                            columnIndex={columnIndex}
-                            //onChange={(newValue, rowIndex, columnIndex)  => console.log(newValue, rowIndex, columnIndex)}
+                            columnIndex={columnIndex}                        
                             onConfirm={handleDataEditing}/>
                         )            
                     }
@@ -235,14 +235,14 @@ export function MCGroupingTable(props) {
        
         if (isSupported){
             const reader = new FileReader()
-            reader.onload = (e) => {
-                const text = e.target.result.split("\n")
-                const columnNames = text[0].split("\t")
+            reader.onload = (readEvent) => {
+                
+                let {columnNames, dataArray} = readLinesAndColumnNamesFromTxtFile(readEvent)
                 if (columnNames.includes("Replicate") && columnNames.includes("Run")){
-                    const data = _.range(1,text.length).map(idx => text[idx].split("\t"))
-                    const numSamples = data.length
-                    const replicates = _.uniq(data.map(v => v[_.indexOf(columnNames,"Replicate")]))
-                    const dataTable = data.map(rowData => Object.fromEntries(rowData.map((v,i) => [columnNames[i],v])))
+                    
+                    const numSamples = dataArray.length
+                    const replicates = _.uniq(dataArray.map(v => v[_.indexOf(columnNames,"Replicate")]))
+                    const dataTable = dataArray.map(rowData => Object.fromEntries(rowData.map((v,i) => [columnNames[i],v])))
                     const numberOfGroupings = columnNames.length - 2 // Run and Replicate must be the in the file
                     handleTemplateInput(columnNames,dataTable,replicates.length,numSamples,numberOfGroupings)
 

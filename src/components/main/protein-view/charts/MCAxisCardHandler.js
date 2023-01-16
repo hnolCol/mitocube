@@ -1,17 +1,18 @@
-
-
-import React from "react"
+import { useRef,useState } from 'react';
+import _ from "lodash"
+import axios from 'axios';
+import { Text } from '@visx/text';
 import { ParentSize } from '@visx/responsive';
+
+import { MCCardHeader } from "../CardHeader";
+import { MCSpinner } from "../../../spinner/MCSpinner";
 import { MinimalPointplot } from './types/MCPointplot';
 import { MCMinimalBoxplot } from './types/MCMinimalBoxplot';
 import { MCRelativeBar } from './types/MCRelativeBar';
-import { Text } from '@visx/text';
-import _ from "lodash"
-import { useRef, useState } from 'react';
-import { MCSpinner } from '../../spinner/MCSpinner';
-import axios from 'axios';
-import { MCCardHeader } from "../protein-view/CardHeader"
+
 import { MCHeatmap } from "./types/MCHeatmap";
+import { MCSimpleResponseCheck } from '../../../utils/ResponseChecks';
+
 
 const getWidthAndStartForAxis = (numberAxis,axesPerRow,width,height) => {
     
@@ -52,29 +53,6 @@ const GraphComponents = {
 
 }
 
-function MCHeatmapFrame(props){
-    const svgRef = useRef(null);
-    
-    return(
-        <ParentSize ignoreDimensions={["top","left"]} debounceTime={300} enableDebounceLeadingCall={false}>
-        {parent => (
-            <svg
-
-                width={parent.width}
-                height = {parent.height}
-                ref = {svgRef}
-                id = {props.id}
-            >
-
-                <MCHeatmap {...props.graphData} width={parent.width} height={parent.height}/>
-
-            </svg>
-        )}
-        </ParentSize>
-    )
-}
-
-// console.log(getWidthAndStartForAxis(5,3,400,500))
 
 export function MCSVGFrame(props){
     const svgRef = useRef(null);
@@ -93,9 +71,7 @@ export function MCSVGFrame(props){
                 
             >
                 <rect x={0} y={0} width={parent.width} height={parent.height} fill='white' rx={10} ry={10}/>
-                {/* <MinimalPointplot xLimits = {[0,27]} yLimits = {[1,-0.05]} xLabel = {"Time (days)"} yLabel = {"Incorporation rate"} 
-                values = {[[0,0],[7,0.1],[11,0.4],[14,0.6],[21,0.8],[26,0.82]]} title="Ndufa1" width = {parent.width} height = {parent.height} svgRef={svgRef}/>
-                <text x = {20} y={20}>{parent.width}</text> */}
+               
                 {(parent.width < 200 || parent.height < 100)?
                     <Text 
                         x = {parent.width/2} 
@@ -166,7 +142,9 @@ MCSVGFrame.defaultProps = {
     graphType : {1 : "barplot", 2 : "boxplot", 3 : "pointplot"}
 }
 
-export const MCAxisHandler = (props) => {
+
+export function MCCardAxisHandler(props) {
+    const { token, isSummary } = props
     const [correlatedFeatures,setCorrelatedFeature] = useState({success:false,isLoading:false,correlationData:[],show:false})
     const axisKeys = _.range(props.numberAixs)
     
@@ -185,20 +163,21 @@ export const MCAxisHandler = (props) => {
                 return { ...prevValues,"isLoading": true}})
             
             axios.post('/api/features/cards/data/correlation',
-                {"dataID" : dataID, "featureIDs":[featureID], "token" : props.token},
+                {"dataID" : dataID, "featureIDs":[featureID], "token" : token},
                 { headers: { 'Content-Type': 'application/json' } }).then(response => {
-                    
-                    //console.log(JSON.parse(response.data))
                     let data = _.isString(response.data) ?  JSON.parse(response.data) :response.data 
-                        
-                    if ("error" in data & data["error"] === "Token is not valid.") {
+                    if ("success" in data && !data["success"] && !data["tokenValid"]) {
                         props.resetAuthStatus()
                         return 
                     }
-                    setCorrelatedFeature(
-                        {isLoading:false,success:data["success"],correlationData:data["correlationData"],show:true})
+                    if (MCSimpleResponseCheck(response.data) && data["tokenValid"]) {
+                        setCorrelatedFeature(
+                            { isLoading: false, success: data["success"], correlationData: data["correlationData"], show: true })
+                    }
+                    else {
+                        console.log("there was an error") //show to user.
+                    }
                 }).catch(
-                
                     error => {
                         console.log(error)
                         setCorrelatedFeature(
@@ -222,8 +201,8 @@ export const MCAxisHandler = (props) => {
                         indicatorTooltipStr = {props.indicatorTooltipStr} 
                         indicatorColor = {props.indicatorColor} handleRemoveRequest = {props.handleRemoveRequest} id = {props.id} dataID = {props.dataID}
                         handleExpInfoRequest = {props.handleExpInfoRequest}
-                        isSummary = {props.isSummary}
-                        description = {props.featureProps.shortDescription}
+                        isSummary = {isSummary}
+                        description = {props.featureProps.Title}
                         label = {props.label}
                         correlationShown = {correlatedFeatures.show}
                         featureID = {props.featureProps.Entry}
@@ -231,7 +210,7 @@ export const MCAxisHandler = (props) => {
                         showDataInTable = {props.showDataInTable}
                         setOpenOfDataInTable = {props.setOpenOfDataInTable}
                         downloadData = {correlatedFeatures.show?correlatedFeatures.correlationData.downloadData:props.chartData.download}
-                        requestCorrelatedFeatures = {props.isSummary?undefined:findCorrelatedFeatures}
+                        requestCorrelatedFeatures = {isSummary?undefined:findCorrelatedFeatures}
                     />
                     <div className='axis-container'>
                         {axisKeys.map(k => {return(
@@ -243,7 +222,7 @@ export const MCAxisHandler = (props) => {
                                     props.chartData.success?
                                     <MCSVGFrame 
                                         id = {props.id} 
-                                        isSummary = {props.isSummary}
+                                        isSummary = {isSummary}
                                         graphType = {props.chartData.chart.graphType} 
                                         graphData={props.chartData.chart.graphData}
                                         description = {props.featureProps.shortDescription}/>: 
@@ -256,11 +235,35 @@ export const MCAxisHandler = (props) => {
     </div>
     )
 }
-MCAxisHandler.defaultProps = {
+MCCardAxisHandler.defaultProps = {
     numberAixs : 1,
     rowHeight : 100,
     chartData : {},
     APIsuccess : false
 }
 
+
+function MCHeatmapFrame(props){
+    const svgRef = useRef(null);
+    
+    return(
+        <ParentSize ignoreDimensions={["top","left"]} debounceTime={300} enableDebounceLeadingCall={false}>
+        {parent => (
+            <svg
+
+                width={parent.width}
+                height = {parent.height}
+                ref = {svgRef}
+                id = {props.id}
+            >
+
+                <MCHeatmap {...props.graphData} width={parent.width} height={parent.height}/>
+
+            </svg>
+        )}
+        </ParentSize>
+    )
+}
+
+// console.log(getWidthAndStartForAxis(5,3,400,500))
 

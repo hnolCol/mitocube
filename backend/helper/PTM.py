@@ -102,7 +102,7 @@ class PTMManger:
         """Finds all features coming from datasets that contain PTMs"""
         
         featureIDs  = self.featureFinder.getFeatures(filter={"PTM":"True"})
-        dbAnnotatedFeautures = self.featureFinder.getFeatureInfoFromDB(featureIDs,DBColumns=["Entry","Gene names","Protein names","Organism"])
+        dbAnnotatedFeautures = self.featureFinder.getFeatureInfoFromDB(featureIDs)
        
         return dbAnnotatedFeautures
 

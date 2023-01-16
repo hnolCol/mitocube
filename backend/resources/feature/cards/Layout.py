@@ -5,8 +5,16 @@ import pandas as pd
 import json
 
 def getSummaryCardDetails(featureID):
-    ""
-    return {"id":featureID,"cardType":"summary","dataID":None,"featureID":featureID,"filterName":"Summary","filterColor":"#efefef","shortDescription":"Regulation Overview"}
+    """"""
+    return {
+        "id":featureID,
+        "cardType":"summary",
+        "dataID":None,
+        "featureID":featureID,
+        "filterName":"Summary",
+        "filterColor":"#efefef",
+        "Title":"Regulation Overview"
+        }
 
 
 def getCardLayout(cs,numColumns,w=2,h=2):
@@ -42,6 +50,8 @@ def getCardLayout(cs,numColumns,w=2,h=2):
 class CardLayout(Resource):
     def __init__(self,*args,**kwargs):
         """
+        ToDO: Rewrite this ugly class and make it clearer,
+        too many hard coded things.
         """
         self.data = kwargs["data"]
         self.token = kwargs["token"]
@@ -78,7 +88,7 @@ class CardLayout(Resource):
                         "dataID":dataID,
                         "featureID":featureID,
                         "filterName":self.data.getParam(dataID,filterParamName),
-                        "shortDescription":self.data.getParam(dataID,"shortDescription"),
+                        "Title":self.data.getParam(dataID,"Title"),
                         "filterColor":shortCutFilterColors[self.data.getParam(dataID,filterParamName)]} for featureID,dataIDs in dataIDsByFeature.items() for dataID in dataIDs]
 
                 layouts = {}
@@ -100,7 +110,7 @@ class CardLayout(Resource):
                                 "Entry":k["featureID"],
                                 "filterName":k["filterName"],
                                 "filterColor":k["filterColor"],
-                                "shortDescription":k["shortDescription"],
+                                "Title":k["Title"],
                                 "dataID" : k["dataID"],
                                 "chartData" :  summaryChartData[k["featureID"]] if k["filterName"] == "Summary" else self.data.getDataForCard(k["dataID"],k["featureID"],k["filterName"]),
                             } 

@@ -1,6 +1,5 @@
 from flask import request, jsonify
 from flask_restful import Resource
-import json
 
 class Filter(Resource):
     def __init__(self,*args,**kwargs):

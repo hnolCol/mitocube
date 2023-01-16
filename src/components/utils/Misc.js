@@ -3,6 +3,15 @@ import { useMemo, useState, useCallback } from "react";
 import {isObject, join } from "lodash";
 import _ from "lodash"
 
+
+export function isStringNumber(str) {
+    if (typeof str != "string") return false 
+    let isNumber = !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
+        !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
+    if (isNumber) return { isNumber: isNumber, value: parseFloat(str) }
+    return { isNumber: false, value: undefined }
+    }
+
 export function getMonthName(monthNumber) {
     const date = new Date();
     date.setMonth(monthNumber - 1);
@@ -119,15 +128,6 @@ export function extractNamePrefix(s){
     return join(strSplit.map(v => capitalizeString(v)),"")
 
 }
-
-export function useToggle(initialValue = false) {
-    const [value, setValue] = useState(initialValue);
-    const toggle = useCallback(() => {
-      setValue(v => !v);
-    }, []);
-    return [value, toggle];
-  }
-
 
 export function MCGetFilterFromLocalStorage(){
     const MCFilter = JSON.parse(localStorage.getItem("mitocube-filter"))

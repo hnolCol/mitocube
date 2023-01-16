@@ -10,8 +10,8 @@ function MCScatterPoint(props) {
     return( 
         <circle 
             key={`${idx}-pp`} 
-            cx={xscale(p[0])} 
-            cy={yscale(p[1])} 
+            cx={xscale(p[0])}  //move scale outsite? 
+            cy={yscale(p[1])}  //move scale outsite? 
             r = {r} 
             fill={p[2]?p[0]>0?"#ea563c":"#7894a2":defaultCircleFill} 
             opacity={opacity}

@@ -10,7 +10,7 @@ import _ from "lodash"
 import { MCCombobox } from "../utils/components/MCCombobox"
 import { ParentSize } from "@visx/responsive"
 import { createEnum, getMonthName, groupby, quantile } from "../utils/Misc"
-import { MCSVGFrame } from "../main/charts/AxisContainer"
+import { MCSVGFrame } from "../main/protein-view/charts/MCAxisCardHandler"
 
 const allowedPages = createEnum(["Overview","Runs"])
 const timeRanges = createEnum(["Max", "2 Month", "3 Month", "1 Year", "YTD"])

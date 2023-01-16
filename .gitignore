@@ -19,6 +19,7 @@ __pycache__/
 # production
 /build
 /backend/data
+/backend/data_
 /backend/data/data.zip
 /backend/data.zip
 # misc

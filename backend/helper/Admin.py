@@ -22,9 +22,7 @@ class AdminUsers(object):
         pw = generate_password_hash(config("admin-pw"))
        
         superAdminEmailFound = [userEmailHash for userEmailHash in self.users.keys() if check_password_hash(userEmailHash,config("email-admin"))]
-    
-        #print(check_password_hash(self.users[superAdminEmailFound[0]]["pw"],config("admin-pw")))
-       
+      
         if len(superAdminEmailFound) != 0 and len(self.users) == 0:
             raise ValueError("Something is wrong.")
         if len(self.users) == 0:

@@ -1,14 +1,17 @@
-import { H4 } from "@blueprintjs/core"
 
 
 export function MCHeader(props) {
+    const {hexColor, fontSize, fontWeight} = props
     return(
         <div style={{
-                color:props.hexColor,
-                fontSize:"1.1rem",
-                fontWeight:"bold",
+                color:hexColor,
+                fontSize:fontSize,
+                fontWeight:fontWeight,
                 marginTop:"0.1rem",
-                marginBottom:"0.3rem"}}>
+                marginBottom: "0.3rem",
+                transitionDuration: "1.5s",
+                transitionProperty: "color",
+                cursor:"default"}}>
             {props.text}
         </div>
     )
@@ -16,5 +19,7 @@ export function MCHeader(props) {
 
 MCHeader.defaultProps = {
     text : "Welcome to MitoCube Admin Content",
-    hexColor : "#6e5b7b"
+    hexColor: "#2F5597",
+    fontSize: "1.1rem",
+    fontWeight : "bold"
 }

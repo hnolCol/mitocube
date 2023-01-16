@@ -1,11 +1,12 @@
 from .dataset.Summary import DatasetsSummary
 from .dataset.Params import DatasetParams
-from .dataset.Details import DatasetDetails, DatasetGroupings, DatasetExperimentalInfo, DatasetsHeatmap, DatasetsVolcano
+from .dataset.FileStorage import FileStorageService
+from .dataset.Details import DatasetDetails, DatasetGroupings, DatasetExperimentalInfo, DatasetsHeatmap, DatasetsVolcano, DatasetSearch
 from .dataset.MitoMap import DatasetsMitoMap
 from .feature.Features import Features, FeaturesInDatasets, FeatureDetails, FeatureDBInfo, FeatureSummary
-from .feature.cards.Data import CorrelationsToFeature
+from .feature.cards.Correlations import CorrelationsToFeature
 from .feature.cards.Layout import CardLayout
-from .submission.ID import DataID, DataSubmissionDetails, DataSubmissions, SampleList
+from .submission.Submissions import DataSubmissionID, DataSubmissionDetails, DataSubmissions, SampleList
 from .filter.Filter import Filter
 from .login.Login import LoginWebsite, TokenValid, AdminLoginWebsite, AdminLoginValidation, AdminTokenValid, AdminUser
 from .performance.ShareToken import ShareTokenValid, ShareToken
@@ -39,10 +40,14 @@ mitoCubeResources = [
         "obj":  AdminTokenValid,
         "reqKwargs" : ["token","user"]
     },
-    
+    {
+        "url":'/api/dataset',
+        "obj": FileStorageService,
+        "reqKwargs" : ["data","token"]
+    },
     # {
-    #     "url":'/api/dataset/summary',
-    #     "obj": DatasetSummary,
+    #     "url":'/api/dataset/data',
+    #     "obj": FileStorageService,
     #     "reqKwargs" : ["data","token"]
     # },
     {
@@ -54,6 +59,11 @@ mitoCubeResources = [
         "url":'/api/dataset/details',
         "obj": DatasetDetails,
         "reqKwargs" : ["data","token"]
+    },
+    {
+        "url":'/api/dataset/features',
+        "obj": DatasetSearch,
+        "reqKwargs" : ["featureFinder","token"]
     },
     {
         "url":'/api/dataset/groupings',
@@ -134,7 +144,7 @@ mitoCubeResources = [
     ###Sample submission
     {
         "url":'/api/data/submission/id',
-        "obj": DataID,
+        "obj": DataSubmissionID,
         "reqKwargs" : ["data","token","submission"]
     },
     {

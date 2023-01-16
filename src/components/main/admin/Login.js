@@ -27,7 +27,7 @@ export function MCAdminLogin(props) {
     const logout = (e) => {
       removeMitoCubeAdminToken()
       setAdminAuthenticationState({isAuth:false,token:null,superAdmin:false})
-      
+
     }
     
 
@@ -39,10 +39,7 @@ export function MCAdminLogin(props) {
         {adminToken:adminTokenDetails.adminToken,validationCode:loginInfo.validationCode,token:token},
         {headers : {'Content-Type': 'application/json'}}).then(response => {
           if (response.status === 200 & "success" in response.data & response.data["success"]){
-            // setAdminToken(prevValues => {
-            //   return { ...prevValues,"validated": response.data["success"]}
-            // })
-            
+      
             setAdminAuthenticationState({
                             isAuth:response.data["success"],
                             token:adminTokenDetails.adminToken,

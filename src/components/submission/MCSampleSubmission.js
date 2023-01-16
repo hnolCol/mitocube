@@ -3,12 +3,13 @@ import { useState, useEffect } from "react"
 import axios from "axios";
 import { Alert, Button, ButtonGroup, Code, EditableText, InputGroup, NumericInput } from "@blueprintjs/core";
 import { MCCombobox } from "../utils/components/MCCombobox";
-import { saveSubmission, getSavedSubmission, extractNamePrefix, downloadJSONFile } from "../utils/Misc";
-import _, { isObject } from "lodash";
+import { saveSubmission, getSavedSubmission, extractNamePrefix, downloadJSONFile, isStringNumber } from "../utils/Misc";
+import _, { isNumber, isObject } from "lodash";
 import { MCGroupingTable } from "./MCGroupingTable";
 import { DateInput2 } from "@blueprintjs/datetime2";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { MCHeader } from "../utils/components/MCHeader";
 
 
 const initAlert = {
@@ -18,7 +19,7 @@ const initAlert = {
     intent:"danger"
 }
 const initSubmission = {
-    id:undefined,
+    dataID:undefined,
     time:undefined,
     details:{},
     groupingTable:{columnNames:["Run","Replicate"],
@@ -32,41 +33,40 @@ function buildRunName (time,researcher,dataID,nrows,index) {
 }
 
 export function MCSampleSubmission (props) {
-
+    const { token } = props
     //const [submissionID, setsubmissionID] = useState(initDetails)
     const [submission, setSubmission] = useState(initSubmission)
     const [details, setDetails] = useState([])
     const [alertDetails, setAlertDetails] = useState(initAlert)
     const [scrollPosition, setScrollPosition] = useState(0);
-
+    const [submissionInProgress, setSubmissionInProgress] = useState(false)
 
     useEffect(() => {
-
+        //load saved submission.
         let s = getSavedSubmission()
         let submissionHeaders = isObject(s)?Object.keys(s):[]
-        if (submissionHeaders.includes("id")&&submissionHeaders.includes("time")){
-                    
-            setSubmission(s)   
-
+        if (submissionHeaders.includes("dataID")&&submissionHeaders.includes("time")){
+            setSubmission(prevValues => { return { prevValues, ...s } })
         }
         else {
-        axios.get('/api/data/submission/id',{params:{token:props.token}}).then(response => {
+        axios.get('/api/data/submission/id',{params:{token:token}}).then(response => {
                 if (response.status === 200 & response.data["success"]){
                         setSubmission({
-                            id:response.data["id"],
+                            dataID:response.data["dataID"],
                             time:response.data["time"],
                             details:submission.details,
                             groupingTable: initSubmission.groupingTable
                         })
                 }
                 else {
-                    console.log("API ERROR")    
+                    setAlertDetails({isOpen:true,children:<div>{response.data.msg}</div>,icon:"issue"})
                 }
             })}
-      }, []);
+      }, [token]);
 
+    
     useEffect(() => {
-        axios.get('/api/data/submission/details',{params:{token:props.token}}).then(response => {
+        axios.get('/api/data/submission/details',{params:{token:token}}).then(response => {
                 if (response.status === 200 & response.data["success"]){
                     setDetails(response.data.details)
                 }
@@ -74,21 +74,20 @@ export function MCSampleSubmission (props) {
                     setDetails([])
                 }
             })
-      }, [props.token]);
+      }, [token]);
 
     
     const saveSubmissionValue = (detailName,value,minValue = undefined) => {
         // handle submission values 
-        
         if (minValue !==undefined && value < minValue) value = ""
         let subDetails = submission.details
         subDetails[detailName] = value
         
-        if (detailName === "n_samples"){
+        if (detailName === "Number Samples"){
             let groupingTable = submission.groupingTable
             if (groupingTable.data.length < value){
                 const addNRows = value - groupingTable.data.length
-                let newwData = _.concat(groupingTable.data,_.range(addNRows).map((v,ii) => {return({Run:buildRunName(submission.time,submission.details["Experimentator"],submission.id,groupingTable.data.length,ii)})}))
+                let newwData = _.concat(groupingTable.data,_.range(addNRows).map((v,ii) => {return({Run:buildRunName(submission.time,submission.details["Experimentator"],submission.dataID,groupingTable.data.length,ii)})}))
                 groupingTable.data = newwData 
                 setSubmission(prevValues => {
                     return { ...prevValues, "details":subDetails,"groupingTable":groupingTable}})
@@ -100,15 +99,16 @@ export function MCSampleSubmission (props) {
                     return { ...prevValues, "details":subDetails,"groupingTable":groupingTable}})
             }
         }
+
         else if (detailName === "Experimentator"){
             let groupingTable = submission.groupingTable
-            _.range(0,groupingTable.data.length).forEach((v,ii) => groupingTable.data[v]["Run"] = buildRunName(submission.time,submission.details["Experimentator"],submission.id,0,ii))
-
+            _.range(0,groupingTable.data.length).forEach((v,ii) => groupingTable.data[v]["Run"] = buildRunName(submission.time,submission.details["Experimentator"],submission.dataID,0,ii))
             setSubmission(prevValues => {
-                return { ...prevValues, "details":subDetails,"groupingTable":groupingTable}})
+                return { ...prevValues, "details":subDetails,"groupingTable":groupingTable, "rerender" : Math.random()}})
             
         }
-        else if (detailName === "n_groupings"){
+            
+        else if (detailName === "Number Groupings"){
 
             let groupingTable = submission.groupingTable
             groupingTable.columnNames = _.concat(["Run","Replicate"],_.range(value).map(v => `Grouping ${v+1}`))
@@ -120,10 +120,6 @@ export function MCSampleSubmission (props) {
             setSubmission(prevValues => {
                 return { ...prevValues, "details":subDetails}})
         }
-
-
-        
-
     }
 
     const resetForm = () => {
@@ -139,14 +135,32 @@ export function MCSampleSubmission (props) {
         saveSubmission(submission)
     }
 
-    const handleDataEditing = (value,rowIndex,columnIndex) => {
-       
+    const handleDataEditing = (value, rowIndex, columnIndex) => {
+
         let tableData = submission.groupingTable
+        
+        if (tableData.data.length === 0 || !_.isObject(tableData.data[0])) {
+                setSubmission(prevValues => { return { ...prevValues, "rerender": Math.random() } })
+                return
+        }//no samples added yet 
+        
+        if (_.isObject(tableData.data[rowIndex]) && tableData.columnNames[columnIndex] === "Replicate") {
+                    
+                const { isNumber } = isStringNumber(value)
+            
+                if (!isNumber) {
+                    setSubmission(prevValues => { return { ...prevValues, "rerender": Math.random() } })
+                    console.log("return")
+                    return
+                }
+            
         if (_.isArray(rowIndex)){
             rowIndex.forEach(v => tableData.data[v][tableData.columnNames[columnIndex]] = value)
         }
+        
         else {
-            tableData.data[rowIndex][tableData.columnNames[columnIndex]] = value
+                    tableData.data[rowIndex][tableData.columnNames[columnIndex]] = value
+                }
         }
         
        // console.log(value,rowIndex,columnIndex)
@@ -165,43 +179,47 @@ export function MCSampleSubmission (props) {
     }
 
     const submitExperiment = () => {
+
         const [ok,msg] = checkDetailInput(submission,details)
-        
         if (!ok){
             setAlertDetails({isOpen:true,children:<div>{msg}</div>,icon:"issue"})
         }
         else {
+            setSubmissionInProgress(true)
             const jsonData = JSON.stringify({token:props.token,submission:submission})
             
             axios.post('/api/data/submission/details',
-                jsonData, {headers: {
+                    jsonData,
+                {
+                    headers: {
                     // Overwrite Axios's automatically set Content-Type
                     'Content-Type': 'application/json'
                 }}, 
             ).then(response => {
-                    console.log(response.data)
-                    if (!response.data.success) {
-                        setAlertDetails(prevValues => {
-                            return { ...prevValues, "isOpen":true,"children":<div>{response.data.msg}</div>,"icon":"issue"}})
-                    }
-                    else {
-                        setAlertDetails(prevValues => {
-                            return {
-                                ...prevValues, "isOpen": true, "children":
-                                    <div>
-                                        Submission complete. You will receive a confirmation email.
-                                        <Button
-                                            text="Download summary."
-                                            icon="download"
-                                            intent="primary"
-                                            onClick={e => downloadJSONFile(response.data.paramsFile, `params-${response.data.paramsFile.dataID}`)} minimal={true} />
-                                    </div>,
-                                "icon": "tick", "intent": "success"
-                            }
-                        })
-                    }
+                setSubmissionInProgress(false) //turn loading botton off
+                if (!response.data.success) {
+                    setAlertDetails(prevValues => {
+                        return { ...prevValues, "isOpen": true, "children": <div>{response.data.msg}</div>, "icon": "issue" }
+                    })
+                    
                 }
-                )
+                else {
+                    setAlertDetails(prevValues => {
+                        return {
+                            ...prevValues, "isOpen": true, "children":
+                                <div>
+                                    Submission complete. You will receive a confirmation email.
+                                    <Button
+                                        text="Download summary."
+                                        icon="download"
+                                        intent="primary"
+                                        onClick={e => downloadJSONFile(response.data.paramsFile, `params-${response.data.paramsFile.dataID}`)} minimal={true} />
+                                </div>,
+                            "icon": "tick",
+                            "intent": "success"
+                        }
+                    })
+                }})
         }
     }
 
@@ -212,12 +230,16 @@ export function MCSampleSubmission (props) {
     const handleTemplateInput = (columnNames,dataTable,nReplicates,nSamples,nGroupings) => {
         // handle templete input (e.g. loaded from a txt file)
         
-        let tableData = {columnNames:columnNames,data:dataTable}
+        
         let subDetails = submission.details
-        subDetails["n_samples"] = nSamples
-        subDetails["n_replicates"] = nReplicates
-        subDetails["n_groupings"] = nGroupings
-
+        subDetails["Number Samples"] = nSamples
+        subDetails["Number Replicates"] = nReplicates
+        subDetails["Number Groupings"] = nGroupings
+        console.log(nSamples,nReplicates,nGroupings)
+        _.range(0, dataTable.length).forEach((v, ii) => dataTable[v]["Run"] = buildRunName(submission.time, submission.details["Experimentator"], submission.dataID, 0, ii))
+        let tableData = {columnNames:columnNames, data: dataTable}
+        
+        console.log(tableData)
         //update
         setSubmission(prevValues => {
             return { ...prevValues, "groupingTable":tableData,"rerender":Math.random()}})  
@@ -259,12 +281,15 @@ export function MCSampleSubmission (props) {
                                 backgroundColor:"#aabbc2",
                                 width:`${200*scrollPosition}px`}}
        />
-
             </div>
             <div>
-                <h2>Sample submission</h2>
-                <h3>{submission.id}</h3> 
-                <Code>{submission.time}</Code>
+                    <div className="middle-m">               
+                        <MCHeader text="Sample Submission" />
+                        <div className="little-m">
+                            <MCHeader text = {submission.dataID} fontSize="0.8rem"/>
+                            <Code>{submission.time}</Code>
+                        </div>
+                    </div>
                 <p>
                     Please fill out all fields below regarding your proteomics sample submisison. An E-Mail will be sent to the provided email below.
                     Noteworthy, you can enter multiple E-Mails if required separated by a comma. Emails about the state of the project will be send to all adresses
@@ -283,7 +308,7 @@ export function MCSampleSubmission (props) {
                             data = {submission.groupingTable.data} 
                             rerender = {submission.rerender}
                             columnNames = {submission.groupingTable.columnNames}
-                            numReplicates = {submission.details["n_replicates"]!==undefined?submission.details["n_replicates"]:1}
+                            numReplicates = {submission.details["Number Replicates"]!==undefined?submission.details["Number Replicates"]:1}
                             handleDataEditing = {handleDataEditing}
                             handleTemplateInput = {handleTemplateInput}
                             handleColumnNameEditing  = {handleColumnNameEditing }/>
@@ -294,7 +319,7 @@ export function MCSampleSubmission (props) {
                 <Link to="/"><Button text = {"Back"} intent="danger" /></Link>
                 <Button text={""} onClick={resetForm} icon="refresh"/>
                 <Button text={""} onClick={saveSubmissionDetailsToLocalStorage} icon="floppy-disk"/>
-                <Button text={"Submit"} intent="primary" icon="send-to" onClick={submitExperiment}/>
+                <Button text={"Submit"} intent="primary" icon="send-to" onClick={submitExperiment} loading={submissionInProgress} />
             </ButtonGroup>
         </div>
     )
@@ -318,7 +343,7 @@ function checkDetailInput(submission,details) {
     if (submission.details["Research Aim"] !== undefined && submission.details["Research Aim"].length < 100){
         return ([false, "The 'Research Aim' is too short (< 100 characters). Please provide more information."])
     }
-    if (submission.details["n_samples"] < submission.details["n_replicates"]){
+    if (submission.details["Number samples"] < submission.details["Number Replicates"]){
         return ([false, "Number of replicates is bigger than the number of samples."])
     }
 
@@ -338,7 +363,7 @@ function MCSubmissionDetails (props) {
 
                 {   
                     if (v.field === "numeric-input"){
-                        v["value"] = submission[v.name]!==undefined?submission[v.name]:""
+                        v["value"] = submission[v.name]!==undefined?`${submission[v.name]}`:""
                         return (
                             <MCNumericInput key = {v.name} detailName = {v.name} cb = {saveSubmissionValue} {...v}/>
                         )

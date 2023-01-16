@@ -71,7 +71,6 @@ export function MCMethodEditingDialog (props) {
             handleDataChange(dataID,updated_src)
         }
         onClose()
-        
 
     }
 

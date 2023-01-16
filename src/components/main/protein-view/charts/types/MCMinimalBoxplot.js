@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { localPoint } from '@visx/event';
 import { Text } from '@visx/text';
 import { scaleLinear } from '@visx/scale';
-import { getLuma } from '../../../utils/Misc';
+import { getLuma } from '../../../../utils/Misc';
 import _ from 'lodash';
 
 

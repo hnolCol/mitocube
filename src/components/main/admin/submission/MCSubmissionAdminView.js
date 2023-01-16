@@ -1,17 +1,20 @@
-import { Alert, Button, Collapse, InputGroup, Code, ButtonGroup, MenuItem, Menu, MenuDivider } from "@blueprintjs/core"
+import { Alert, Button, Collapse, InputGroup, Code, ButtonGroup, MenuItem, Menu, MenuDivider, Icon, FileInput } from "@blueprintjs/core"
 import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
 
 import axios from "axios"
 import ReactJson from 'react-json-view'
-import { MCCombobox } from "../utils/components/MCCombobox"
-import { arrayOfObjectsToTabDel, arrayToTabDel, downloadJSONFile, downloadTxtFile } from "../utils/Misc"
+import { MCCombobox } from "../../../utils/components/MCCombobox"
+import { arrayOfObjectsToTabDel, arrayToTabDel, downloadJSONFile, downloadTxtFile } from "../../../utils/Misc"
 import _ from "lodash"
 import { Text } from "@visx/text"
-import { MCCreateSampleList } from "./MCCreateSampleList"
+import { MCCreateSampleList } from "../../../submission/MCCreateSampleList"
 import { Popover2, Tooltip2 } from "@blueprintjs/popover2"
 import { MCGroupingNameDialog, MCMethodEditingDialog } from "./MCSubmissionDialogs"
-import { MCHeader } from "../utils/components/MCHeader"
+import { MCHeader } from "../../../utils/components/MCHeader"
+import { MCSimpleResponseCheck, MCTokenValidCheck } from "../../../utils/ResponseChecks"
+import { MCTooltipButton } from "../../../utils/components/MCTooltipButton"
+import { readLinesAndColumnNamesFromTxtFile } from "../../../utils/FileReading"
 
 
 const initRenameGrouping = {isOpen:false,groupingNames:[],dataID:undefined,paramsFile:{}}
@@ -20,9 +23,18 @@ const initExperimental = {isOpen:false,dataID:undefined,paramsFile:{}}
 
 
 function MCSubmissionItem(props) {
-    const {dataID, token, handleDataChange, paramsFile, states, setAlertState,openSampleListDialog, openRenameGroupingDialog, isUpdated, setIsUpdated, openMethodEditingDialog} = props
+    const {dataID, token, handleDataChange, paramsFile, states, setAlertState,openSampleListDialog, openRenameGroupingDialog, isUpdated, setIsUpdated, openMethodEditingDialog, tagNames} = props
     
     const [isOpen, setIsOpen] = useState(false)
+    const [alertDetails, setAlertDetails] = useState({
+        isOpen: false,
+        children: <div><p>Alert</p></div>,
+        intent: "none",
+        loading : false,
+        onConfirm: undefined,
+        onCancel: undefined,
+        cancelButtonText : undefined
+    })
     
 
     const onEditJsonParams = (params) => {
@@ -84,8 +96,6 @@ function MCSubmissionItem(props) {
             setIsUpdated(dataID,true)
             setAlertState({isOpen:true,children:<div>State of {dataID} changed to : {newState}. Please note that you still have to save/upload the changes.</div>})
         }
-        
-
     }
     const handleDelete = (e) => {
         // handle delete of submission (actually putting to archive)
@@ -94,9 +104,138 @@ function MCSubmissionItem(props) {
         })
     }
 
+
+    const resetAlert = () => {
+        setAlertDetails(prevValues => {
+            return { ...prevValues, isOpen: false, children: <div></div> }
+        })
+
+    }
+
+    const alterAlertChildren = (children, isString = true, intent = "none", icon = "none", cancelButtonText = undefined, onConfirm = resetAlert, onCancel = undefined) => {
+        if (isString) {
+            setAlertDetails(prevValues => {
+                return {
+                    ...prevValues,
+                    children: <div><p>{children}</p></div>,
+                    intent,
+                    icon,
+                    cancelButtonText,
+                    "onConfirm": onConfirm,
+                    "onCancel": onCancel
+                }
+            })
+        }
+        else {
+            setAlertDetails(prevValues => {
+                return {
+                    ...prevValues, children, intent, icon, cancelButtonText,
+                    "onConfirm": onConfirm, "onCancel": onCancel
+                }
+            })
+        }
+    }
+
+    const uploadFile = (columnNames, dataArray, paramsFile) => {
+        setAlertDetails(prevValues => { return { ...prevValues, loading: true } })
+        const postData = { columnNames, values: dataArray, paramsFile, token, dataID }
+        let commonAlertStateChange = {loading: false, "onConfirm" : resetAlert, cancelButtonText : undefined}
+        axios.post('/api/dataset',
+            postData, {
+            headers: { 'Content-Type': 'application/json' }
+        }).then(response => {
+            
+            if (MCSimpleResponseCheck(response.data)){
+                let children = <div><p>Data successfully added to the MitoCube database.</p></div>
+                setAlertDetails(prevValues => {
+                    return {
+                        ...prevValues,
+                        children, ...commonAlertStateChange
+                    }
+                })
+            }
+            else {
+                let children = <div><p>There was an error: {response.data["msg"]}.</p></div>
+                setAlertDetails(prevValues => {
+                    return {
+                        ...prevValues,
+                        icon : "error",
+                        intent : "danger",
+                        children, ...commonAlertStateChange
+                    }
+                })
+            }
+        }).catch((error) => {
+            let children = <div><p>The API returned an unspecified error. {error}</p></div>
+            setAlertDetails(prevValues => {
+                return {
+                    ...prevValues,
+                    intent: "danger",
+                    icon : "error",
+                    children, ...commonAlertStateChange
+                }
+            })
+        })
+
+    }
+
+    const handleFileUpload = (e, paramsFile) => {
+        setAlertDetails(prevValues => {return {...prevValues,isOpen:true,children:<div><p>File reading started...</p></div>}})
+        const fileList = e.target.files
+        if (fileList.length === 1) {
+            let file = fileList[0] //first item in files, we just want a single file
+            if (file.type === "text/plain") {
+                alterAlertChildren("Text file found...")
+                const reader = new FileReader()
+                reader.onload = (readEvent) => {
+                    let {columnNames, dataArray} = readLinesAndColumnNamesFromTxtFile(readEvent)
+                    let { success, expressionColumns } = getExpressionColumnsFromParamFile(paramsFile)
+                    let allExpressionColumnsFound = checkForAllItemsInArray(columnNames,expressionColumns)
+                    if (!success) {
+                        alterAlertChildren("Only plain txt files are allowed.",true,"danger")
+                    }
+                    if (!columnNames.includes("Key")) {
+                        alterAlertChildren("File column names (first row) must contain the column name 'Key'",true,"danger","error")
+                    }
+                    if (allExpressionColumnsFound) {
+                        alterAlertChildren(`File checked. ${dataArray.length} data rows / features detected. Click okay to upload file to MitoCube database.`,
+                            true, "success", "tick", "Cancel",() => uploadFile(columnNames,dataArray,paramsFile),resetAlert)
+                    }
+                    else {
+                        let missingColumns = _.filter(expressionColumns, columnName => !columnNames.includes(columnName))
+                        let children = <div>
+                            <p>
+                                Not all expression columns were found!<br></br><span style={{ fontWeight: "bold" }}>{missingColumns.length} of {expressionColumns.length}</span> specified could not be detected.
+                                <br></br>Please ensure that the file contains all sample names specified in the paramsFile's groupings.
+                            </p>
+                            <div className="little-m" style={{maxHeight:"10rem",overflowY:"scroll",minWidth:"100%",paddingRight:"1rem"}}>
+                                <p>The following files could not be found in the submitted data file.:</p>
+                                <div className="vert-align-div">
+                                    {missingColumns.map((missingColumnName, idx) => <div className="middle-m white-bg" style={{width:"100%"}} key={missingColumnName}>{idx} : {missingColumnName}</div>)}
+                                </div>
+                            </div>
+                        
+                        </div>
+                        alterAlertChildren(children,false,"danger","error")
+                    }
+                    
+                }
+                reader.readAsText(file)
+            }
+            else {
+                alterAlertChildren("Only plain txt files are allowed.",true,"danger","error")   
+            }
+        }
+        else {
+            alterAlertChildren("Please select a single file.",true,"danger","error")
+        }
+    }
+
+
     return(
         <div>
-        
+            <Alert style={{minWidth:"50vw"}} {...{ ...alertDetails, canEscapeKeyCancel: false, canOutsideClickCancel: false }}
+                />
         <MCSubmissionHeader 
                 paramsFile = {paramsFile} 
                 states = {states} 
@@ -105,7 +244,9 @@ function MCSubmissionItem(props) {
                 handleDelete={handleDelete} 
                 handleStateChange = {handleStateChange} 
                 isUpdated={isUpdated}
-                handleUpdate = {handleUpdate}
+                handleUpdate={handleUpdate}
+                handleFileUpload={handleFileUpload}
+                tagNames={tagNames}
                 openSampleListDialog = {openSampleListDialog}
                 openRenameGroupingDialog = {openRenameGroupingDialog}
                 openMethodEditingDialog = {openMethodEditingDialog}
@@ -126,11 +267,50 @@ function MCSubmissionItem(props) {
 }
 
 
+// function readLinesAndColumnNamesFromTxtFile(readEvent, cellSplit = "\t") {
+//     let lines = readEvent.target.result.replace(/\r\n/g,'\n').split('\n')
+//     const columnNames = lines[0].split(cellSplit)
+//     const dataArray = _.range(1, lines.length).map(idx => lines[idx].split("\t")) //skip column names
+//     return {columnNames, dataArray}
+// }
+
+function getExpressionColumnsFromParamFile(paramsFile) {
+    if (_.has(paramsFile, "groupingNames")) {
+        let groupingNames = paramsFile["groupingNames"]
+
+        if (_.isArray(groupingNames) && groupingNames.length > 0) {
+            let groupingName = groupingNames[0]
+
+            if (_.has(paramsFile["groupings"], groupingName)) {
+
+                let grouping  = paramsFile["groupings"][groupingName]
+               
+                let expressionColumns = _.flatten(Object.values(grouping))
+          
+                return { success: true, expressionColumns }
+            }
+        
+    }
+    }
+    return { success: false, expressionColumns : [] }
+    
+}
+
+function checkForAllItemsInArray(array, items) {
+    return _.every(items,(item) => array.includes(item))
+}
+function checkForKeysInObject(object, keys) {
+    let objectKeys = Object.keys(object)
+    return _.every(keys,(key) => objectKeys.includes(key))
+}
 
 function MCSubmissionHeader (props) {
-    const {paramsFile,states, isOpen, setIsOpen, handleDelete, handleStateChange, isUpdated, handleUpdate, openSampleListDialog, openRenameGroupingDialog, openMethodEditingDialog}= props
-    const [mouseOverDataID,setMouseOverDataID] = useState(false)
+    const {paramsFile, states, isOpen, setIsOpen, handleDelete, handleStateChange, isUpdated, handleUpdate, handleFileUpload, openSampleListDialog, openRenameGroupingDialog, openMethodEditingDialog, tagNames}= props
+    const [mouseOverDataID, setMouseOverDataID] = useState(false)
+    //const [uploadFileName, setUploadFileName] = useState("")
+
     const dateString = `${paramsFile["Creation Date"].substring(0,4)}-${paramsFile["Creation Date"].substring(4,6)}-${paramsFile["Creation Date"].substring(6)}`
+    
     const getDaysSinceSumbission = (dateString) => {
 
         const d =  new Date(dateString)
@@ -142,6 +322,7 @@ function MCSubmissionHeader (props) {
         return `${diffDays} days`
     }
 
+   
 
     return(
         <div key = {paramsFile.dataID} className="submission-container" onMouseEnter={e => setMouseOverDataID(paramsFile.dataID)} onMouseLeave={e => setMouseOverDataID(undefined)}>
@@ -161,7 +342,7 @@ function MCSubmissionHeader (props) {
                             {paramsFile.shortDescription}
                         </div>
                         <div className="dataset-tag-box">
-                            {["Experimentator","Email","Type","Material","Organism","dataID"].map(k => {
+                            {tagNames.map(k => {
                                 return (
                                     <div key={k} className="submission-prop">
                                     <Code>{paramsFile[k]}</Code>
@@ -191,16 +372,16 @@ function MCSubmissionHeader (props) {
                         <Button icon={"edit"} 
                                 minimal={true} 
                                 intent={isOpen?"primary":"none"}/>
-                        </Popover2>
-                        <Tooltip2 content={<div>
-                                <p>Create a sample list (Run Name and Plate position + Groupings) for example Xcalibur.</p>
-                                <p>It is recommended to scramble the runs.</p>
-                                </div>}>
-                            <Button 
-                                icon="th-list" 
-                                onClick={e => openSampleListDialog(paramsFile.dataID)} 
-                                minimal={true}/>
-                        </Tooltip2>
+                    </Popover2>
+                    
+                    
+                    <MCTooltipButton
+                        content={<div>
+                            <p>Create a sample list (Run Name and Plate position + Groupings) for example Xcalibur.</p>
+                            <p>It is recommended to scramble the runs.</p>
+                            </div>}
+                        icon="th-list"
+                        onClick={() => openSampleListDialog(paramsFile.dataID)}/>
 
                         <MCCombobox 
                                 items = {states} 
@@ -210,17 +391,40 @@ function MCSubmissionHeader (props) {
                                             minimal : true,
                                             small : true,
                                             icon : "tag"
-                                        }}/>
-                        <Tooltip2 content={<p>Download complete paramter file as a json file.</p>}>
-                            <Button icon="download" intent="primary" onClick={e => downloadJSONFile(paramsFile,`params-${paramsFile.dataID}`)} minimal={true}/>
-                        </Tooltip2>
-                        <Tooltip2 content={<p>Download submission summary as tab-delimited text file.</p>}>
-                            <Button icon="download" intent="success" onClick={e => downloadTxtFile(arrayToTabDel(extractMainParamsFromJSON(paramsFile),["Parameter","Value"]),`params-${paramsFile.dataID}.txt`)} minimal={true}/>
-                        </Tooltip2>
-                        <Tooltip2 content={<p>Place project to archive.</p>}>
-                        <Button text="" icon="trash"  onClick={handleDelete} intent={"danger"}  minimal={true}/>
-                        </Tooltip2>
-                        
+                        }} />
+                    
+                    <Tooltip2 content={<div><p>Upload file (quantitative matrix) for submission and transfer to MitoCube database for direct accessment.</p></div>}>
+                        <label style={{outline:"none"}}>
+                            <input className="bp4-file-input" type="file" multiple={false} onChange={(e) => handleFileUpload(e, paramsFile)} disabled={true} />
+                            
+                            <div style={{ marginTop: "2px" }} className="bp4-button bp4-minimal">
+                                <div className="hor-aligned-div">
+                                    <div style={{minWidth:"1rem"}}><Icon icon="upload" /></div>
+                                    <div>Upload</div>
+                                </div>
+                            </div>
+                        </label>
+                    </Tooltip2>
+
+                    <div style={{minWidth:"4rem"}}></div>
+                    <MCTooltipButton
+                        content={<p>Download complete paramter file as a json file.</p>}
+                        icon="download"
+                        intent="primary"
+                        onClick={() => downloadJSONFile(paramsFile, `params-${paramsFile.dataID}`)}/>
+                    
+                    <MCTooltipButton
+                        content={<p>Download submission summary as tab-delimited text file.</p>}
+                        icon="download"
+                        intent="success"
+                        onClick={() => downloadTxtFile(arrayToTabDel(extractMainParamsFromJSON(paramsFile),["Parameter","Value"]),`params-${paramsFile.dataID}.txt`)}/>
+                    
+                    <MCTooltipButton
+                        content={<p>Place project to archive.</p>}
+                        icon="trash"
+                        intent="danger"
+                        onClick={handleDelete}/>
+                                     
                     </ButtonGroup>
                     </div>
 
@@ -268,9 +472,12 @@ function MCSubmissionTimeLine (props) {
 
 
 export function MCSubmissionAdminView(props) {
+
+    const { token, logoutAdmin } = props    
     const [submissionDetails, setSubmissions] = useState({
         submissions: [],
         states: [],
+        tagNames : [],
         searchColumns : [],
         submissionSatesCounts: {},
         submissionsToShow: [],
@@ -284,17 +491,21 @@ export function MCSubmissionAdminView(props) {
     const [updatedDataIDs, setUpdatedDataIDs] = useState({})
     const [alertState, setAlertState] = useState({isOpen:false,children:<div>Warning!</div>})
     
-    const { token } = props    
+    
 
     useEffect(() => {
-        axios.get("/api/admin/submissions", {params:{token:token}}).then(response => {
-            if (response.status===200 & "success" in response.data & response.data["success"]) {
+        // use react query. 
+        axios.get("/api/admin/submissions", { params: { token: token } }).then(response => {
+            
+            if (response.status===200 & MCSimpleResponseCheck(response.data)) {
                 const stateCounts = getStateCounts(response.data.states, response.data.submissions)
                 let responseData = response.data
+                console.log(responseData)
                setSubmissions(
                     {
                         submissions:responseData.submissions, 
                         states: responseData.states, 
+                        tagNames : responseData.tagNames,
                         searchColumns : responseData.searchColumns,
                         submissionSummaryColumns : responseData.submissionSummaryColumns,
                         submissionSatesCounts : stateCounts,
@@ -302,7 +513,11 @@ export function MCSubmissionAdminView(props) {
                         submissionFilter : "None",
                         searchString : ""
                     })
-              }
+            }
+            else if (!MCTokenValidCheck(response.data) && _.isFunction(logoutAdmin)) {
+                //loguout from admin section if token is not valid.
+                logoutAdmin()
+            }
         })
           
         }, []);
@@ -316,7 +531,6 @@ export function MCSubmissionAdminView(props) {
 
     const openMethodEditingDialog = (dataID,paramsFile) => {
 
-        console.log(dataID)
         setExperimentalDetails({isOpen:true,dataID:dataID,paramsFile:paramsFile})
         setUpdatedState(dataID,true)
     }
@@ -553,7 +767,8 @@ export function MCSubmissionAdminView(props) {
                             openRenameGroupingDialog = {openRenameGroupingDialog}
                             openMethodEditingDialog = {openMethodEditingDialog}
                             setAlertState = {setAlertState} 
-                            states = {submissionDetails.states}
+                            states={submissionDetails.states}
+                            tagNames={submissionDetails.tagNames}
                             isUpdated = {Object.keys(updatedDataIDs).includes(v.dataID)?updatedDataIDs[v.dataID]:false}
                             setIsUpdated = {setUpdatedState}
                             {...v}/>)

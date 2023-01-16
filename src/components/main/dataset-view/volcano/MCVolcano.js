@@ -1,18 +1,25 @@
-import { AxisBottom, AxisLeft } from "@visx/axis"
-import { scaleLinear } from "@visx/scale"
-import { localPoint } from '@visx/event';
-import axios from "axios";
 import { useEffect, useState, useRef, useMemo } from "react";
-import { MCSpinner } from "../../spinner/MCSpinner";
-import { GridRows, GridColumns } from '@visx/grid';
-import { useToggle, arrayOfObjectsToTabDel, downloadSVGAsText, downloadTxtFile, findClosestMatch, saveFeatureList } from "../../utils/Misc";
-import { Text } from "@visx/text";
-import _ from "lodash";
 import { Button, ButtonGroup, Dialog, FileInput, InputGroup, Menu, MenuItem } from "@blueprintjs/core";
-import { MCGroupingSelection } from "./MCDataset";
 import { Popover2, Popover2InteractionKind } from "@blueprintjs/popover2";
-import MCScatterPoint from "./MCScatterPoint";
+import { useToggle } from "../../../../hooks/useToggle";
+
+
+import { arrayOfObjectsToTabDel, downloadSVGAsText, downloadTxtFile, findClosestMatch, saveFeatureList } from "../../../utils/Misc";
+
+import { Text } from "@visx/text";
+import { scaleLinear } from "@visx/scale";
+import { localPoint } from '@visx/event';
+import { AxisBottom, AxisLeft } from "@visx/axis";
+import { GridRows, GridColumns } from '@visx/grid';
 import ParentSize from "@visx/responsive/lib/components/ParentSizeModern";
+
+import { MCSpinner } from "../../../spinner/MCSpinner";
+import { MCGroupingSelection } from "../MCDataset";
+import MCScatterPoint from "./MCScatterPoint";
+
+import _ from "lodash";
+import axios from "axios";
+import { MCSimpleResponseCheck } from "../../../utils/ResponseChecks";
 
 function MCCreateList(props) {
 
@@ -148,18 +155,12 @@ export function MCVolcanoGrid(props) {
                             className="volcano-box" 
                             key = {`${i}-volcContainer`}>
                                 <MCVolcanoCollection 
-                                    groupingNames={groupingNames} 
-                                    groupItems = {groupItems}
-                                    dataID= {dataID}
-                                    token = {token}
-                                    data = {volcanoData[i]}
-                                    volcanoProps = {volcanoProps}
-                                    //transferPointHandler={handleCrossPoint} 
-                                    //highlightPoint={crossPoint} 
-                                    //setMouseOverPlot={setMouseOverPlot} 
-                                    //setVolcanoData = {setVolcanoData}
-                                    //mouseOverPlot={mouseOverPlot}
-                                    //transferPoints = {transferPoints}
+                                    groupingNames={groupingNames}
+                                    groupItems={groupItems}
+                                    dataID={dataID}
+                                    token={token}
+                                    data={volcanoData[i]}
+                                    volcanoProps={volcanoProps}
                                     />
                          </div>)
                          }
@@ -214,13 +215,17 @@ export function MCVolcanoLoader(props) {
 
     useEffect(() => {
         if (data!==undefined) return 
-        axios.get('/api/data/volcano', {params:{dataID:dataID,grouping:grouping,token:token}}).then(response => {
-            if (response.data.params === undefined) {
-                setErrorMsg("API responded with an error.")
-            }
-            else {
-                volcanoProps.setVolcanoData(response.data.params)
-            }
+        axios.get('/api/data/volcano', { params: { dataID: dataID, grouping: grouping, token: token } }).then(response => {
+            console.log(response.data)
+                if (response.status === 200 && MCSimpleResponseCheck(response.data)){
+                    volcanoProps.setVolcanoData(response.data.params)
+                }
+                else {
+                    setErrorMsg(`There was an error in extracting the data. ${response.data["msg"]}`)
+                }
+            }).catch(error => {
+            
+            setErrorMsg(`There was an error returned from the API: ${error}`)
         })
       }, []);
 
@@ -522,6 +527,8 @@ export function MCVolcano(props) {
         } 
     }
 
+    if (width < 0) return <div></div>
+
     return (
         <div>
         <div className="hor-aligned-div" style={{marginLeft:"0.2rem"}}>
@@ -626,20 +633,20 @@ export function MCVolcano(props) {
             
             <g className="unselectable-text">
            
-            <AxisBottom left={0} top={height-margin.bottom} scale={xscale} numTicks={4} label={xlabel} strokeWidth={1}/>
-            <AxisLeft left={margin.left} scale={yscale} numTicks={4} label={ylabel} strokeWidth={1} labelOffset={16}/>
+                    <AxisBottom left={0} top={height - margin.bottom} scale={xscale} numTicks={4} label={xlabel} strokeWidth={1} labelProps={{fontSize : 14, textAnchor : "middle"}} />
+                    <AxisLeft left={margin.left} scale={yscale} numTicks={4} label={ylabel} strokeWidth={1} labelOffset={22} labelProps={{fontSize : 14, textAnchor : "middle"}}/>
 
-            <Text x = {margin.left+4} y = {margin.top} verticalAnchor="start" fontSize={10} {...fontProps}>
+            <Text x = {margin.left+4} y = {margin.top} verticalAnchor="start" fontSize={12} {...fontProps}>
                 {`
                 n = ${pointsToShow.length}${activeFilterColumn.length === 1?` / ${points.length}`:""}
                 ${activeFilterColumn.length === 1?`(filter=${activeFilterColumn[0][0]})`:""} 
                 ${searchWordActive?`(${regExpMatchingPoints.length} matching '${search}')`:""} 
                 ${zoomActive.xDomain!==undefined?"zoom active":""}`}</Text>
-            <Text x = {margin.left+4} y = {margin.top + 10 } verticalAnchor="start" fontSize={10} {...fontProps}>
+            <Text x = {margin.left+4} y = {margin.top + 12 } verticalAnchor="start" fontSize={12} {...fontProps}>
                 {`# sig = ${n_significant} 
                 ${searchWordActive?`(${regExpSignificant})`:""}`}
             </Text>
-            <Text x = {margin.left+4} y = {margin.top + 22} verticalAnchor="start" fontSize={10} {...fontProps}>
+            <Text x = {margin.left+4} y = {margin.top + 26} verticalAnchor="start" fontSize={12} {...fontProps}>
                 
                 {`${n_significant-n_significant_up} ${searchWordActive?`(${regExpSignificant-regExpSignificant_up})`:""}↓ - ${n_significant_up} ${searchWordActive?`(${regExpSignificant_up})`:""} ↑ `}
             </Text>
@@ -781,15 +788,18 @@ export function MCVolcano(props) {
         }):null}
 
         {/* `(${regExpMatchingPoints.length} matching '${search}')`:""} } */}
-
-         <rect x = {margin.left} 
+        {width - margin.left > 0 ?
+            <rect
+                x={margin.left} 
                 y = {margin.top} 
                 width={width-margin.left-margin.right} 
                 height={height-margin.top-margin.bottom} 
                 fill="transparent"
                 opacity={0}
                 onMouseLeave={e => setMouseOverPlot(undefined)} 
-                onMouseEnter={e => setMouseOverPlot(svgID)}/> 
+                onMouseEnter={e => setMouseOverPlot(svgID)} />
+            : null}
+         
 
         </svg>
         </div>
