@@ -84,7 +84,6 @@
                 "fields" : ["featureIDs","filter","columnNumber"],
                 "description":"Returns a JSON object the layout for the react-grid for each featureID in feautureIDs (list). The columnNumber is a dict/object looking like {lg:12,md:5,s:5} where the keys are the breakpoints."
             }
-
         ],
         
         
@@ -215,9 +214,9 @@
                 "field" : "text-input",
                 "name" : "Protein of Interest",
                 "title" : "Protein of Interest",
-                "q" : "Protein of Interest",
+                "q" : "Protein of Interest (seperate multiple by comma)",
                 "default" : "",
-                "placeholder" : "Please provide the protein of interest (knockout line, OMA1, YME1l1)."
+                "placeholder" : "Please provide the protein(s) of interest (knockout line, OMA1, YME1l1)."
             },
             {
                 "field" : "combo-input",

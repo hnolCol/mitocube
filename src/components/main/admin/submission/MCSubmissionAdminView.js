@@ -38,7 +38,6 @@ function MCSubmissionItem(props) {
     
 
     const onEditJsonParams = (params) => {
-        //console.log(params)
         
         if (["dataID","SampleNumber"].includes(params.name)){
             setAlertState({isOpen:true,alert:"danger",children:<div>The dataID, groupingNames and sample number cannot be changed.</div>})
@@ -64,11 +63,8 @@ function MCSubmissionItem(props) {
         else {
             setIsUpdated(dataID,true)
             handleDataChange(dataID,params.updated_src)
-        }
-       
-        
+        }   
     }
-
 
 
     const handleUpdate = (e) =>{
@@ -137,9 +133,11 @@ function MCSubmissionItem(props) {
     }
 
     const uploadFile = (columnNames, dataArray, paramsFile) => {
+        
         setAlertDetails(prevValues => { return { ...prevValues, loading: true } })
         const postData = { columnNames, values: dataArray, paramsFile, token, dataID }
         let commonAlertStateChange = {loading: false, "onConfirm" : resetAlert, cancelButtonText : undefined}
+        
         axios.post('/api/dataset',
             postData, {
             headers: { 'Content-Type': 'application/json' }
@@ -322,6 +320,20 @@ function MCSubmissionHeader (props) {
         return `${diffDays} days`
     }
 
+    const getResearchAimFromParamsFile = (paramsFile) => {
+        if (paramsFile.shortDescription !== undefined && _.isString(paramsFile.shortDescription)) {
+            return paramsFile.shortDescription //older naming
+        }
+        else {
+            if (_.has(paramsFile, "Experimental Info") && _.isArray(paramsFile["Experimental Info"])) {
+                let researchAim = _.filter(paramsFile["Experimental Info"], expInfo => expInfo.title === "Research Aim")
+                if (researchAim.length > 0) {
+                    return researchAim[0].details
+                }
+                return ""
+            }
+        }
+    }
    
 
     return(
@@ -339,7 +351,7 @@ function MCSubmissionHeader (props) {
                         </div>
 
                         <div style={{fontSize:"1em",paddingRight:"5rem"}}>
-                            {paramsFile.shortDescription}
+                            {getResearchAimFromParamsFile(paramsFile)}
                         </div>
                         <div className="dataset-tag-box">
                             {tagNames.map(k => {
@@ -500,7 +512,6 @@ export function MCSubmissionAdminView(props) {
             if (response.status===200 & MCSimpleResponseCheck(response.data)) {
                 const stateCounts = getStateCounts(response.data.states, response.data.submissions)
                 let responseData = response.data
-                console.log(responseData)
                setSubmissions(
                     {
                         submissions:responseData.submissions, 
@@ -577,7 +588,6 @@ export function MCSubmissionAdminView(props) {
         var filteredSubmissions = getStringMatchSubmissions(submissionDetails.searchString)
 
         const submissionsFiltered = filterName === "None"?_.map(filteredSubmissions, v => v.dataID):_.map(_.filter(filteredSubmissions, v => v.paramsFile.State === filterName),v => v.dataID)
-        //console.log(filteredSubmissions)
         setSubmissions(prevValues => {
             return { ...prevValues, "submissionsToShow":submissionsFiltered, "submissionFilter":filterName}})
 

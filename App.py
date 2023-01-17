@@ -39,7 +39,7 @@ pathToPerformanceData = os.path.join(app.root_path,"backend","data","dynamic","p
 pathToDB = os.path.join(app.root_path,"backend","data","static","dbs","uniprot")
 pathToSubmissionFolder =  os.path.join(app.root_path,"backend","data","dynamic","submissions")
 pathToArchive =  os.path.join(app.root_path,"backend","data","archive")
-pathToAPIConfig = os.path.join(app.root_path,"backend","config","docs")
+pathToAPIConfig = os.path.join(app.root_path,"backend","config","docs") #should point to figure, and check for existance! ToDO
 pathToDataFolder = os.path.join(app.root_path,"backend","data")
 
 if not os.path.exists(pathToDataFolder):
@@ -58,7 +58,9 @@ if not os.path.exists(pathToDataFolder):
 dbManager = DBFeatures(pathToDB=pathToDB)
 dataManger = Data(pathToData,pathToAPIConfig,dbManager)
 adminUserManager = AdminUsers(pathToUsers)
-tokenManager = Token(pathToTokens, tokensValid = dataManger.getAPIParam("token-valid(h)"), shareTokensValid = dataManger.getAPIParam("share-token-valid(h)"))
+tokenManager = Token(pathToTokens, 
+        tokensValid = dataManger.getAPIParam("token-valid(h)"), 
+        shareTokensValid = dataManger.getAPIParam("share-token-valid(h)"))
 performanceManager = Performance(pathToData = pathToPerformanceData, 
                         performanceConfig = dataManger.getAPIParam("performance-runs"), 
                         propertyOptions = dataManger.getAPIParam("performancePropertyOptions"),

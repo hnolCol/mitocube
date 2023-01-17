@@ -642,7 +642,7 @@ class Data(object):
 
     def __readConfig(self):
         """Loads the config file."""
-        pathToDocs = os.path.join(self.pathToAPIConfig,"api_docs_config.json")
+        pathToDocs = os.path.join(self.pathToAPIConfig,"api_config.json")
         if os.path.exists(pathToDocs):
             self.config = json.load(open(pathToDocs))
             
