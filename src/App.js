@@ -11,9 +11,9 @@ import {
 import { MCProtectedRoute} from "./components/utils/components/MCProtectedRoute"
 import {Welcome} from "./components/main/Welcome"
 import { ProteinMainView } from './components/main/protein-view/MainView';
-import { MCHelpMainView} from "./components/main/Help"
+import { MCHelpMainView} from "./components/main/help/Help"
 import { helpDetails } from "./data/help"
-import {helpLinks} from "./components/main/Help"
+import {helpLinks} from "./components/main/help/Help"
 import { MCDatasetMainView } from './components/main/Dataset';
 import { getMitoCubeToken } from './components/utils/Misc';
 
@@ -28,6 +28,7 @@ import { MCPerformanceView } from "./components/performance/MCPerformanceView"
 import { MCAdminUserView } from './components/main/admin/user/User';
 import { removeMitoCubeAdminToken } from "./components/utils/Misc"
 import { MCPTMView } from './components/main/ptm-view/MCPTMView';
+import { MCInstallationHelp } from './components/main/help/Installation';
 
 
 
@@ -211,7 +212,12 @@ function App() {
       }
       />
 
+        <Route path="/help/installation" element={<MCInstallationHelp />}>
           
+          
+          
+        </Route>
+
         <Route path="/help" element={<MCHelpMainView/>}> 
             {helpLinks.map((v,i) => {
               
@@ -226,6 +232,8 @@ function App() {
             }
           
         </Route>
+        
+        
 
         <Route path="*" element = {<div>Page not found. Return to <Link to="/">main page.</Link></div>}/>
 

@@ -1,7 +1,7 @@
 import { Button, ButtonGroup, InputGroup } from "@blueprintjs/core";
 import axios from "axios";
 import { useQuery } from "react-query"
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { MCHeader } from "../../../utils/components/MCHeader";
 import _ from 'lodash'
 import { MCDeleteButton } from "../../../utils/components/MCDeleteButton";

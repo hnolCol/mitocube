@@ -1,3 +1,4 @@
+gunicorn
 fastcluster==1.2.6
 Flask==2.0.2
 Flask-Mail==0.9.1

@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 
 
 const defaultArea = {fill:"#DEDEDE",stroke:"#000000",strokeWidth:0.4,strokeMiterlimit:10}
-const highlightArea = {fill:"#6e5b7b",stroke:"#000000",strokeWidth:0.4,strokeMiterlimit:10}
+//const highlightArea = {fill:"#6e5b7b",stroke:"#000000",strokeWidth:0.4,strokeMiterlimit:10}
 const defaultTableCell = {fill:"#FFFFFF",stroke:"#000000",strokeWidth:0.3,strokeMiterlimit:10}
 const lineStyle = {fill:"none",stroke:"#000000",strokeWidth:0.4,strokeMiterlimit:10}
 

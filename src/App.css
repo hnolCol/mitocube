@@ -1098,3 +1098,37 @@ hr {
 input[type="file"] {
   display: none;
 }
+
+.help-installation-container{
+  margin-left: 4rem;
+  margin-right: 4rem;
+  margin-top:8rem;
+  margin-bottom: 4rem;
+  width: calc(100vw - 8rem);
+  height: calc(100vh - 12rem);
+  font-size: 0.9rem;
+}
+.help-info-content {
+  margin-top: 2rem;
+  padding-left:2rem;
+  padding-right: 3rem;
+  padding-bottom: 2rem;
+  margin-bottom: 6rem;
+  height:100%;
+  overflow-y: scroll;
+
+}
+.help-venv-span {
+  font-weight: bolder;
+  color: #b66476;
+}
+
+.help-domain-span {
+  font-weight: bolder;
+  color: #9db58a;
+}
+
+.help-project-span {
+  font-weight: bolder;
+  color: #2F5597;
+}

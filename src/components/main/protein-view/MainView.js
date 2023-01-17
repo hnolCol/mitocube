@@ -77,7 +77,7 @@ export function ProteinMainView(props) {
     } 
 
     const showDataInTable = (data,columnNames,title,fileNameID) => {
-      console.log(data,columnNames)
+
       setDataForTable({isOpen:true,data:data,columnNames:columnNames,title:title,fileNameID:fileNameID})
 
     }
@@ -200,8 +200,7 @@ export function ProteinMainView(props) {
                 onClose = {setSettingDialogOpen} 
                 title="MitoCube Settings"/>
       <MCDialog children={<MCDataSummary 
-                  onClose={setDataSummaryDialogOpen} 
-                  token={props.token}/>} 
+                  token={token}/>} 
                   isOpen={dataSummaryDialogOpen} 
                   onClose={setDataSummaryDialogOpen} 
                   title="Data Summary" 
