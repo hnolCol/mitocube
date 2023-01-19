@@ -59,7 +59,6 @@ class DBFeatures:
 
     def __readData(self):
         ""
-        #print(self.__getFiles())
         Xs = [pd.read_csv(f, sep="\t") for f in self.__getFiles()]
         if len(Xs) > 1:
             self.DBs = pd.concat(Xs,axis=1,ignore_index=True)
@@ -521,7 +520,8 @@ class DatasetCollection:
                 params["PTM"] = False #assume it is not PTM
             if not params["PTM"]: #if not ptm, remove duplicate keys
                 data = data.loc[~data.index.duplicated(keep='first'),:]
-
+            #remove nan index
+            data = data.loc[data.index.dropna(),:]
             self.collection[dataID] = Dataset(dataID, data, params, self.dbManager)
 
     def getDataIDs(self) -> List[str]:
@@ -564,9 +564,11 @@ class Data(object):
         self.pathToData = pathToData
         self.pathToAPIConfig = pathToAPIConfig 
         self.dbManager = dbManager
+        self.checkedDataThatCouldNotLoad = []
         self.dataCollection = DatasetCollection(dbManager)
         self.__readConfig()
         self.__readData()
+        self.__handleShortCutFilters()
         self.__readDataInfo()
 
     def __readData(self) -> None:
@@ -576,10 +578,11 @@ class Data(object):
         for dataID in self.getDataIDsInFolder():
             paths = self.__getPaths(dataID) #checks for existance.
             if all(path is not None for path in paths) and dataID not in self.dataCollection:
-               
-                self.dataCollection.addDatasetFromPath(dataID,paths[0],paths[1])
-        
-        self.__handleShortCutFilters()
+                try:
+                    self.dataCollection.addDatasetFromPath(dataID,paths[0],paths[1])
+                except Exception as e:
+                    print(f"There was an error for dataset {dataID}")
+                    self.checkedDataThatCouldNotLoad.append(dataID)
     
     def __handleShortCutFilters(self) -> None:
         ""
@@ -601,15 +604,19 @@ class Data(object):
         
         foundMissing = False
         for dataID in self.getDataIDsInFolder():
-            print(dataID)
-            if not dataID in self.dataCollection: #dont use dataIDExists - loop
-                print("found a missing dataID")
+            if not dataID in self.dataCollection and dataID not in self.checkedDataThatCouldNotLoad: #dont use dataIDExists - ednless loop - dont reload fialed dfs
                 paths = self.__getPaths(dataID) #checks for existance.
                 if all(path is not None for path in paths):
-                    self.dataCollection.addDatasetFromPath(dataID,paths[0],paths[1])
-                foundMissing = True 
+                    try:
+                        self.dataCollection.addDatasetFromPath(dataID,paths[0],paths[1])
+                        foundMissing = True #when at least one file was successsfully loaded
+                    except Exception as e:
+                        print(e)
+                        self.checkedDataThatCouldNotLoad.append(dataID)
+
         if foundMissing:
             #creates summary datasets
+            self.__handleShortCutFilters()
             self.__readDataInfo()
 
         return foundMissing
@@ -731,6 +738,7 @@ class Data(object):
             
     def getDataSummary(self) -> pd.DataFrame:
         "Return da data frame containing a summary for data in the database"
+        self.__checkForMissingDataset()
         if hasattr(self,"dataSummary"):
             return self.dataSummary
         else:
@@ -804,7 +812,12 @@ class Data(object):
 
     def dataIDExists(self,dataID) -> bool:
         """Checks if dataID is present in the dataCollection."""
-        return dataID in self.dataCollection
+        if dataID in self.dataCollection:
+            return True
+        elif self.__checkForMissingDataset():
+            return dataID in self.dataCollection
+        return False
+       # return dataID in self.dataCollection
 
     def update(self) -> None:
         "Updates data and checks for new ones"
@@ -1192,7 +1205,6 @@ class Data(object):
             annotationColumn,filterColumns,highlightColumns,highlightColumnSepForMenu = self.getAPIParams(paramNames)
 
             groupings, groupingNames, groupingMapper, groupingColorMapper, groupColorValues, groupingItems = self.getGroupingDetails(dataID,expColumns)
-            
             data = self.dataCollection[dataID].getData()
             #does not seem efficient, get all data from db in one go?
             filterColumnDBInfo = [self.dbManager.getDBInfoForFeatureListByColumnName(data.index,colName,checkShape=False).fillna("-") for colName in filterColumns ]
@@ -1200,8 +1212,7 @@ class Data(object):
             #attach DB info to data
             data = data.join(filterColumnDBInfo + annotationColumnInfo)
             #if missing features in DB that are present in data, NaN are created, repplace them.
-            data[filterColumns] = data[filterColumns].fillna("-")
-            
+            data[filterColumns] = data[filterColumns].dropna(how="all").fillna("-")
             groupingName, group1, group2 = grouping["main"], grouping["group1"], grouping["group2"]
             if groupingName in groupings and group1 in groupings[groupingName] and group1 in groupings[groupingName]:
                 columnNamesGroup1 = groupings[groupingName][group1]
@@ -1213,6 +1224,7 @@ class Data(object):
                     columnNamesGroup2 = [colName for colName in columnNamesGroup2 if colName in withinGroupingColumnNames]
                
             #get highlight column data 
+     
             highlightFeatures = OrderedDict() 
             if len(highlightColumns) > 0:
                 
@@ -1227,12 +1239,17 @@ class Data(object):
                         del vs['nan']
 
                     highlightFeatures[highlightColumn] = vs 
-
             tTestResult = calculateTTest(data,columnNamesGroup1,columnNamesGroup2)
             # add filter and annotation columns
+           
             tTestResult = pd.concat([tTestResult,data[filterColumns + [annotationColumn]]],axis=1)
             #reset index and rename
+
             tTestResult = tTestResult.reset_index().rename({"index":"Key"})
+
+            #double for Key in Ttestresult 
+
+            #return error 
             tTestResult[annotationColumn] = tTestResult[annotationColumn].fillna("-")
             tTestResult = tTestResult.dropna(subset=["x","y"])
             # get max values for volcano plot
@@ -1240,6 +1257,7 @@ class Data(object):
             xLabel = "log2FC {} vs {}".format(group1,group2) if grouping["withinGrouping"] == "None" else "log2FC {} vs {} - ({}:{})".format(group1,group2,grouping["withinGrouping"],grouping["withinGroup"])
             
             defaultColumns = ["x","y","s","Key",annotationColumn]
+
             results = {
                 "points": tTestResult[defaultColumns + filterColumns].values.tolist(),
                 "xDomain" : [-maxXValue-maxXValue*0.1,maxXValue+maxXValue*0.1],

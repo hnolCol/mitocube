@@ -29,6 +29,7 @@ import { MCAdminUserView } from './components/main/admin/user/User';
 import { removeMitoCubeAdminToken } from "./components/utils/Misc"
 import { MCPTMView } from './components/main/ptm-view/MCPTMView';
 import { MCInstallationHelp } from './components/main/help/Installation';
+import { MCConfigHelp } from './components/main/help/Config';
 
 
 
@@ -212,11 +213,9 @@ function App() {
       }
       />
 
-        <Route path="/help/installation" element={<MCInstallationHelp />}>
-          
-          
-          
-        </Route>
+        <Route path="/help/installation" element={<MCInstallationHelp />}/>
+
+        <Route path="help/config" element={<MCConfigHelp />}/>
 
         <Route path="/help" element={<MCHelpMainView/>}> 
             {helpLinks.map((v,i) => {

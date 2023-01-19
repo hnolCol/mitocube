@@ -40,20 +40,34 @@ export function MCInstallationHelp() {
                 {["sudo apt update", "sudo apt install python3-pip python3-dev build-essential libssl-dev libffi-dev python3-setuptools"].map(
                     codeText => <Code key={codeText}>{codeText}</Code>)
                 }
-                <p>Install git to clone the GitHub MitoCube repository.</p>
+                <p>Install git to clone the GitHub MitoCube repository if you haven't already.</p>
                 <Code>
                     sudo apt install git
                 </Code>
                 <p>Create a folder to init a git and pull the repository from github.</p>
                 {["mkdir mitocube","git init","git pull https://github.com/hnolcol/mitocube"].map(codeText => <Code key={codeText}>{codeText}</Code>)}
-
-            </div>
+                    <p>Then, create an .env file that is used by the python-decouple package and handles the passwords. .env files are not pushed to the repository. You should not save the password in any other file.</p>
+                    <p>Info: We will likely implement a utility python function to create this file which will not save plain text passwords but the hash.</p>
+                    <p>First create the file</p>
+                    <Code>sudo nano .env</Code>
+                    <Pre>
+                        {
+    `
+    mitocube-pw="PASSWORD TO ENTER WEBSITE"
+    email-pw="EMAIL ACCOUNT PASSWORD"
+    email-admin="SUPER ADMIN EMAIL"
+    pw-admin="SUPER ADMIN PASSWORD"`
+                    }
+                    </Pre>
+                    <p>Please note that other email settings should be defined in the main <a href="/help/config">config file.</a></p>
+                    <p>Save the file by ctrl-x, shift-Y and enter.</p>
+                </div>
             
             <MCHeader text="Install javascript reactjs packages" />
             <div className="vert-align-div-flexStart">
                 <p>Install packages from packages.json file obtained from GitHub repository.</p>
                 <Code>yarn add</Code>
-                <p>Then build the index.html file which will be rendered by the Flask App (@app.route("/") in the App.py file) from the build/static folder.</p>
+                <p>Then build the index.html file which will be rendered by the Flask App (@app.route("/") in the App.py file and nginx config) from the build/static folder.</p>
                 <Code>yarn build</Code>
                 <p>The output should look like this.</p>
                 <Pre>
