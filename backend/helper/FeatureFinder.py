@@ -45,7 +45,7 @@ class FeatureFinder(object):
         #     return [] 
         #dataIDs = []
         r = []
-
+        self.data.checkForMissingDataset() #check if there are dataIDs that are not present yet.
         for dataset in self.data.dataCollection.values():
             params = dataset.getParams()
             if self.__checkParamByFilterDict(params,filter):
@@ -164,7 +164,7 @@ class FeatureFinder(object):
 
         if len(featureIDs) == 0:
             return {} 
-        
+        self.data.checkForMissingDataset()
         dataIDsByFeature = OrderedDict()
         numbOfDataFitFilter = OrderedDict([(featureID,0) for featureID in featureIDs])
         

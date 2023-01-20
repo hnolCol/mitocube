@@ -254,9 +254,10 @@ function MCSubmissionItem(props) {
             <div style={{maxHeight:"50vh",overflowY:"scroll"}}>
             <ReactJson  
                 // theme={"shapeshifter:inverted"} 
-                src = {paramsFile} 
-                displayDataTypes={false} 
-                style={{fontSize:".75rem"}} name={false} onEdit={onEditJsonParams}/>
+                        src = {paramsFile} 
+                        displayDataTypes={false} 
+                        style={{ fontSize: ".75rem" }}
+                        name={false} onEdit={onEditJsonParams} />
             </div>
         </Collapse>
 

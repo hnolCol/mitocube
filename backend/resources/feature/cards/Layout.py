@@ -17,27 +17,24 @@ def getSummaryCardDetails(featureID):
         }
 
 
-def getCardLayout(cs,numColumns,w=2,h=2):
+def getCardLayout(cards,numColumns,cardWidth=2,cardHeight=2):
     ""
     r = []
-    nr = 0 
-    nc = 0 
-    for n,k in enumerate(cs):
-        if n == 0:
-            pass
-        else:
-            if nr + w > numColumns:
-                nr = 0
-                nc += h
+    rowIndex = 0 
+    columnIndex = 0 
+    for cardIndex,cardInfo in enumerate(cards):
+        if cardIndex != 0:
+            if rowIndex + cardWidth >= numColumns:
+                rowIndex = 0
+                columnIndex += cardHeight
             else:
-                nr += w 
-
+                rowIndex += cardWidth 
         c = {
-            "i":k["id"],
-            "x":nr,
-            "y": nc,
-            "w":w,
-            "h":h,
+            "i":cardInfo["id"],
+            "x":rowIndex,
+            "y": columnIndex,
+            "w":cardWidth,
+            "h":cardHeight,
             "static":False
             }
         r.append(c)

@@ -10,7 +10,7 @@ import { MCAddButton } from "../../utils/components/MCAddButton";
 import { MCProteinLayout } from "./Layout";
 import { MCDataFilter } from "../../dialogs/filter/DataFilter";
 import { MCDialog } from "../../dialogs/MCDialog";
-import { MCDataTableDialog } from "../../dialogs/MCDataTableDialog";
+import { MCAnovaStats } from "../../dialogs/MCANOVAStatsResults";
 import { MCGetFilterFromLocalStorage } from "../../utils/Misc";
 
 import { MCSpinner } from "../../spinner/MCSpinner";
@@ -172,7 +172,7 @@ export function ProteinMainView(props) {
         <div style={{ marginLeft: "40px", marginTop: "40px", overflowY: "scroll", height: "100%" }}>
           <MCProteinSearch token={token} isOpen={searchOpen} onItemSelect={onItemSelect} filter = {MCGetFilterFromLocalStorage()} onClose = {setSearchOpen}/>
       {/* <OmnibarSearch isOpen={searchOpen} setOpenState = {setSearchOpen} onItemSelect={onItemSelect} filter = {MCGetFilterFromLocalStorage()}/> */}
-      <MCDataTableDialog 
+      <MCAnovaStats 
                 isOpen={dataForTable.isOpen} 
                 title={dataForTable.title}  
                 data={dataForTable.data} 

@@ -5,7 +5,7 @@ from flask import request, jsonify
 from flask_restful import Resource
 from werkzeug.security import generate_password_hash, check_password_hash
 import json
-from ..misc import isAdminValid
+from ..misc import isAdminValid, adminTokenInValidResponse
 
 
 REQUIRED_INFO = ["General","Metrices","Properties","Distributions","QC-Peptides"]
@@ -26,8 +26,11 @@ class ShareDataDetails(Resource):
     def get(self) -> dict:
         "Returns required details (properties etc)"
 
+        token = request.args.get('token', default="None", type=str)
+        if not isAdminValid(self.token,token):
+            return adminTokenInValidResponse
+
         performanceColumns = self.performance.getRequiredInfo()
-        
         uniquePropertyValues = self.performance.getUniquePropertyOptions()
         r = OrderedDict()
         for k,v in performanceColumns:
@@ -36,7 +39,7 @@ class ShareDataDetails(Resource):
 
         return {
                 "success":len(performanceColumns) > 0,
-                "tuples":performanceColumns,
+                "tuples":performanceColumns, #tuples shounds like a weird name
                 "performanceHeaders": r,
                 "uniqueProperties" : uniquePropertyValues
                 }

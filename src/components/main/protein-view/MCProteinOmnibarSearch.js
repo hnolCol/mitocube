@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 import useDebounce from "../../../hooks/useDebounce";
 import { filterArrayBySearchString } from "../../utils/Filter";
 import { MCSimpleResponseCheck } from "../../utils/ResponseChecks";
-
+import { useQuery } from "react-query"
 
 // if (!_.isEqual(prevProps.filter,this.props.filter)){
 //     this._asyncDataFetch()
@@ -64,28 +64,35 @@ export function MCProteinSearch(props) {
     const [featureDeatails, setFeatureDetails] = useState({items : [], featureLabels : {}, itemsToShow : [], searchString : "", sortBy : ""})
     const debounceSearchString = useDebounce(featureDeatails.searchString, 400)
     
-    useEffect(() => {
-        // change to query-react
-        axios.post("/api/features/details",
-            { filter: filter, token: token }, 
-            { headers: { 'Content-Type': 'application/json' } }).then(response => 
-            {
-                if (response.status === 200 && MCSimpleResponseCheck(response.data)) {
-                    console.log(response.data)
+    const getFeatureDetails = async () => {
+        const res = await axios.post("/api/features/details",
+                        { filter: filter, token: token }, 
+            { headers: { 'Content-Type': 'application/json' } })
+        
+        return res.data
+
+    }
+    const { isLoading, isFetching } = useQuery(["getFeatureDetails", filter],
+        getFeatureDetails, {
+            onSuccess: (data) => {
+                if (MCSimpleResponseCheck(data)) {
                     setFeatureDetails(prevValues => {
                         return {
                             ...prevValues,
-                            "items": _.isArray(response.data.features)?response.data.features:[],
-                            "featureLabels": response.data.featureLabels,
-                            "sortBy" : response.data.sortBy,
+                            "items": _.isArray(data.features)?data.features:[],
+                            "featureLabels": data.featureLabels,
+                            "sortBy" : data.sortBy,
                         }
                     })
                 }
-            })
-        
-    }, [token]) 
+            },
+            refetchOnWindowFocus: false,
+            enabled: _.isString(token) && _.isObject(filter)
+    })
 
     useEffect(() => { 
+        if (isLoading) return 
+        if (isFetching) return
         //search in all entries of an item object
         if (!_.isArray(featureDeatails.items)) return 
         if (featureDeatails.items.length === 0) return 

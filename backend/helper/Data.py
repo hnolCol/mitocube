@@ -599,7 +599,7 @@ class Data(object):
         if isinstance(availableColors,list) and len(availableColors) > 0:
             self.shortcutFilterColors = dict([(filterName,availableColors[n % len(availableColors)]) for n,filterName in enumerate(sorted(shortCutFilterValues))])
     
-    def __checkForMissingDataset(self):
+    def checkForMissingDataset(self):
         """Checks if the folder for datasets contains dataIDs that were not loaded yet."""
         
         foundMissing = False
@@ -732,13 +732,13 @@ class Data(object):
                 json.dump(paramsFile, f, ensure_ascii=False, indent=4)
             #save data file
             data.reset_index().to_csv(pathToDataFile, sep="\t", index=None)
-            self.__checkForMissingDataset()
+            self.checkForMissingDataset()
             return True 
         return False 
             
     def getDataSummary(self) -> pd.DataFrame:
         "Return da data frame containing a summary for data in the database"
-        self.__checkForMissingDataset()
+        self.checkForMissingDataset()
         if hasattr(self,"dataSummary"):
             return self.dataSummary
         else:
@@ -814,10 +814,9 @@ class Data(object):
         """Checks if dataID is present in the dataCollection."""
         if dataID in self.dataCollection:
             return True
-        elif self.__checkForMissingDataset():
+        elif self.checkForMissingDataset():
             return dataID in self.dataCollection
         return False
-       # return dataID in self.dataCollection
 
     def update(self) -> None:
         "Updates data and checks for new ones"
@@ -1316,9 +1315,9 @@ class Data(object):
 
     def getDataForCard(self, dataID : str,featureID : list, filterName : str) -> Dict[str,Any]:
         """Extracts data for boxplot visualization"""
-
+        
         dataset = self.getDataset(dataID)
-        if dataset is None : return {"success" : False}
+        if dataset is None : return {"success" : False, "msg" : "DataID not found."}
 
         meltedData = dataset.getMeltedData([featureID])
         groupingColorMapper = dataset.getGroupingColorMapper()
@@ -1334,9 +1333,11 @@ class Data(object):
         try:
             statsData = anova(meltedData,dv="value",between=groupingNames)
             statsData.columns = [pingouinColumn[colName] if colName in pingouinColumn else colName for colName in statsData.columns]
+            anovaSignificant = bool(np.any(statsData["p-value (uncorrected)"].values < 0.05)) #numpy bool_ cannot be used for JSON
         except:
             statsData = pd.DataFrame(["ANOVA could not be calculated."], columns=["Error"])
-        jsonStatsData = statsData.to_json(orient="records")
+            anovaSignificant = False
+        jsonStatsData = statsData.fillna("").to_dict(orient="records")
         v, legendTitle, legendData, tickLabel, legendItems = self._getDataForBoxplot(
                                                                     quantileData,
                                                                     groupedData,
@@ -1364,7 +1365,8 @@ class Data(object):
 
         return {
             "success":True,
-            "download":meltedData.to_json(orient="records"),
+            "download":meltedData.fillna("").to_dict(orient="records"),
+            "isSignificant" : anovaSignificant,
             "chart":chartData,
             "statsData":jsonStatsData
             }

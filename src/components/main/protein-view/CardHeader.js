@@ -3,6 +3,7 @@ import { Popover2 } from "@blueprintjs/popover2";
 import { MCIndicatorCircle, MCMenuIcon } from "./Layout";
 import { downloadTxtFile, arrayOfObjectsToTabDel, downloadSVGAsText } from "../../utils/Misc";
 import { Link } from "react-router-dom";
+import _ from "lodash"
 const saveSvgAsPng = require('save-svg-as-png')
 const imageOptions = {
     backgroundColor: 'white',
@@ -20,8 +21,9 @@ export function MCCardHeader(props){
         correlationShown,
         indicatorColor,
         indicatorTooltipStr,
+        isSignificant,
         requestCorrelatedFeatures } = props //isSummary indicates that it is a summary card instead an experiment shown
-    const statResults = statsData === undefined?[{Data:"No Stats Data Found."}]:JSON.parse(statsData)
+    const statResults = statsData === undefined?[{Data:"No Stats Data Found."}]:_.isObject(statsData)?statsData:JSON.parse(statsData)
     const columnNames = statsData === undefined ? ["Data"] : Object.keys(statResults[0])
 
     return(
@@ -31,7 +33,8 @@ export function MCCardHeader(props){
                 {props.description}
             </div>
             <div>
-            <ButtonGroup vertical={false} minimal={true} >
+                <ButtonGroup vertical={false} minimal={true} >
+                    {isSignificant ? <MCIndicatorCircle size={20} fillColor={"green"} tooltipStr="At least one p-value of the ANOVA anaylsis is below < 0.01" /> : null}
             <MCIndicatorCircle size = {20} fillColor={indicatorColor} tooltipStr={`${indicatorTooltipStr} Card`}/>
                 <Popover2 content={
                         <Menu>

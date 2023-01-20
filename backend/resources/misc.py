@@ -2,6 +2,9 @@
 from typing import Tuple, Any
 import json 
 
+adminTokenInValidResponse = {"success":False,"msg":"Admin token is not valid.", "tokenIsValid":False}
+
+
 def isTokenInRequestDataValid(requestData, tokenCheck) -> Tuple[bool,Any]:
     data = json.loads(requestData, strict=False)
     if "token" not in data:

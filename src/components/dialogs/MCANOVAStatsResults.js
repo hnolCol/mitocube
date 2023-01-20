@@ -1,9 +1,10 @@
 
 import { Dialog, Classes } from "@blueprintjs/core";
 import { Table2, Column, Cell, SelectionModes } from "@blueprintjs/table"
+import _ from "lodash";
 import { MCCSVDownload } from "../utils/components/MCCSVDownload" 
 
-export function MCDataTableDialog (props) {
+export function MCAnovaStats (props) {
     const {data, columnNames, numRows} = props
     
     const cellRenderer = (rowIndex,columnIndex) => {
@@ -15,8 +16,7 @@ export function MCDataTableDialog (props) {
         }
         else if (columnNames[columnIndex] === "p-value (uncorrected)") {
             const pValue = data[rowIndex][columnNames[columnIndex]]
-           
-            return <Cell style={{backgroundColor:pValue<0.01?"#93ad7f":"transparent"}}>{pValue}</Cell>
+            return <Cell style={{backgroundColor:pValue<0.01 && _.isNumber(pValue)?"#93ad7f":"transparent"}}>{pValue}</Cell>
         }
         else 
             {return <Cell>{data[rowIndex][columnNames[columnIndex]]}</Cell>}
@@ -54,7 +54,7 @@ export function MCDataTableDialog (props) {
     )
 }
 
-MCDataTableDialog.defaultProps = {
+MCAnovaStats.defaultProps = {
     isOpen : true,
     fileNameID : "YME1",
     title : "Data",

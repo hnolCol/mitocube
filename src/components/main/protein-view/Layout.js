@@ -145,7 +145,6 @@ export function MCProteinLayout(props) {
       axios.post('/api/features/cards' ,
             {featureIDs:props.featureIDItems,filter:{},columnNumber:columnNumbers,token:token}, 
             {headers : {'Content-Type': 'application/json'}}).then(response => {
-              
               if (response.status === 200){
                 const responseData = response.data
                 if ("error" in responseData & responseData["error"] === "Token is not valid.") {

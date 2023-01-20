@@ -7,6 +7,7 @@ from flask_restful import Resource
 import json
 from datetime import date
 from ..utils.html import *
+from ..misc import isAdminValid, adminTokenInValidResponse
 
 def handleDetailInputs(submissionDetail):
     """"""
@@ -72,8 +73,8 @@ class SampleList(Resource):
     def get(self) -> dict:
         ""
         token = request.args.get('token', default="None", type=str)
-        if token == "None" or not self.token.isAdminToken(token):
-            return {"success":False,"error":"Token is not valid. Admin token required."}
+        if not isAdminValid(self.token,token):
+            return adminTokenInValidResponse
 
         dataID = request.args.get('dataID', default="None", type=str)
         startRow = request.args.get('startRow', default="A", type=str)
@@ -115,8 +116,8 @@ class DataSubmissionDetails(Resource):
             if all(x in data for x in ["dataID","token","paramsFile"]):
                 token = data["token"]
                 
-                if token == "None" or not self.token.isAdminToken(token):
-                    return {"success":False,"msg":"Token is not valid."}
+                if not isAdminValid(self.token,token):
+                    return adminTokenInValidResponse
                 dataID = data["dataID"]
                 paramsFile = data["paramsFile"]
                 ok, msg, paramsFile = self.submission.update(dataID,paramsFile)
@@ -129,8 +130,8 @@ class DataSubmissionDetails(Resource):
         if request.data != b'':
             data = json.loads(request.data, strict=False)
             token = data["token"]
-            if token == "None" or not self.token.isAdminValid(token):
-                return {"success":False,"msg":"Token is not valid."}
+            if not isAdminValid(self.token,token):
+                    return adminTokenInValidResponse
             dataID = data["dataID"]
             
             ok, msg = self.submission.delete(dataID)
@@ -225,8 +226,8 @@ class DataSubmissions(Resource):
     def get(self) -> dict:
         
         token = request.args.get('token', default="None", type=str)
-        if not self.token.isAdminToken(token):
-            return {"success":False, "tokenIsValid":False, "msg":"Token is not valid."}
+        if not isAdminValid(self.token,token):
+                    return adminTokenInValidResponse
         
         submissions, submissionStates = self.submission.getSubmission()
         submissionSummaryColumns = self.submission.getSummaryColumns() #submissionSummaryColumns,

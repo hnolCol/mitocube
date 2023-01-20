@@ -205,7 +205,8 @@ export function MCCardAxisHandler(props) {
                         description = {props.featureProps.Title}
                         label = {props.label}
                         correlationShown = {correlatedFeatures.show}
-                        featureID = {props.featureProps.Entry}
+                            featureID={props.featureProps.Entry}
+                            isSignificant = {props.chartData.isSignificant}
                         statsData = {props.chartData.statsData}
                         showDataInTable = {props.showDataInTable}
                         setOpenOfDataInTable = {props.setOpenOfDataInTable}
