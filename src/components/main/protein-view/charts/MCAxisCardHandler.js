@@ -144,7 +144,7 @@ MCSVGFrame.defaultProps = {
 
 
 export function MCCardAxisHandler(props) {
-    const { token, isSummary } = props
+    const { token, isSummary, chartData } = props
     const [correlatedFeatures,setCorrelatedFeature] = useState({success:false,isLoading:false,correlationData:[],show:false})
     const axisKeys = _.range(props.numberAixs)
     
@@ -194,7 +194,7 @@ export function MCCardAxisHandler(props) {
     return (
 
         <div>
-            {(props.chartData === null || Object.keys(props.chartData).length === 0) && !props.isSummary?null:
+            {(chartData === null || Object.keys(chartData).length === 0) && !props.isSummary?null:
             props.height[0]===undefined?null:correlatedFeatures.isLoading?<MCSpinner />:
             <div>
                     <MCCardHeader 
@@ -206,11 +206,11 @@ export function MCCardAxisHandler(props) {
                         label = {props.label}
                         correlationShown = {correlatedFeatures.show}
                             featureID={props.featureProps.Entry}
-                            isSignificant = {props.chartData.isSignificant}
-                        statsData = {props.chartData.statsData}
+                            isSignificant = {chartData.isSignificant}
+                        statsData = {chartData.statsData}
                         showDataInTable = {props.showDataInTable}
                         setOpenOfDataInTable = {props.setOpenOfDataInTable}
-                        downloadData = {correlatedFeatures.show?correlatedFeatures.correlationData.downloadData:props.chartData.download}
+                        downloadData = {correlatedFeatures.show?correlatedFeatures.correlationData.downloadData:chartData.download}
                         requestCorrelatedFeatures = {isSummary?undefined:findCorrelatedFeatures}
                     />
                     <div className='axis-container'>
@@ -219,13 +219,13 @@ export function MCCardAxisHandler(props) {
                                 {
                                     correlatedFeatures.success && correlatedFeatures.show? 
                                     <MCHeatmapFrame id = {props.id} graphData = {correlatedFeatures.correlationData}/>: 
-                                        correlatedFeatures.show?<p>There was an unexpected error return from the API.</p>:
-                                    props.chartData.success?
+                                        correlatedFeatures.show?<p>There was an unexpected error returned from the API.</p>:
+                                    chartData.success?
                                     <MCSVGFrame 
                                         id = {props.id} 
                                         isSummary = {isSummary}
-                                        graphType = {props.chartData.chart.graphType} 
-                                        graphData={props.chartData.chart.graphData}
+                                        graphType = {chartData.chart.graphType} 
+                                        graphData={chartData.chart.graphData}
                                         description = {props.featureProps.shortDescription}/>: 
                                     <p>The API responded with an error</p>
                                 }

@@ -9,8 +9,9 @@ import { arrayToTabDel, downloadTxtFile } from "../utils/Misc"
 function MCAddGroupDialog(props) {
     const {isOpen,onClose,grouping,existingGroups,reportGroup,r,columnIndex} = props
     const [groupName, setGroupName] = useState("")
-    let groupingNameNotValid = _.isArray(existingGroups)?existingGroups.includes(groupName):false
-    const saveGroup = (e) => {
+    let groupingNameNotValid = _.isArray(existingGroups) ? existingGroups.includes(groupName) : false
+    
+    const saveGroupAndClose = (e) => {
         if (groupingNameNotValid) return 
         reportGroup(groupName,grouping,r.regions,columnIndex)
         onClose()
@@ -24,10 +25,10 @@ function MCAddGroupDialog(props) {
                     onKeyUp={e => {
                         if (e.code === "Enter") {
                           e.preventDefault();
-                          saveGroup()
+                          saveGroupAndClose()
                           ;}}}/>
                 <ButtonGroup fill={true}>
-                    <Button text="OK" intent="primary" onClick={saveGroup} disabled={groupingNameNotValid}/>
+                    <Button text="OK" intent="primary" onClick={saveGroupAndClose} disabled={groupingNameNotValid}/>
                     <Button text="Cancel" onClick={onClose}/>
                 </ButtonGroup>
             </div>
@@ -85,11 +86,13 @@ function getRowsAsArray(region){
 
 export function MCGroupingTable(props) {
 
-    const {data, columnNames, handleDataEditing, numReplicates, handleColumnNameEditing, handleTemplateInput, handleFillSeries, rerender} = props
+    const {data, columnNames, handleDataEditing, numReplicates, handleColumnNameEditing, handleTemplateInput, handleFillSeries, allowCustomRunNames, rerender} = props
     const [groupings,setGroupings] = useState({})
     const [addGroup,setAddGroup] = useState({})
     const [editGrouping,setEditGrouping] = useState({})
     const [templateFile, setTemplateFile] = useState("")
+
+
     const selectionRegion =(e)=>{
         
         return {
@@ -201,9 +204,12 @@ export function MCGroupingTable(props) {
     }
 
     const cellRenderer = (rowIndex,columnIndex) => {
-       
         if (data !== undefined && isArray(data)) {
-            
+            if (rowIndex > data.length-1) {
+                //just to have some border.
+                return <Cell value = {""} />
+
+            }
             if (data[rowIndex] === undefined || (_.isObject(data[rowIndex]) && !_.has(data[rowIndex],columnNames[columnIndex]))){
                 return (
                     <EditableCell2 
@@ -212,7 +218,7 @@ export function MCGroupingTable(props) {
                         columnIndex={columnIndex}
                         onConfirm={handleDataEditing}/>
                 )}
-            if (columnIndex !== 0) {
+            if ((columnIndex !== 0 || allowCustomRunNames)) {
                 
                 return (
                     <EditableCell2 
@@ -244,8 +250,20 @@ export function MCGroupingTable(props) {
                 if (columnNames.includes("Replicate") && columnNames.includes("Run")){
                     
                     const numSamples = dataArray.length
-                    const replicates = _.uniq(dataArray.map(v => v[_.indexOf(columnNames,"Replicate")]))
-                    const dataTable = dataArray.map(rowData => Object.fromEntries(rowData.map((v,i) => [columnNames[i],v])))
+                    const replicates = _.uniq(dataArray.map(v => v[_.indexOf(columnNames, "Replicate")]))
+                    const runNames = _.uniq(dataArray.map(v => v[_.indexOf(columnNames, "Run")]))
+                    
+                 
+                    const dataTable = dataArray.map((rowData,rowIdx) => Object.fromEntries(rowData.map((v, i) => {
+                        if (allowCustomRunNames && columnNames[i] === "Run") {
+                            
+                            return ([columnNames[i], runNames[rowIdx]])
+                        }
+                        return ([columnNames[i], v])
+                    })))
+                   
+                   
+                    console.log(dataTable)
                     const numberOfGroupings = columnNames.length - 2 // Run and Replicate must be the in the file
                     handleTemplateInput(columnNames,dataTable,replicates.length,numSamples,numberOfGroupings)
 

@@ -131,13 +131,18 @@
         "dataset-header" : "Title",
         "dataset-presentation" : ["Creation Date","Title","Material","Type","Organism","Experimentator","Number Samples"],
         "dataset-presentation-sort-by" : ["Organism","Type","Creation Date"],
-        
+
+        "dataset-admin-table-params" : ["Creation Date","dataID","Title","Experimentator","GroupName","Protein of Interest","Type","Organism","Material","Number Samples"],
+        "dataset-admin-email-param" : "Email",
+
         "experiment-procedure-params" : ["Creation Date","dataID","Experimentator","Material","Title","Number Samples","Number Replicates","groupingNames","Experimental Info"],
         "short-cut-filter-param" : "Type",
         "short-cut-colors" : ["#365072","#6e5b7b","#b66476","#e8696e","#eaac89","#8c7f77"],
-        "submission-states" : ["Submitted","Processed","Measuring","Data analysis","Done"], 
+        "submission-allow-custom-runName" : 1, 
+        "submission-states" : ["Submitted","Processed","Measuring","Measuring Paused","Data analysis","Done"], 
         "submission-search-columns" : ["Material","Organism","dataID","Title","Email","Type","Experimentator"],
         "submission-tags" : ["Experimentator","Email","Type","Organism","Material","dataID"],
+        "submission-summary" : ["Creation Date", "State", "dataID","Email","Experimentator","Title","SampleNumber","Type","Organism", "Material","Experimental Info","groupingNames"],
         "submission-summary-short" : [
             "Creation Date",
             "State",
@@ -179,7 +184,7 @@
                 "name" : "Email",
                 "q" : "Email adress",
                 "default" : "",
-                "placeholder" : "Enter your email adress.",
+                "placeholder" : "Enter your email adress. You can enter multiple emails by separating them with a comma.",
                 "intent" : "primary",
                 "leftIcon":"envelope"
             },
@@ -218,7 +223,16 @@
                 "title" : "Protein of Interest",
                 "q" : "Protein of Interest (seperate multiple by comma)",
                 "default" : "",
-                "placeholder" : "Please provide the protein(s) of interest (knockout line, OMA1, YME1l1)."
+                "placeholder" : "Please provide the protein(s) of interest (knockout line, OMA1, YME1l1).",
+                "intent" : "primary"
+            },
+            {
+                "field" : "text-input",
+                "name" : "Linked data",
+                "title" : "Linked data",
+                "q" : "Linked data to connect whole proteome and PTM data.",
+                "default" : "None",
+                "placeholder" : "Please provide a dataID if a linked submission/dataset exists. Example: Phospho- and whole proteome datasets."
             },
             {
                 "field" : "combo-input",
@@ -241,10 +255,10 @@
                     "Whole proteome",
                     "Neo N-term enrichment",
                     "Phophoproteome",
+                    "Acetylome",
+                    "Ubiquitinome",
                     "Pulse-SILAC",
                     "Immunoprecipitation",
-                    "Whole proteome & Neo N-term enrichment",
-                    "Whole proteome & Phosphoproteomic",
                     "Other (Specify in Additional Info)"]
             },
             {

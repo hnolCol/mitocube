@@ -30,6 +30,7 @@ import { removeMitoCubeAdminToken } from "./components/utils/Misc"
 import { MCPTMView } from './components/main/ptm-view/MCPTMView';
 import { MCInstallationHelp } from './components/main/help/Installation';
 import { MCConfigHelp } from './components/main/help/Config';
+import { MCAdminDatasets } from './components/main/admin/datasets/MCAdminDatasets';
 
 
 
@@ -144,7 +145,7 @@ function App() {
             </MCProtectedRoute>
               } />
         
-        <Route path="/nterm" element={
+        <Route path="/ptm" element={
             <MCProtectedRoute isAuthenthicated={isAuthenthicated.isAuth}>
               <MCPTMView token={isAuthenthicated.token} setAuthenticationSate={setAuthenticationState}/> 
             </MCProtectedRoute>
@@ -176,6 +177,16 @@ function App() {
         </MCProtectedRoute>
       }
       /> */}
+        
+      <Route path="/admin/datasets" element = {
+        <MCProtectedRoute isAuthenthicated={isAdminAuthenthicated.isAuth}>
+            <div style = {{maxHeight:"100vh",height:"100vh",overflowY:"hidden"}}>
+              {/* // <MCPerformanceView token={isAdminAuthenthicated.token} logoutAdmin = {loggingAdminOut}/> */}
+              <MCAdminDatasets token={isAdminAuthenthicated.token} logoutAdmin = {loggingAdminOut}/>
+            </div>
+        </MCProtectedRoute>
+      }
+      />
 
       <Route path="/admin/performance" element = {
         <MCProtectedRoute isAuthenthicated={isAdminAuthenthicated.isAuth}>

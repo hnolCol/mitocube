@@ -11,7 +11,9 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { MCHeader } from "../utils/components/MCHeader";
 import { tab } from "@testing-library/user-event/dist/tab";
-
+import { fromDateToString } from "../utils/DateFormatting";
+import { useQuery } from "react-query";
+import { MCSimpleResponseCheck } from "../utils/ResponseChecks";
 
 const initAlert = {
     isOpen:false,
@@ -37,42 +39,75 @@ export function MCSampleSubmission (props) {
     const { token } = props
     //const [submissionID, setsubmissionID] = useState(initDetails)
     const [submission, setSubmission] = useState(initSubmission)
-    const [details, setDetails] = useState([])
+    const [details, setDetails] = useState({items : [], allowCustomRunNames : false})
     const [alertDetails, setAlertDetails] = useState(initAlert)
     const [scrollPosition, setScrollPosition] = useState(0);
     const [submissionInProgress, setSubmissionInProgress] = useState(false)
 
-    useEffect(() => {
-        //load saved submission.
+    const checkForSavedSubmission = () => {
         let s = getSavedSubmission()
         let submissionHeaders = isObject(s)?Object.keys(s):[]
-        if (submissionHeaders.includes("dataID")&&submissionHeaders.includes("time")){
+        if (submission.time===undefined&&submission.dataID===undefined&&submissionHeaders.includes("dataID")&&submissionHeaders.includes("time")){
             setSubmission(prevValues => { return { prevValues, ...s } })
+            return true
         }
-        else {
-        axios.get('/api/data/submission/id',{params:{token:token}}).then(response => {
-                if (response.status === 200 & response.data["success"]){
-                        setSubmission({
-                            dataID:response.data["dataID"],
-                            time:response.data["time"],
-                            details:submission.details,
-                            groupingTable: initSubmission.groupingTable
-                        })
-                }
-                else {
-                    setAlertDetails({isOpen:true,children:<div>{response.data.msg}</div>,icon:"issue"})
-                }
-            })}
-      }, [token]);
+        return false
+    }
+
+    const getSubmissionID = async () => {
+        let res  = await axios.get('/api/data/submission/id', { params: { token: token } })
+        return res.data
+    }
+
+    const { isLoading } = useQuery(["getSubID"], getSubmissionID, {
+        onSuccess: (data) => {
+            if (MCSimpleResponseCheck(data)) {
+                console.log("Hello")
+                setSubmission(
+                    {
+                        ...data,
+                        details: submission.details,
+                        groupingTable: initSubmission.groupingTable
+                    }
+                )
+            }
+        },
+        enabled : !checkForSavedSubmission()
+    })
+
+
+
+    // useEffect(() => {
+    //     //load saved submission.
+    //     let s = getSavedSubmission()
+    //     let submissionHeaders = isObject(s)?Object.keys(s):[]
+    //     if (submissionHeaders.includes("dataID")&&submissionHeaders.includes("time")){
+    //         setSubmission(prevValues => { return { prevValues, ...s } })
+    //     }
+    //     else {
+    //     axios.get('/api/data/submission/id',{params:{token:token}}).then(response => {
+    //             if (response.status === 200 & response.data["success"]){
+    //                     setSubmission({
+    //                         dataID:response.data["dataID"],
+    //                         time:response.data["time"],
+    //                         details:submission.details,
+    //                         groupingTable: initSubmission.groupingTable
+    //                     })
+    //             }
+    //             else {
+    //                 setAlertDetails({isOpen:true,children:<div>{response.data.msg}</div>,icon:"issue"})
+    //             }
+    //         })}
+    //   }, []);
 
     
     useEffect(() => {
         axios.get('/api/data/submission/details',{params:{token:token}}).then(response => {
-                if (response.status === 200 & response.data["success"]){
-                    setDetails(response.data.details)
+            if (response.status === 200 & response.data["success"]) {
+                    setDetails(prevValues => { return { ...prevValues, "items" : response.data.details, "allowCustomRunNames" : response.data.allowCustomRunNames} })
                 }
                 else {
-                    setDetails([])
+                    setDetails({items : [], allowCustomRunNames : false})
                 }
             })
       }, [token]);
@@ -198,7 +233,7 @@ export function MCSampleSubmission (props) {
 
     const submitExperiment = () => {
 
-        const [ok,msg] = checkDetailInput(submission,details)
+        const [ok,msg] = checkDetailInput(submission,details.items)
         if (!ok){
             setAlertDetails({isOpen:true,children:<div>{msg}</div>,icon:"issue"})
         }
@@ -253,8 +288,9 @@ export function MCSampleSubmission (props) {
         subDetails["Number Samples"] = nSamples
         subDetails["Number Replicates"] = nReplicates
         subDetails["Number Groupings"] = nGroupings
-        console.log(nSamples,nReplicates,nGroupings)
-        _.range(0, dataTable.length).forEach((v, ii) => dataTable[v]["Run"] = buildRunName(submission.time, submission.details["Experimentator"], submission.dataID, 0, ii))
+        if (!details.allowCustomRunNames) {
+            _.range(0, dataTable.length).forEach((v, ii) => dataTable[v]["Run"] = buildRunName(submission.time, submission.details["Experimentator"], submission.dataID, 0, ii))
+        }
         let tableData = {columnNames:columnNames, data: dataTable}
         
         //console.log(tableData)
@@ -273,10 +309,10 @@ export function MCSampleSubmission (props) {
         setScrollPosition(scrollP)
         };
 
-
+   
     return(
 
-        <div style={{fontSize:"0.80rem","width":"75%",transform:"translateX(20%)",paddingBottom:"3rem"}}>
+        <div style={{fontSize:"0.80rem","width":"100vw",paddingBottom:"3rem", paddingLeft : "5vw", paddingRight: "5vw"}}>
             <Alert {...alertDetails} canOutsideClickCancel = {true} onClose = {closeAlert}/>
             
             <div style={
@@ -305,7 +341,6 @@ export function MCSampleSubmission (props) {
                         <MCHeader text="Sample Submission" />
                         <div className="little-m">
                             <MCHeader text = {submission.dataID} fontSize="0.8rem"/>
-                            <Code>{submission.time}</Code>
                         </div>
                     </div>
                 <p>
@@ -314,17 +349,18 @@ export function MCSampleSubmission (props) {
                     Example: name1@email.de,name2@email.com</p>
             </div>
             <div style={{height : "75vh", overflowY : "scroll", paddingRight:"1rem",marginTop:"0.7rem",marginBottom:"0.7rem"}} onScroll={onScroll}>
-                <MCSubmissionDetails 
-                    token = {props.token} 
-                    submission = {submission.details} 
-                    date = {submission.time}
-                    saveSubmissionValue = {saveSubmissionValue}
-                    details = {details} 
-                    setDetails = {setDetails}/>
+                <MCSubmissionDetails
+                    token={props.token}
+                    submission={submission.details}
+                    date={submission.time}
+                    saveSubmissionValue={saveSubmissionValue}
+                    details={details.items}
+                />
                 <div>
                     <MCGroupingTable 
                             data = {submission.groupingTable.data} 
-                            rerender = {submission.rerender}
+                            rerender={submission.rerender}
+                            allowCustomRunNames={details.allowCustomRunNames}
                             columnNames = {submission.groupingTable.columnNames}
                             numReplicates = {submission.details["Number Replicates"]!==undefined?submission.details["Number Replicates"]:1}
                             handleDataEditing={handleDataEditing}
@@ -450,7 +486,7 @@ function MCDateInput(props) {
             parseDate={str => str.split(" ")[0].replace("-","").replace("-","")}
             onChange = {handleDateChange}
             placeholder="YYYYMMDD" 
-            formatDate={date => `${date.getFullYear()}-${date.getMonth()+1>9?"":"0"}${date.getMonth()+1}-${date.getDate()+1>9?"":"0"}${date.getDate()}`} 
+            formatDate={date => fromDateToString(date)} 
             closeOnSelection={true} 
             fill={true}
             value = {valueToShow}/>

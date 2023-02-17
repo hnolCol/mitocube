@@ -27,7 +27,7 @@ class ShareDataDetails(Resource):
         "Returns required details (properties etc)"
 
         token = request.args.get('token', default="None", type=str)
-        if not isAdminValid(self.token,token):
+        if not isAdminValid(token, self.token):
             return adminTokenInValidResponse
 
         performanceColumns = self.performance.getRequiredInfo()
@@ -58,7 +58,7 @@ class ShareData(Resource):
         "Returns performance data"
 
         token = request.args.get('token', default="None", type=str)
-        if not isAdminValid(self.token,token):
+        if not isAdminValid(token, self.token):
             return {"success":False,"msg":"Token is not valid."}
         
         if self.performance.df.index.size == 0:
@@ -110,7 +110,7 @@ class ShareData(Resource):
                 return {"success": False, "msg":"Share token is not valid."}
 
         if "token" in data:
-            if not isAdminValid(self.token,data["token"]):
+            if not isAdminValid(data["token"], self.token):
                 return {"success":False,"msg":"Token not valid and shareToken not found."}
       
         if not "performanceData" in data:

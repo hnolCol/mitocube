@@ -65,7 +65,7 @@ class PTMAnnotations:
         self.annotationLabelPositions = OrderedDict([(k,0) for k in self.annotations])
         self.annotationPositions = OrderedDict()
 
-    def calculatePostions(self):
+    def calculatePostions(self, ptm = True):
         """
         
         """
@@ -75,9 +75,11 @@ class PTMAnnotations:
             positionArray, foundPositions = PTMPeptidePosition(self.proteinLength,positions)()
             positions = pd.DataFrame(foundPositions, columns=["idx","rowIdx","start","end"])
             positions["id"] = [getRandomString(4) for _ in range(positions.index.size)]
-
-            sites = dict([(peptideID,[{"position":random.randint(positions.iloc[n]["start"],positions.iloc[n]["end"]),"label" : f'S{random.randint(positions.iloc[n]["start"],positions.iloc[n]["end"])}'} for _ in range(2)]) for n,peptideID in enumerate(positions["id"].values)])
-            siteDetails.append(sites)
+            if ptm:
+                sites = dict([(peptideID,[{
+                "position":random.randint(positions.iloc[n]["start"],positions.iloc[n]["end"]),
+                "label" : f'S{random.randint(positions.iloc[n]["start"],positions.iloc[n]["end"])}'} for _ in range(2)]) for n,peptideID in enumerate(positions["id"].values)])
+                siteDetails.append(sites)
             if positionArray.shape[0] > 0:
                 self.annotationPositions[annotation] = {
                         "positions" : positions.to_dict(orient="records"), 
@@ -114,6 +116,23 @@ class PTMManger:
         """"""
         return PTMPeptidePosition(*args,**kwargs)
 
+    def localizeLibFeatures(self,featureID, libSearch : dict):
+        ""
+        
+        featureSequence = self.featureFinder.getFeatureInfoFromDB([featureID],annotationColumns = ["Sequence"])
+        sequence = featureSequence[0]["Sequence"]
+        r = {}
+        for libName, libData in libSearch.items():
+            libEntries = []
+            libfeatures = libData["Stripped.Sequence"].values
+            if libfeatures.size == 0:
+                continue
+            for libFeature in libfeatures:
+                start = sequence.find(libFeature)
+                end = start + len(libFeature)
+                libEntries .append([start,end])
+            r[libName] = np.array(libEntries)
+        return r, len(sequence)
     def getPTMPeptides(self, featureIDs):
         """"""
         dataIDsMapper = self.featureFinder.getDatasets(featureIDs,filter={"PTM":"True"},featureSpecFilter = {})

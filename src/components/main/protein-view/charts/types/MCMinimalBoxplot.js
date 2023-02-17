@@ -127,7 +127,8 @@ export function MCMinimalBoxplot(props) {
             legendTitle, 
             vertical, 
             highlightPoint, 
-            legendItems} = props
+        legendItems,
+        showLimtis} = props
    
     //const legendItems = _.isObject(legend) ? Object.keys(legend) : []
     
@@ -303,7 +304,7 @@ export function MCMinimalBoxplot(props) {
                 )
                 
             })}
-            {labelText!==undefined?<g>
+            {labelText!==undefined ||  showLimtis?<g>
                         <Text 
                         x = {x+width-marginRight-2}
                         y = {y+marginTop+2}
@@ -504,5 +505,6 @@ MCMinimalBoxplot.defaultProps = {
     x : 0,
     y : 0,
     vertical : true,
-    hoverboxOff : false,
+    hoverboxOff: false,
+    showLimtis :true,
 }

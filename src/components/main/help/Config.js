@@ -81,6 +81,12 @@ const CONFIG_PARAMS = [
         "dependsOn": "The search columns should be present in the submission json file and hence must be requested by users within the sample submission process. Hence, the parameter must be defined in the 'submission-details'.",
         "resources": []
     },
+    {
+        "section" : "Submission",
+        "paramName" : "submission-summary",
+        "example" : ["State", "dataID","Email","Experimentator","Title","SampleNumber", "Type","Organism","groupingNames", "Material","Experimental Info"],
+        "info" : "Parameters that will be displayed within a dialog to give an easy to read submission overview."
+    }
 ]
 
 

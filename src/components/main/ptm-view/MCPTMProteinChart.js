@@ -77,7 +77,7 @@ function MCPTMPeptide(props) {
             strokeWidth={0.2} 
             rx={itemHeight/8}
             />
-        {sites.map((siteDetails,idx) => {
+        {_.isArray(sites)?sites.map((siteDetails,idx) => {
             let xSitePosition = xscale(siteDetails.position)
                 return (
                     <line 
@@ -90,7 +90,7 @@ function MCPTMPeptide(props) {
                         strokeWidth={2}
                         />
                 )
-        })}
+        }):null}
         </g>
 
     )

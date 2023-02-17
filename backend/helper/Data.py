@@ -23,7 +23,7 @@ from .Misc import buildRegex, matchValueRangeToColors
 from collections import OrderedDict
 from typing import List, Tuple, Dict, Any, Iterable, Callable
 from dataclasses import dataclass
-
+import shutil
 
 # move this somewhere else! 
 Set6 = ["#444444", "#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99",
@@ -547,6 +547,11 @@ class DatasetCollection:
     def keys(self) -> List[str]:
         "Returns a list of dataIDs"
         return list(self.collection.keys())
+    
+    def remove(self,dataID : str) -> None:
+        ""
+        if dataID in self.collection:
+            del self.collection[dataID]
 
     def values(self) -> List[Dataset]:
         ""
@@ -559,10 +564,11 @@ class Data(object):
     Serves as a hub to get data for specific plots suchs as 
     heatmap, volcano etc. It also manages statistical tests. 
     """
-    def __init__(self,pathToData,pathToAPIConfig,dbManager,*args,**kwargs):
+    def __init__(self,pathToData,pathToAPIConfig,pathToArchive,dbManager,*args,**kwargs):
         ""
         self.pathToData = pathToData
         self.pathToAPIConfig = pathToAPIConfig 
+        self.pathToArchive = pathToArchive
         self.dbManager = dbManager
         self.checkedDataThatCouldNotLoad = []
         self.dataCollection = DatasetCollection(dbManager)
@@ -603,7 +609,15 @@ class Data(object):
         """Checks if the folder for datasets contains dataIDs that were not loaded yet."""
         
         foundMissing = False
-        for dataID in self.getDataIDsInFolder():
+        dataIDs = self.getDataIDsInFolder()
+        dataIDsNotMatchingFolder = [dataID for dataID in self.dataCollection.keys() if dataID not in self.dataCollection]
+        
+        if len(dataIDsNotMatchingFolder) > 0:
+            print(dataIDsNotMatchingFolder)
+            print("DELETE dataIDs from collection.")
+            for dataID in dataIDsNotMatchingFolder:
+                self.dataCollection.remove(dataID)
+        for dataID in dataIDs:
             if not dataID in self.dataCollection and dataID not in self.checkedDataThatCouldNotLoad: #dont use dataIDExists - ednless loop - dont reload fialed dfs
                 paths = self.__getPaths(dataID) #checks for existance.
                 if all(path is not None for path in paths):
@@ -1258,7 +1272,7 @@ class Data(object):
             defaultColumns = ["x","y","s","Key",annotationColumn]
 
             results = {
-                "points": tTestResult[defaultColumns + filterColumns].values.tolist(),
+                "points": tTestResult[defaultColumns + filterColumns].fillna("-").values.tolist(),
                 "xDomain" : [-maxXValue-maxXValue*0.1,maxXValue+maxXValue*0.1],
                 "yDomain" : [maxYValue+maxYValue*0.1,-0.005*maxYValue],
                 "xlabel"  : xLabel,
@@ -1370,5 +1384,17 @@ class Data(object):
             "chart":chartData,
             "statsData":jsonStatsData
             }
-
+    def transferDataToArchive(self,dataID):
+        """Transfer Data to Archive"""
+        pathToDataID = os.path.join(self.pathToData,dataID)
+        print(pathToDataID)
+        print(os.path.exists(pathToDataID) and os.path.isdir(pathToDataID))
+        if os.path.exists(pathToDataID) and os.path.isdir(pathToDataID):
+            pathToArchive = os.path.join(self.pathToArchive,dataID)
+            if not os.path.exists(pathToArchive): #only copy if doesnt exist 
+                print("moving")
+                shutil.move(pathToDataID,pathToArchive)
+                self.dataCollection.remove(dataID)
+                self.checkForMissingDataset()
+            print("checked")
 

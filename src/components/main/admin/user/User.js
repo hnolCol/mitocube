@@ -8,6 +8,7 @@ import { MCDeleteButton } from "../../../utils/components/MCDeleteButton";
 import { motion } from "framer-motion";
 import { MCAskQuestion } from "../../../dialogs/MCAskQuestion";
 import { MCSimpleResponseCheck, MCTokenValidCheck } from "../../../utils/ResponseChecks";
+import { Link } from "react-router-dom";
 
 
 function MCUserItem (props) {
@@ -163,6 +164,9 @@ export function MCAdminUserView (props) {
     return(
 
         <div className="welcome-content">
+            <div className="top-right-absolute-container">
+                <Link to="/">Home</Link>
+            </div>
             <MCAskQuestion {...alterProps} onClose = {closeAlert}/>
             {superAdmin?
             <div>

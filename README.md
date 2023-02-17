@@ -14,4 +14,6 @@ The application is written in ReactJS (frontend) and Python (Flask based backend
 
 ## Installation
 
-Please visit the (Installation help website)[https://mitocube.com/help/installation] to install MitoCube.
+Please visit the (Installation help website)[https://app.mitocube.com/help/installation] to install MitoCube.
+
+ 

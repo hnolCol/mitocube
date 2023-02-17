@@ -1,4 +1,4 @@
-import { InputGroup, Dialog, ButtonGroup, Tag } from "@blueprintjs/core";
+import { InputGroup, Dialog, ButtonGroup, Tag, MenuItem } from "@blueprintjs/core";
 import { useEffect, useState } from "react";
 import { Button } from "@blueprintjs/core"
 
@@ -9,21 +9,142 @@ import axios from "axios";
 import { useQuery } from "react-query"
 
 import { MCHeader } from "../../utils/components/MCHeader";
-import { filterArrayBySearchString } from "../../utils/Filter";
+import { filterArrayBySearchString, filterDatasetsByDataIDs, handleSearchTagBasedFiltering } from "../../utils/Filter";
 import { MCSimpleResponseCheck } from "../../utils/ResponseChecks";
+import { MCGetFilterFromLocalStorage } from "../../utils/Misc";
+import { Suggest2 } from "@blueprintjs/select";
+import { OmnibarItem } from "../protein-view/MCProteinOmnibarSearch";
+import useDebounce from "../../../hooks/useDebounce";
+import { MCListAsTags } from "../../utils/components/MCTableLikeItem";
+import { MCHighlightSpan } from "../../utils/components/MCHighlightText";
+import { MCTagContainer } from "../../utils/components/MCTagContainer";
 
 const initialSearchPropState = {isLoading: false, searchString: "", msg: "", featureIDMapper: {}, numberOfDatasets : 0}
 
+
+function MCFeatureSuggest(props) {
+    
+    const {isLoading,isFetching,featureLabels, tags, setTags, items, ...rest } = props
+    const [searchString, setSearchString] = useState("")
+    const [itemsToShow, setItemsToShow] = useState([])
+    
+    const debounceSearchString = useDebounce(searchString, 300)
+   
+
+
+    useEffect(() => { 
+        if (isLoading) return 
+        if (isFetching) return
+        //search in all entries of an item object
+        if (!_.isArray(items)) return 
+        if (items.length === 0) return 
+        // search for string in all available columns, search is debounced (e.g. runs only if unchanged for some ms)
+        let filteredItems = filterArrayBySearchString(debounceSearchString, items.slice(), Object.keys(items[0]))
+        if (filteredItems.length > 20) {
+            // if too many items, just show the first 20.
+            filteredItems = filteredItems.slice(1,20)
+        }
+       
+        setItemsToShow(filteredItems)
+    },
+        [debounceSearchString, isFetching, isLoading])
+
+
+    const onItemSelect = (entry) => {
+        
+        let currentTags = tags.slice() 
+        let tagAlreadyIn = _.includes(currentTags, entry)
+        console.log(tagAlreadyIn)
+        var newTags = []
+        if (tagAlreadyIn) {
+            newTags = _.filter(currentTags, tag => tag[featureLabels.id]===entry[featureLabels.id])
+        }
+        else {
+            newTags =  _.concat(currentTags,[entry])
+        }
+        
+        setTags(newTags)
+        
+
+    }
+
+    const renderItem = (item, e) => {
+        // if (!modifiers.matchesPredicate) {
+        //   return null;
+        // }
+    
+        
+    return (
+        <OmnibarItem
+            key={item[featureLabels.id]}
+            item={item}
+            handleClose = {undefined}
+            onSelect={() => e.handleClick()}
+            featureLabels={featureLabels} />
+           
+        );
+      }
+    
+
+    return (
+        <Suggest2
+            {...rest}
+            disabled={isFetching  || isLoading}
+            noResults = {searchString!==""?<p>No features matches search string</p>:<p>Enter query string to show results.</p>}
+            menuProps={{ style: { overflowY: "scroll", maxHeight: "40vh" } }}
+            query={searchString}
+            items={itemsToShow} 
+            onItemSelect={onItemSelect}
+            resetOnClose={false}
+            itemRenderer={renderItem}
+            inputValueRenderer={T => T[featureLabels.main]}
+            onQueryChange={(searchString) => setSearchString(searchString)}
+            popoverProps = {{matchTargetWidth:true,minimal:true}}
+            inputProps={{ placeholder: searchString===""?`Search in ${items.length} features ...`:searchString }} />     
+    )
+}
+MCFeatureSuggest.defaultProps = {
+    items: [],
+    isLoading: false,
+    isFetching : false
+    
+}
+
+
 function MCSearchDatasetsDialog(props) {
 
-    const { isOpen, onClose, token, setFilter} = props
+    const { isOpen, onClose, token, setFilter } = props
+    const [searchItems, setSearchItems] = useState({ items: [], featureLabels: {} })
     const [searchProps, setSearchProps] = useState(initialSearchPropState)
-    
-    const performSearch = () => {
+    const [tags, setTags] = useState([])
+    const filter = MCGetFilterFromLocalStorage()
 
-        setSearchProps(prevValues => { return { ...prevValues, "isLoading": true } })
+    const getFeatureDetails = async () => {
+        //fetch data from api
+        const res = await axios.post("/api/features/details",
+                        { token: token }, 
+                        { headers: { 'Content-Type': 'application/json' } })
         
-        axios.get('/api/dataset/features', { params: { token: token, featureID: searchProps.searchString } }).then(
+        return res.data
+
+    }
+    const { isLoading, isFetching } = useQuery(["getFeatureDetails",filter],
+        getFeatureDetails, {
+            onSuccess: (data) => {
+                if (MCSimpleResponseCheck(data)) {
+                    setSearchItems(prevValues => {return {...prevValues,"items" : data.features, "featureLabels" : data.featureLabels}})
+                   
+                }
+            },
+            refetchOnWindowFocus: false,
+            enabled: _.isString(token) && isOpen
+    })
+
+    const performSearch = () => {
+        //perform search 
+        if (!_.has(searchItems.featureLabels, "id")) return 
+        setSearchProps(prevValues => { return { ...prevValues, "isLoading": true } })
+        axios.get('/api/dataset/features', { params: { token: token, featureIDs: _.join(_.map(tags, tag => tag[searchItems.featureLabels.id]),";") } }).then(
             response => {
                 if (response.status === 200 && "success" in response.data && response.data["success"]) {
                     
@@ -60,6 +181,7 @@ function MCSearchDatasetsDialog(props) {
 
     return (
         <Dialog
+            style = {{width:"100vh"}}
             {...{ isOpen }}
             onClose={handleClose}
             onClosing={() => setSearchProps(initialSearchPropState)}
@@ -67,24 +189,30 @@ function MCSearchDatasetsDialog(props) {
             canOutsideClickClose={false}>
                 <div className="middle-m">
                     <MCHeader text="Search for protein in datasets." />
-                    <p>Please enter the Uniprot ID. After the searching has been performed, you will be able to filter the datasets based on the fact if the protein was found in the dataset.</p>
-                    <div className="little-m">
-                        <InputGroup
-                            value={searchProps.searchString}
-                            onChange={e => setSearchProps(prevValues => { return { ...prevValues, "searchString": e.target.value } })}
-                            placeholder="Search for protein (Uniprot ID)" />
-                    </div>
+                <p>Please enter a search string and select features, you will be able to filter the datasets based on the fact if the protein(s) was/were found in the dataset.</p>
+                <p>If you enter multiple proteins only datasets will be displayed in which {<MCHighlightSpan text="all proteins"/>} were detected.</p>
+                <div className="little-m">
+                    <MCFeatureSuggest {...searchItems} setTags={setTags} tags={tags} />
+                    {_.has(searchItems.featureLabels, "main") && _.has(searchItems.featureLabels, "id") && tags.length > 0 ?
+                        <div style={{maxWidth:"100%"}}>
+                            <MCListAsTags array={tags.map(tag => `${tag[searchItems.featureLabels.main]}(${tag[searchItems.featureLabels.id]})`)} />
+                        </div> : null}
+
+                </div>
                     <div className="little-m">
                         <ButtonGroup>
                             <Button
                                 text="Search"
                                 loading={searchProps.isLoading}
                                 onClick={performSearch}
-                                disabled={searchProps.searchString.length < 6} />
+                                disabled={tags.length === 0} />
                             <Button
                                 text="Apply"
                                 disabled={_.isEmpty(searchProps.featureIDMapper) || searchProps.numberOfDatasets === 0}
-                                onClick={saveFilterAndClose} />
+                            onClick={saveFilterAndClose} />
+                            <Button
+                                text="Reset"
+                                onClick={() => setTags([])} />
                             <Button text="Close" intent={"danger"} onClick={onClose} />
                         </ButtonGroup>
                         <p>{searchProps.msg}</p>
@@ -118,7 +246,7 @@ export function MCDatasetSelection (props) {
         {
             refetchOnWindowFocus : false,
             onSuccess: (data) => {
-                console.log(data)
+                
                 if (MCSimpleResponseCheck(data) && _.has(data, "tagNames")
                     && _.has(data, "searchNames") && _.has(data,"datasets")) {
                         let datasets = data["datasets"]
@@ -135,7 +263,6 @@ export function MCDatasetSelection (props) {
                             )
                 }
                 else {
-                    console.log(data)
                     console.log("the received data could not be interpreted.") //better error handling. 
                 }
         }})
@@ -179,7 +306,7 @@ export function MCDatasetSelection (props) {
         
         if (searchStringEmpty && featureIDFilterIsEmpty && !searchTagsEmpty) {
             //only search tags are available
-            let datasetsThatMatchSearchTags = handleSearchTagBasedFiltering(dataSummary.raw, searchTags)
+            let datasetsThatMatchSearchTags = handleSearchTagBasedFiltering(dataSummary.raw, searchTags, dataSummary.searchNames)
             return datasetsThatMatchSearchTags
         }
 
@@ -193,7 +320,7 @@ export function MCDatasetSelection (props) {
 
         if (!searchStringEmpty && featureIDFilterIsEmpty && !searchTagsEmpty) {
             //search string in tag-filtered datasets
-            let datasetsThatMatchSearchTags = handleSearchTagBasedFiltering(dataSummary.raw, searchTags)
+            let datasetsThatMatchSearchTags = handleSearchTagBasedFiltering(dataSummary.raw, searchTags, dataSummary.searchNames)
             return filterArrayBySearchString(
                 searchString,
                 datasetsThatMatchSearchTags ,
@@ -202,29 +329,18 @@ export function MCDatasetSelection (props) {
 
         if (searchStringEmpty && !featureIDFilterIsEmpty && !searchTagsEmpty) {
             let datasetsThatMatchFeatureIDFilter = handleDatasetFilteringByDataID(dataSummary.raw, featureIDFilter)
-            return handleSearchTagBasedFiltering(datasetsThatMatchFeatureIDFilter, searchTags)
+            return handleSearchTagBasedFiltering(datasetsThatMatchFeatureIDFilter, searchTags, dataSummary.searchNames)
         }
 
         // if all are not empty 
         let datasetsThatMatchFeatureIDFilter = handleDatasetFilteringByDataID(dataSummary.raw, featureIDFilter)
-        let datasetsThatMatchSearchTagsAndFilter = handleSearchTagBasedFiltering(datasetsThatMatchFeatureIDFilter, searchTags)
+        let datasetsThatMatchSearchTagsAndFilter = handleSearchTagBasedFiltering(datasetsThatMatchFeatureIDFilter, searchTags, dataSummary.searchNames)
         return filterArrayBySearchString(
             searchString,
             datasetsThatMatchSearchTagsAndFilter,
             dataSummary.searchNames)
     }
 
-
-    const handleSearchTagBasedFiltering = (datasets, searchTags) => {
-        //and based filtering
-        let filteredDataIDs = searchTags.map(searchTag => {
-            return (
-                filterArrayBySearchString(searchTag,datasets,dataSummary.searchNames).map(o=>o.dataID) //easier to compare just dataIDs to find intersection.
-            )
-        })
-        let dataIDs = _.intersection(...filteredDataIDs)
-        return filterDatasetsByDataIDs(datasets, dataIDs)
-    }
 
 
     const handleKeyUp = (e) => {
@@ -262,20 +378,12 @@ export function MCDatasetSelection (props) {
         handleSearchTag(searchTag,true) //true = removeFromTags
     }
 
-
     const handleDatasetFilteringByDataID = (datasets, featureIDFilters) => {
 
         let dataIDs = _.intersection(...Object.values(featureIDFilters))
         return  filterDatasetsByDataIDs(datasets, dataIDs)
     }
 
-    const filterDatasetsByDataIDs = (datasets, dataIDs) => {
-        // filter the array of objects datasets using another array of dataIDs.
-        if (_.isArray(dataIDs) && _.isArray(datasets)) {
-            return _.filter(datasets, (datasetProps) => dataIDs.includes(datasetProps.dataID))
-        }
-        return []
-    }
 
     const handleFeatureIDFilter = (newFeatureIDFilter) => {
         
@@ -318,6 +426,9 @@ export function MCDatasetSelection (props) {
 
     return(
         <div className="dataset-selection-content">
+            <div className="top-right-absolute-container">
+            <Link to="/">Home</Link>
+            </div>
             <div className="middle-m">
             <MCHeader text="Dataset Selection" fontSize="1.5rem"/>
             </div>
@@ -344,21 +455,7 @@ export function MCDatasetSelection (props) {
                 
             </div>
 
-            <div className="hor-aligned-div">
-
-                {_.isArray(dataSummary.searchTags) ? dataSummary.searchTags.map(searchTag => {
-                    return (
-                        <div key={searchTag} className="little-m">
-                            <Tag
-                                intent="primary"
-                                onRemove={() => removeSearchTag(searchTag)}
-                                interactive={true}>
-                                {`${searchTag}`}
-                            </Tag>
-                        </div>)
-                    
-                }): null}
-            </div>
+            <MCTagContainer searchTags={dataSummary.searchTags} handleRemove={removeSearchTag} />
 
             <div className="hor-aligned-div">
 

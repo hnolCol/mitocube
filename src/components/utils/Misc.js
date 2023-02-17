@@ -4,6 +4,11 @@ import {isObject, join } from "lodash";
 import _ from "lodash"
 
 
+export function areAllValuesArrays(object) {
+    let arrayCheckForValues = Object.values(v => _.isArray(v))
+    return _.every(areAllValuesArrays)
+}
+
 export function makeRepeatedArray(arr, repeats) {
     return [].concat(...Array.from({ length: repeats }, () => arr));
 }
@@ -275,8 +280,8 @@ export function arrayToTabDel(data,columnNames){
 
 export function arrayOfObjectsToTabDel(data, headers, groupingMapper){
     
-    if (data !== undefined && Array.isArray(data) && headers.length === data[0].length) {
-       
+    if (data !== undefined && _.isArray(data) && headers.length === data[0].length) {
+     
         const groupings = groupingMapper===undefined?undefined:Object.keys(groupingMapper).map(groupingName => {
             const headersMappedToGroupings = headers.map(headerName => groupingMapper[groupingName][headerName])
             return headersMappedToGroupings.join("\t")  
@@ -289,13 +294,23 @@ export function arrayOfObjectsToTabDel(data, headers, groupingMapper){
 
 
     }
-    else if (data !== undefined && data.length > 0 && isObject(data)){
+    else if (data !== undefined && data.length > 0 && isObject(data[0])) {
+      
         const headers = Object.keys(data[0])
+
+        const groupings = groupingMapper === undefined ? undefined : Object.keys(groupingMapper).map(groupingName => {
+ 
+            const headersMappedToGroupings = headers.map(headerName => groupingMapper[groupingName][headerName])
+    
+            return headersMappedToGroupings.join("\t")  
+        })
+
+
         const csvData = data.map(v => {
                 const dd = headers.map(h => {return v[h]})
                 return dd.join("\t")    
                 }) 
-        return [headers.join("\t"),csvData.join("\n")].join("\n")
+        return groupings!==undefined?[headers.join("\t"),groupings.join("\n"),csvData.join("\n")].join("\n"):[headers.join("\t"),csvData.join("\n")].join("\n")
     }
     
 }   

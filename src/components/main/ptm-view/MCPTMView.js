@@ -171,7 +171,7 @@ export function MCPTMView(props) {
             
                 <MCHeader text={"Post translational modification (PTM) View"} />
                 <p>Under construction. </p>
-            {/* <MCPTMSearch 
+            <MCPTMSearch 
                 filter = {search.filter} 
                 categoricalColumns = {search.categoricalColumns}
                 comboboxItems = {search.comboboxItems}
@@ -194,7 +194,7 @@ export function MCPTMView(props) {
                 titleColumn={search.titleColumn}
                 annotationColors = {search.annotationColors}
                 handlePinnedChange = {handlePinnedChange} 
-                categoricalColumns={search.categoricalColumns}/> */}
+                categoricalColumns={search.categoricalColumns}/>
         </div>
         </div>
     )

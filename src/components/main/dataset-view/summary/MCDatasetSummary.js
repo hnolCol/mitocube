@@ -4,6 +4,7 @@ import _ from "lodash"
 import { useState } from "react";
 import { useQuery } from "react-query"
 import { MCTableLikeItem } from "../../../utils/components/MCTableLikeItem";
+import { fromGroupingsToGroupMapper } from "../../../utils/Groupings";
 import { arrayOfObjectsToTabDel, downloadTxtFile } from "../../../utils/Misc";
 import { MCSimpleResponseCheck } from "../../../utils/ResponseChecks";
 
@@ -17,26 +18,24 @@ export function MCDatasetSummary(props) {
         return res.data
     }
     
-    const { isLoading, isFetching, refetch} = useQuery("downloadDataset",getDatasetData,{enabled:false})
+    const { isLoading, isFetching, isError, refetch} = useQuery(["downloadDataset",dataID],getDatasetData,{enabled:false})
 
     const downloadData = (e) => {
-        if (!_.isArray(dataForDownload)) return 
-        if (dataForDownload.length === 0) {
+            // downloads data
             refetch().then(response => {
                 if (response.isSuccess && MCSimpleResponseCheck(response.data)) {
-                    if (_.isObject(response.data) && _.has(response.data, "data"))
-                        setDataForDownload(response.data.data)
+                    if (_.isObject(response.data) && _.has(response.data, "data") && _.isObject(response.data.data)) {
+                        if (!_.isArray(response.data.data)) return 
+                        if (!_.isObject(response.data.params)) return 
+                        let dataForDownload = response.data.data
+                        let paramsFile = response.data.params
+                        let columnNames = Object.keys(dataForDownload[0])
+                        let groupingMapper = fromGroupingsToGroupMapper(paramsFile)
+                        downloadTxtFile(arrayOfObjectsToTabDel(dataForDownload, columnNames, groupingMapper), `Data(${dataID}).txt`)
+                    }
                 }
             })
-        }
-        else {
-            // download the data when they are there.
-            if (_.isObject(dataForDownload[0])) {
-                let columnNames = Object.keys(dataForDownload[0])
-                downloadTxtFile(arrayOfObjectsToTabDel(dataForDownload,columnNames),`Data(${dataID}).txt`)
-            }
-            
-        }
+        
         }
 
     return (
@@ -44,8 +43,8 @@ export function MCDatasetSummary(props) {
         
         <div className="hor-aligned-div middle-m white-bg ">
                 <div className="dataset-attr-name">Download Data:</div>
-                <div><Button small={true} text={dataForDownload.length > 0 ? "Download" : "Fetch data"}
-                    minimal={true} icon="download" intent="primary" loading={isLoading || isFetching} onClick={downloadData} /></div>
+                <div><Button small={true} text={ isError?"API returned an error":"Fetch & Download"}
+                    minimal={true} icon="download" intent={isError ? "danger" : "primary"} loading={isLoading || isFetching} onClick={downloadData} /></div>
         </div>
         {names.map(attrName => {
             return (

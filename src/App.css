@@ -449,6 +449,14 @@ hr {
   
 }
 
+.hor-aligned-center-div-between-space{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between; 
+  
+}
+
 .hor-aligned-center-div-sapce-between{
   display: flex;
   flex-direction: row;
@@ -464,6 +472,7 @@ hr {
   flex-direction: row;
   justify-content: flex-start; 
   align-items: center;
+  flex-wrap: wrap;
   
 }
 
@@ -1118,6 +1127,12 @@ input[type="file"] {
   overflow-y: scroll;
 
 }
+
+.highlight-span {
+  font-weight: bolder;
+  color: #2F5597;
+}
+
 .help-venv-span {
   font-weight: bolder;
   color: #b66476;
@@ -1131,4 +1146,64 @@ input[type="file"] {
 .help-project-span {
   font-weight: bolder;
   color: #2F5597;
+}
+
+.icon-transition {
+  transition-duration: 1.5s;
+  transition-property: fill;
+}
+
+
+.admin-navbar{
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  width : 3rem;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+}
+.admin-header{
+  transform: rotate(-90deg);
+  color : #b66476;
+  height: 5rem;
+
+}
+
+.admin-dataset-container {
+  width: 100vw;
+  height : 100vh;
+  font-size: 0.85rem;
+  cursor: default;
+}
+.admin-dataset-header{
+  margin-left: 2rem;
+}
+.admin-dataset-top-container{
+  height : 9rem;
+}
+
+.admin-dataset-grid{
+  width: 100vw;
+  height : calc(100vh - 9rem);
+  display: grid;
+  gap: 0.0rem 0.0rem;
+  padding-left: 0.75rem;
+  padding-right: 2rem;
+  overflow-y: scroll;
+  overflow-x: scroll;
+}
+
+.admin-dataset-grid-left-center-item{
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  justify-content: center; 
+  border-right: 2px solid #efefef;
+  border-top: 3px solid #efefef;
+  padding-left: 0.3rem;
+  font-size: 0.70vw ;
 }

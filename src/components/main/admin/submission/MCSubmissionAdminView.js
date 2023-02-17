@@ -1,4 +1,4 @@
-import { Alert, Button, Collapse, InputGroup, Code, ButtonGroup, MenuItem, Menu, MenuDivider, Icon, FileInput } from "@blueprintjs/core"
+import { Alert, Button, Collapse, InputGroup, Code, ButtonGroup, MenuItem, Menu, MenuDivider, Icon } from "@blueprintjs/core"
 import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
 
@@ -10,11 +10,13 @@ import _ from "lodash"
 import { Text } from "@visx/text"
 import { MCCreateSampleList } from "../../../submission/MCCreateSampleList"
 import { Popover2, Tooltip2 } from "@blueprintjs/popover2"
-import { MCGroupingNameDialog, MCMethodEditingDialog } from "./MCSubmissionDialogs"
+import { MCGroupingNameDialog, MCMethodEditingDialog, MCSubmissionOverviewDialog } from "./MCSubmissionDialogs"
 import { MCHeader } from "../../../utils/components/MCHeader"
 import { MCSimpleResponseCheck, MCTokenValidCheck } from "../../../utils/ResponseChecks"
 import { MCTooltipButton } from "../../../utils/components/MCTooltipButton"
 import { readLinesAndColumnNamesFromTxtFile } from "../../../utils/FileReading"
+import { extractGroupsByRunNameFromGrouping } from "./MCGroupingExtraction"
+import { fromDateToString } from "../../../utils/DateFormatting"
 
 
 const initRenameGrouping = {isOpen:false,groupingNames:[],dataID:undefined,paramsFile:{}}
@@ -23,7 +25,7 @@ const initExperimental = {isOpen:false,dataID:undefined,paramsFile:{}}
 
 
 function MCSubmissionItem(props) {
-    const {dataID, token, handleDataChange, paramsFile, states, setAlertState,openSampleListDialog, openRenameGroupingDialog, isUpdated, setIsUpdated, openMethodEditingDialog, tagNames} = props
+    const {dataID, token, handleDataChange, paramsFile, states, setAlertState,openSampleListDialog, openRenameGroupingDialog, isUpdated, setIsUpdated, openMethodEditingDialog, tagNames, openSubmissionOverviewDialog} = props
     
     const [isOpen, setIsOpen] = useState(false)
     const [alertDetails, setAlertDetails] = useState({
@@ -60,10 +62,21 @@ function MCSubmissionItem(props) {
             setAlertState({isOpen:true,children:<div>State must be one of the following: {states.join(", ")}</div>})
             return false
         }
-        else {
-            setIsUpdated(dataID,true)
-            handleDataChange(dataID,params.updated_src)
-        }   
+        else if (params.name === "Creation Date" && params.new_value instanceof Date) {
+            // this must actually be converted to string
+            let dateString = fromDateToString(params.new_value)
+            params.updated_src["Creation Date"] = dateString
+            
+        }
+        else if (params.name === "Creation Date" && _.isNumber(params.new_value)) {
+            // this must actually be converted to string
+            params.updated_src["Creation Date"] = `${params.new_value}`
+            
+        }
+
+        setIsUpdated(dataID,true)
+        handleDataChange(dataID,params.updated_src)
+         
     }
 
 
@@ -93,7 +106,7 @@ function MCSubmissionItem(props) {
             setAlertState({isOpen:true,children:<div>State of {dataID} changed to : {newState}. Please note that you still have to save/upload the changes.</div>})
         }
     }
-    const handleDelete = (e) => {
+    const handleDelete = () => {
         // handle delete of submission (actually putting to archive)
         axios.delete('/api/data/submission/details', {data : {token : token, dataID : dataID}}).then(response => {
             setAlertState({isOpen:true,children:<div>{response.data.msg}</div>})
@@ -236,17 +249,19 @@ function MCSubmissionItem(props) {
                 />
         <MCSubmissionHeader 
                 paramsFile = {paramsFile} 
-                states = {states} 
-                isOpen={isOpen} 
+               // states = {states} 
+                //isOpen={isOpen} 
                 setIsOpen={setIsOpen} 
                 handleDelete={handleDelete} 
-                handleStateChange = {handleStateChange} 
-                isUpdated={isUpdated}
+                //handleStateChange = {handleStateChange} 
+                //isUpdated={isUpdated}
                 handleUpdate={handleUpdate}
-                handleFileUpload={handleFileUpload}
-                tagNames={tagNames}
-                openSampleListDialog = {openSampleListDialog}
-                openRenameGroupingDialog = {openRenameGroupingDialog}
+                //handleFileUpload={handleFileUpload}
+                // tagNames={tagNames}
+                {...{isUpdated, isOpen,  states, handleStateChange, openSampleListDialog,openRenameGroupingDialog, openMethodEditingDialog, tagNames, handleFileUpload, openSubmissionOverviewDialog}}
+                //openSubmissionOverviewDialog={ }
+               // openSampleListDialog = {openSampleListDialog}
+                //openRenameGroupingDialog = {openRenameGroupingDialog}
                 openMethodEditingDialog = {openMethodEditingDialog}
                 />
         
@@ -304,11 +319,11 @@ function checkForKeysInObject(object, keys) {
 }
 
 function MCSubmissionHeader (props) {
-    const {paramsFile, states, isOpen, setIsOpen, handleDelete, handleStateChange, isUpdated, handleUpdate, handleFileUpload, openSampleListDialog, openRenameGroupingDialog, openMethodEditingDialog, tagNames}= props
+    const {paramsFile, states, isOpen, setIsOpen, handleDelete, handleStateChange, isUpdated, handleUpdate, handleFileUpload, openSampleListDialog, openRenameGroupingDialog, openMethodEditingDialog, tagNames, openSubmissionOverviewDialog}= props
     const [mouseOverDataID, setMouseOverDataID] = useState(false)
     //const [uploadFileName, setUploadFileName] = useState("")
 
-    const dateString = `${paramsFile["Creation Date"].substring(0,4)}-${paramsFile["Creation Date"].substring(4,6)}-${paramsFile["Creation Date"].substring(6)}`
+    const dateString =  `${paramsFile["Creation Date"].substring(0,4)}-${paramsFile["Creation Date"].substring(4,6)}-${paramsFile["Creation Date"].substring(6)}`
     
     const getDaysSinceSumbission = (dateString) => {
 
@@ -387,6 +402,10 @@ function MCSubmissionHeader (props) {
                                 intent={isOpen?"primary":"none"}/>
                     </Popover2>
                     
+                    <MCTooltipButton
+                        content={<div><p>Open Submission Overview</p></div>}
+                        icon="eye-open"
+                        onClick={() => openSubmissionOverviewDialog(paramsFile.dataID,paramsFile)} />
                     
                     <MCTooltipButton
                         content={<div>
@@ -430,7 +449,7 @@ function MCSubmissionHeader (props) {
                         content={<p>Download submission summary as tab-delimited text file.</p>}
                         icon="download"
                         intent="success"
-                        onClick={() => downloadTxtFile(arrayToTabDel(extractMainParamsFromJSON(paramsFile),["Parameter","Value"]),`params-${paramsFile.dataID}.txt`)}/>
+                        onClick={() => downloadTxtFile(arrayToTabDel(extractMainParamsFromJSON({ ...paramsFile, ...extractGroupsByRunNameFromGrouping(paramsFile)}),["Parameter","Value"]),`params-${paramsFile.dataID}.txt`)}/>
                     
                     <MCTooltipButton
                         content={<p>Place project to archive.</p>}
@@ -450,12 +469,14 @@ function MCSubmissionHeader (props) {
 }
 
 
+
 function extractMainParamsFromJSON(paramsFile) {
 
     const extractedParams = Object.keys(paramsFile).map(v => {
         const value = paramsFile[v]
-        return({Parameter:v,Value:_.isString(value )?paramsFile[v]:_.isArray(value)&&_.isString(value[0])?_.join(value,","):JSON.stringify(value)})
+        return({Parameter:v,Value:_.isString(value)?_.replace(paramsFile[v],/\n/g,""):_.isArray(value)&&_.isString(value[0])?_.join(value,"\t"):JSON.stringify(value)})
     })
+    
     return extractedParams 
 }
 
@@ -496,11 +517,12 @@ export function MCSubmissionAdminView(props) {
         submissionsToShow: [],
         submissionFilter: "None",
         searchString: "",
-        submissionSummaryColumns: []
+        submissionSummaryParams: []
     })
     const [groupingRenameDetails, setGroupingRenameDetails] = useState(initRenameGrouping)
     const [experimentalDetails, setExperimentalDetails] = useState(initExperimental)
-    const [sampleListDialog, setSampleListDialog] = useState({isOpen:false})
+    const [sampleListDialog, setSampleListDialog] = useState({ isOpen: false })
+    const [subissionOverviewDialog, setSubissionOverviewDialog] = useState({ isOpen: false, dataID: undefined, paramsFile: {} })
     const [updatedDataIDs, setUpdatedDataIDs] = useState({})
     const [alertState, setAlertState] = useState({isOpen:false,children:<div>Warning!</div>})
     
@@ -519,7 +541,7 @@ export function MCSubmissionAdminView(props) {
                         states: responseData.states, 
                         tagNames : responseData.tagNames,
                         searchColumns : responseData.searchColumns,
-                        submissionSummaryColumns : responseData.submissionSummaryColumns,
+                        submissionSummaryParams : responseData.submissionSummaryParams,
                         submissionSatesCounts : stateCounts,
                         submissionsToShow :responseData.submissions.map(v => v.dataID),
                         submissionFilter : "None",
@@ -657,7 +679,7 @@ export function MCSubmissionAdminView(props) {
 
         let submissions = submissionDetails.submissions
         if (submissions.length > 0) {
-            let summaryColumns = submissionDetails.submissionSummaryColumns
+            let summaryColumns = submissionDetails.submissionSummaryParams
             if (_.isArray(summaryColumns) && summaryColumns.length > 0){ 
                 let filteredSubmission = notThisState!==undefined?_.filter(submissions, v => v.paramsFile.State !== notThisState):submissions.slice()
                 let submissionSummary = filteredSubmission.map(submission => Object.fromEntries(summaryColumns.map(sumColumn => [sumColumn, submission.paramsFile[sumColumn]])))
@@ -674,11 +696,22 @@ export function MCSubmissionAdminView(props) {
         }
     }
 
+    const openSubmissionOverviewDialog = (dataID, paramsFile) => {
+        setSubissionOverviewDialog(prevValues => {return {...prevValues,isOpen : true, dataID : dataID, paramsFile: paramsFile}})
+    }
+
     
     return (
         <div className="submission-admin-view">
             
-             <Alert {...alertState} canEscapeKeyCancel={true} canOutsideClickCancel={true} onClose={e => setAlertState({isOpen:false})}/>
+            <Alert {...alertState} canEscapeKeyCancel={true} canOutsideClickCancel={true} onClose={e => setAlertState({ isOpen: false })} />
+            <MCSubmissionOverviewDialog
+                {...subissionOverviewDialog}
+                canEscapeKeyCancel={true}
+                canOutsideClickCancel={true}
+                paramNames={submissionDetails.submissionSummaryParams}
+                onClose={() => setSubissionOverviewDialog(prevValues => { return { ...prevValues, isOpen: false } })} />
+            
              <MCCreateSampleList {...sampleListDialog} onClose = {setSampleListDialog} token={token} handleDataChange = {handleSubmissionUpdate}/>
              <MCMethodEditingDialog 
                 {...experimentalDetails}
@@ -776,10 +809,12 @@ export function MCSubmissionAdminView(props) {
                             handleDataChange = {handleSubmissionUpdate} 
                             openSampleListDialog = {openSampleListDialog}
                             openRenameGroupingDialog = {openRenameGroupingDialog}
-                            openMethodEditingDialog = {openMethodEditingDialog}
+                                openMethodEditingDialog={openMethodEditingDialog}
+                                openSubmissionOverviewDialog={openSubmissionOverviewDialog}
                             setAlertState = {setAlertState} 
                             states={submissionDetails.states}
                             tagNames={submissionDetails.tagNames}
+                            
                             isUpdated = {Object.keys(updatedDataIDs).includes(v.dataID)?updatedDataIDs[v.dataID]:false}
                             setIsUpdated = {setUpdatedState}
                             {...v}/>)

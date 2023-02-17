@@ -73,7 +73,7 @@ class SampleList(Resource):
     def get(self) -> dict:
         ""
         token = request.args.get('token', default="None", type=str)
-        if not isAdminValid(self.token,token):
+        if not isAdminValid(token,self.token):
             return adminTokenInValidResponse
 
         dataID = request.args.get('dataID', default="None", type=str)
@@ -104,9 +104,9 @@ class DataSubmissionDetails(Resource):
         if not self.token.isValid(token):
             return {"success":False,"error":"Token is not valid."}
 
-        details = [handleDetailInputs(submissionDetail) for submissionDetail in self.submission.data.getAPIParam("submission-details")]
-
-        return {"success":True,"details":details}
+        submissionItems = [handleDetailInputs(submissionDetail) for submissionDetail in self.submission.data.getAPIParam("submission-details")]
+        allowCustomRunNames = self.submission.data.getAPIParam("submission-allow-custom-runName") == 1
+        return {"success":True,"details":submissionItems, "allowCustomRunNames" : allowCustomRunNames}
 
 
     def put(self) -> dict:
@@ -116,7 +116,7 @@ class DataSubmissionDetails(Resource):
             if all(x in data for x in ["dataID","token","paramsFile"]):
                 token = data["token"]
                 
-                if not isAdminValid(self.token,token):
+                if not isAdminValid(token,self.token):
                     return adminTokenInValidResponse
                 dataID = data["dataID"]
                 paramsFile = data["paramsFile"]
@@ -130,7 +130,7 @@ class DataSubmissionDetails(Resource):
         if request.data != b'':
             data = json.loads(request.data, strict=False)
             token = data["token"]
-            if not isAdminValid(self.token,token):
+            if not isAdminValid(token,self.token):
                     return adminTokenInValidResponse
             dataID = data["dataID"]
             
@@ -183,7 +183,10 @@ class DataSubmissionDetails(Resource):
                 
                 #extracting the replicates
                 if "Replicate" in groupingDf.columns:
-                    sampleSubmission["replicates"] = OrderedDict ([(replicate,runName) for runName, replicate in groupingDf[["Run","Replicate"]].values])
+                    replicates = OrderedDict((replicateID,[]) for replicateID in groupingDf["Replicate"].unique())
+                    for runName, replicateID in groupingDf[["Run","Replicate"]].values:
+                        replicates[replicateID] = runName
+                    sampleSubmission["Replicates"] = replicates 
                 
                 #extract grouping names
                 groupingNames = [colName for colName in groupingDf.columns if colName not in ["Run","Replicate"]]
@@ -226,11 +229,12 @@ class DataSubmissions(Resource):
     def get(self) -> dict:
         
         token = request.args.get('token', default="None", type=str)
-        if not isAdminValid(self.token,token):
-                    return adminTokenInValidResponse
+        if not isAdminValid(token,self.token):
+            return adminTokenInValidResponse
         
         submissions, submissionStates = self.submission.getSubmission()
-        submissionSummaryColumns = self.submission.getSummaryColumns() #submissionSummaryColumns,
+       
+        submissionSummaryParams = self.submission.getSummaryColumns()
         searchColumns = self.submission.getSearchColumns()
         tagNames = self.submission.getTagNames()
         return {
@@ -240,4 +244,4 @@ class DataSubmissions(Resource):
             "submissions":submissions,
             "states":submissionStates,
             "searchColumns" : searchColumns,
-            "submissionSummaryColumns" : submissionSummaryColumns}
+            "submissionSummaryParams" : submissionSummaryParams}

@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react'
 import {InputGroup, Dialog, Button, ButtonGroup, Menu, MenuItem, TextArea, H6, H5} from '@blueprintjs/core'
 import _ from "lodash"
 import { Popover2 } from '@blueprintjs/popover2'
+import { MCTableLikeItem } from '../../../utils/components/MCTableLikeItem'
+import { extractGroupsByRunNameFromGrouping } from './MCGroupingExtraction'
+import { MCHeader } from '../../../utils/components/MCHeader'
 
 
 function GroupingNameTextInput (props) {
@@ -19,6 +22,36 @@ function GroupingNameTextInput (props) {
     )
 }
 
+
+
+export function MCSubmissionOverviewDialog(props) {
+    
+    const { dataID, paramsFile, paramNames, onClose, ...rest } = props
+
+    if (dataID === undefined) return null 
+    if (!_.isObject(paramsFile)) return null 
+    if (_.isEmpty(paramsFile)) return null 
+    
+    
+    let groupingsMappedToRunNames = extractGroupsByRunNameFromGrouping(paramsFile)
+    
+    return (
+        <Dialog className="middle-m" style={{ width: "80vw", height: "85vh" }} onClose={onClose} title={`Submission Overview ${dataID}`}{...rest}>
+            <div style={{overflowY : "scroll"}}>
+            {paramNames.map(attrName => {
+                if (!_.has(paramsFile,attrName)) return null
+                
+                return (
+                    <MCTableLikeItem key={attrName} {...{ attrName, attr: paramsFile[attrName] }} />
+                )
+            }
+            )}
+            <MCHeader text="Sample Names"/>
+            {Object.keys(groupingsMappedToRunNames).map(runName => <MCTableLikeItem key={runName} {... { attrName: runName, attr: groupingsMappedToRunNames[runName] }} />)}
+            </div>
+        </Dialog>
+    )
+}
 
 export function MCMethodEditingDialog (props) {
     const {dataID, paramsFile, onClose, handleDataChange, ...rest} = props

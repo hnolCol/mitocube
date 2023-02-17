@@ -8,6 +8,10 @@ from collections import OrderedDict
 import pandas as pd 
 import numpy as np 
 import json
+
+def getTodaysDateAsString() -> str:
+    return date.today().strftime("%Y%m%d")
+
 class Submission(object):
 
     def __init__(self,pathToSubmissionFolder,pathToArchive,data,email,*args,**kwargs):
@@ -53,6 +57,15 @@ class Submission(object):
         with open(pathToParamFile, 'w', encoding='utf-8') as f:
             json.dump(sampleSubmission, f, ensure_ascii=False, indent=4)
 
+    def addSampleListToParamsFile(self, params : str, sampleList : pd.DataFrame, columnNames :List[str] = ["Run","Position","Plate"]) -> Dict:
+        ""
+
+        columnNamesFound = [colName for colName in columnNames if colName in sampleList.columns]
+        if len(columnNamesFound) < 2:
+            return params
+        params["sample-list"] = sampleList[columnNamesFound].to_dict(orient="records")
+        params["sample-list-created"] = getTodaysDateAsString()
+        return params
 
     def getID(self):
         "Generate random string"
@@ -65,8 +78,9 @@ class Submission(object):
 
     def getSummaryColumns(self):
         ""
-        summaryColumns = self.data.getAPIParam("submission-summary-short")
-        return summaryColumns if summaryColumns is not None else []
+        summaryParams = self.data.getAPIParam("submission-summary")
+        #shortSummaryParams = self.data.getAPIParam("submission-summary-short")
+        return summaryParams if summaryParams is not None else []
 
     def getSearchColumns(self):
         ""
@@ -146,7 +160,7 @@ class Submission(object):
             
             params["groupings"] = self._updateGrouping(groupingsToRename,newRunNames)
             params["internalID"] = replaceNumberID
-            ok, msg, paramsFile = self.update(dataID,params)
+            
 
             #create list 
             lastIndex = startIndex+len(newRunNames)
@@ -184,25 +198,27 @@ class Submission(object):
                     OrderedDict([
                             ("Run",newRunNames),
                             ("Position",orderedWellPosition[startIndex:startIndex+len(newRunNames)])] + 
-                        [
+                        [ # add groupings
                             (params["groupingNames"][mapperIdx],[mapper[run] if run in mapper else "" for run in runs]) for mapperIdx,mapper in enumerate(groupingsToGenerateName)
                             ]
                     )
                     )
-            
+
+            #add list before scramble.        
+            params = self.addSampleListToParamsFile(params,sampleList)
             if scramble:
                 if "Plate" in sampleList.columns:
                     #randomly only over plates
                     sampleList = sampleList.groupby('Plate').apply(lambda x: x.sample(frac=1.0)).reset_index(drop=True)
                 else:
                     sampleList = sampleList.sample(frac=1.0)
-
+            
+            ok, msg, paramsFile = self.update(dataID,params)
             if ok:
-                return ok, paramsFile,sampleList.to_json(orient="records")
+                return ok, paramsFile, sampleList.to_json(orient="records")
             else:
                 return ok, msg, None
         else:
-
             return False, "DataID not found.", None
 
 
@@ -275,7 +291,7 @@ class Submission(object):
                 
                     paramsFile["updatedState"] = {}
 
-                paramsFile["updatedState"][paramsFile["State"]] = date.today().strftime("%Y%m%d")
+                paramsFile["updatedState"][paramsFile["State"]] = getTodaysDateAsString()
 
                 
                 if paramsFile["State"] == states[-1]:

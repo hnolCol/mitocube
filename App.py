@@ -16,6 +16,7 @@ from backend.helper.Admin import AdminUsers
 from backend.helper.Submission import Submission
 from backend.helper.Performance import Performance
 from backend.helper.PTM import PTMAnnotations, PTMManger
+from backend.helper.Library import Libraries
 #external package imports
 
 from pathlib import Path
@@ -32,15 +33,17 @@ app = Flask(__name__,
 
 api = Api(app)
 #define improtant paths
-pathToTokens = os.path.join(app.root_path,"backend","data","dynamic","tokens.json")
-pathToUsers = os.path.join(app.root_path,"backend","data","dynamic","users.json")
-pathToData = os.path.join(app.root_path,"backend","data","static","datasets")
-pathToPerformanceData = os.path.join(app.root_path,"backend","data","dynamic","performance")
-pathToDB = os.path.join(app.root_path,"backend","data","static","dbs","uniprot")
-pathToSubmissionFolder =  os.path.join(app.root_path,"backend","data","dynamic","submissions")
-pathToArchive =  os.path.join(app.root_path,"backend","data","archive")
-pathToAPIConfig = os.path.join(app.root_path,"backend","config","docs") #should point to figure, and check for existance! ToDO
 pathToDataFolder = os.path.join(app.root_path,"backend","data")
+pathToTokens = os.path.join(pathToDataFolder,"dynamic","tokens.json")
+pathToUsers = os.path.join(pathToDataFolder,"dynamic","users.json")
+pathToData = os.path.join(pathToDataFolder,"static","datasets")
+pathToPerformanceData = os.path.join(pathToDataFolder,"dynamic","performance")
+pathToDB = os.path.join(pathToDataFolder,"static","dbs","uniprot")
+pathToSubmissionFolder =  os.path.join(pathToDataFolder,"dynamic","submissions")
+pathToArchive =  os.path.join(pathToDataFolder,"archive")
+pathToAPIConfig = os.path.join(app.root_path,"backend","config","docs") #should point to figure, and check for existance! ToDO
+pathToStaticData = os.path.join(pathToDataFolder,"static")
+pathToLibs = os.path.join(pathToStaticData,"dbs","library")
 
 if not os.path.exists(pathToDataFolder):
         #move to separate function and do more checking!
@@ -51,13 +54,16 @@ if not os.path.exists(pathToDataFolder):
         pathToSubmission = os.path.join(pathToDynamicData,"submissions")
         #creating folders if they do not exists, should actually only happen on first start.
         for p in [pathToStaticData,pathToDynamicData,staticDatasets, staticUniprot,pathToPerformance,pathToSubmission]:
-                
-                Path(p).mkdir(parents=True,exist_ok=True,)
+                Path(p).mkdir(parents=True,exist_ok=True)
+
+elif not os.path.exists(pathToArchive):
+        os.mkdir(pathToArchive)
 
 #define data helpers
 dbManager = DBFeatures(pathToDB=pathToDB)
-
-dataManger = Data(pathToData,pathToAPIConfig,dbManager)
+libManager = Libraries()
+libManager.addLibsFromFolder(pathToLibs)
+dataManger = Data(pathToData,pathToAPIConfig,pathToArchive,dbManager)
 adminUserManager = AdminUsers(pathToUsers)
 tokenManager = Token(pathToTokens, 
         tokensValid = dataManger.getAPIParam("token-valid(h)"), 
@@ -71,7 +77,7 @@ performanceManager = Performance(pathToData = pathToPerformanceData,
 emailSettings = dataManger.getConfigParam("email-sever-settings")
 for k,v in emailSettings.items():
         if v in [0,1]:
-                app.config[k] = v == 1
+                app.config[k] = v == 1 #0 and 1 are transfered to True/False, might wort also with 0/1?
         else:
                 app.config[k] = v
 app.config["MAIL_PASSWORD"] = config("email-pw")
@@ -91,6 +97,7 @@ helpers = {
         "user" : adminUserManager,
         "submission" : submissionManager,
         "ptm" : ptmManger,
+        "libs" : libManager,
         "performance" : performanceManager
 }
 

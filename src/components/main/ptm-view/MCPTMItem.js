@@ -37,9 +37,9 @@ export function MCPTMItem (props) {
             
             }).then(response => {
                 if (response.data["success"]){
-                    
+                    //console.log(response.data)
                     setChartData(prevValues => {
-                            return {...prevValues,"isLoading" : false, chartData: response.data,"svgID" : svgID}})
+                            return {...prevValues,"isLoading" : false, length : response.data.length, chartData: response.data,"svgID" : svgID}})
                 }
                 else {
 

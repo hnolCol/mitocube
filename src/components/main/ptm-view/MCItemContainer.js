@@ -10,7 +10,15 @@ export function MCItemContainer (props) {
         
         <div className="ptm-item-container vert-align-div">
             {isLoading?<p>Loading...</p>:null}
-            {items.map(item => <MCPTMItem key={item[identifierColumn]} token={token} {...item} handlePinnedChange={handlePinnedChange} categoricalColumns={categoricalColumns} annotationColors={annotationColors} identifierColumn={identifierColumn} titleColumn={titleColumn} />)}
+            {items.map(item => <MCPTMItem
+                key={item[identifierColumn]}
+                token={token}
+                {...item}
+                handlePinnedChange={handlePinnedChange}
+                categoricalColumns={categoricalColumns}
+                annotationColors={annotationColors}
+                identifierColumn={identifierColumn}
+                titleColumn={titleColumn} />)}
             {!showAllItems ? <p>Not all items shown ({N}/{numberItems})</p>:null}
         </div>
        

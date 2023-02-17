@@ -7,6 +7,7 @@ import axios from "axios"
 import { MCHeader } from "../../utils/components/MCHeader"
 import { Link } from "react-router-dom"
 import { removeMitoCubeAdminToken, setMitoCubeAdminToken } from "../../utils/Misc"
+import { MCAdminSideNavigation } from "./navbar/SideNavigation"
 
 
 export function MCAdminLogin(props) {
@@ -75,11 +76,13 @@ export function MCAdminLogin(props) {
       }
 
     return (
-        <div>
+      <div>
+        {/* <MCAdminSideNavigation /> */}
         <div className="welcome-content">
             {isAuthenthicated && isAdminAuthenthicated?
               
-              <div style={{width:"100%",minWidth:"150px"}}>
+            <div style={{ width: "100%", minWidth: "150px" }}>
+              
                 <div style={{position:"absolute",right:0,top:0,width:"100px"}}>
                   <div className="hor-aligned-div">
                   <Button text="Logout" minimal={true} small={true} onClick={logout}/>
@@ -90,7 +93,7 @@ export function MCAdminLogin(props) {
                 <p>Welcome to the Admin Restricted Site of MitoCube. View instrument performance, edit and export submissions and add users.</p>
                 <div className="admin-nav-container">
                   
-                  {["Performance","Submissions","Users"].map(v => { //"Settings"
+                  {["Performance","Submissions","Datasets","Users"].map(v => { //"Settings"
                     return (
                       <div key={v} className="admin-nav-box">
                           <Link style={{textDecoration:"none", color:"#2F5597", fontWeight:"bold", fontSize:"1.3rem"}} to = {`/admin/${v.toLowerCase()}`}>
@@ -108,7 +111,7 @@ export function MCAdminLogin(props) {
                   
               </div>
                <MCSpinner initialText={""} textAnchor="middle" textX = {25}/>
-                <MCHeader text="Welcome to MitoCube Admin Content" />
+                <MCHeader text="Welcome to MitoCube Admin Content" fontSize="1.6rem"/>
                <p>This content offers administrative actions and overviews. You cannot create an account, please contact the site administrator to get access.</p>
             
               {adminTokenDetails.adminToken===undefined?

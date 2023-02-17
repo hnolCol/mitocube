@@ -1,7 +1,7 @@
 
 from flask import request, jsonify
 from flask_restful import Resource
-
+from ..misc import isTokenValid
 from collections import OrderedDict
 import json 
 import os
@@ -12,15 +12,18 @@ class DatasetDetails(Resource):
         """
         self.data = kwargs["data"]
         self.token = kwargs["token"]
-        self.detailHeaders = self.data.getAPIParam('detail-params') 
+        self.detailHeaders = self.data.getAPIParam("detail-params") 
+        
         
 
     def get(self):
         "Returns a formatted way way of params"
         
         token = request.args.get('token', default="None", type=str)
-        if token == "None" or not self.token.isValid(token):
-            return {"success":False,"error":"Token is not valid."}
+        ok, msg = isTokenValid(token,self.token)
+        if not ok:
+            return {"success":False,"msg":msg}
+
         dataID = request.args.get('dataID', default="None", type=str)
         params = self.data.getParams(dataID)
 
@@ -31,7 +34,7 @@ class DatasetDetails(Resource):
             details["Number of Proteins"] = numberFeatures
 
             orderedColumnNames = list(details.keys())
-            if "Experimental Info" in orderedColumnNames: #ugly fix
+            if "Experimental Info" in orderedColumnNames: #ugly fix to put it in the end
                 orderedColumnNames.remove("Experimental Info")
                 orderedColumnNames.append("Experimental Info")
                 
@@ -50,15 +53,24 @@ class DatasetSearch(Resource):
 
     def get(self):
         ""
-        token = request.args.get('token', default="None", type=str)
-        if token == "None" or not self.token.isValid(token):
-            return {"success":False,"msg":"Token is not valid."}
-        featureID = request.args.get('featureID', default="", type=str)
-        if featureID == "":
+        tokenString = request.args.get('token', default="None", type=str)
+        ok, msg = isTokenValid(tokenString,self.token)
+        if not ok:
+            return {"success":ok,"msg":msg}
+        featureIDs = request.args.get('featureIDs', default="", type=str)
+        if featureIDs == "":
             return {"success":False,"msg":"Feature ID must be a Uniprot ID. Found empty string."}
-
-        featureIDDataIDMapper = self.featureFinder.getDatasets([featureID],filter = {"Type":"Whole proteome"}, featureSpecFilter = {})
-        numDatasets = len(featureIDDataIDMapper[featureID])
+        if ";" in featureIDs:
+            featureIDs = featureIDs.split(";")
+        else:
+            featureIDs = [featureIDs]
+            
+        featureIDDataIDMapper = self.featureFinder.getDatasets(
+            featureIDs,
+            filter = {"Type":"Whole proteome"}, 
+            featureSpecFilter = {}) #put whole proteome to config? 
+        
+        numDatasets = len(featureIDDataIDMapper[featureIDs[0]])
         return {
             "success":True,
             "msg":f"Database searched. Found in {numDatasets } dataset(s).",
@@ -81,15 +93,15 @@ class DatasetGroupings(Resource):
         params = self.data.getParams(dataID)
         if params is not None:
             if "groupingNames" in params:
-                return jsonify({
+                return {
                     "success":True,
                     "groupings":{
                         "groupingNames" : params["groupingNames"],
                         "groupings" : params["groupings"]
-                    }})
+                    }}
             else:
-                return jsonify({"success":True,"error":"groupingNames not defined for this dataID."})
-        return jsonify({"success":False,"error":"Parameter file not found."})
+                return {"success":True,"error":"groupingNames not defined for this dataID."}
+        return {"success":False,"error":"Parameter file not found."}
 
 
 class DatasetExperimentalInfo(Resource):
@@ -102,9 +114,10 @@ class DatasetExperimentalInfo(Resource):
         """
         Returns the experimental information for a specific dataset (dataID)
         """
-        token = request.args.get('token', default="None", type=str)
-        if token == "None" or not self.token.isValid(token):
-            return {"error":"Token is not valid.","success":False}
+        tokenString = request.args.get('token', default="None", type=str)
+        ok, msg = isTokenValid(tokenString,self.token)
+        if not ok:
+            return {"success":ok,"msg":msg}
         dataID = request.args.get('dataID', default="None", type=str)
         succes, params = self.data.getExperimentalInformation(dataID=dataID,joinListItems=True)
         if succes:

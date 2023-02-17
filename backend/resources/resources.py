@@ -1,3 +1,4 @@
+from .dataset.AdminDataset import AdminDataset
 from .dataset.Summary import DatasetsSummary
 from .dataset.Params import DatasetParams
 from .dataset.FileStorage import FileStorageService
@@ -169,6 +170,12 @@ mitoCubeResources = [
         "obj": SampleList,
         "reqKwargs" : ["token","submission"]
     },
+    ## admin datasets
+    {
+        "url":'/api/admin/datasets',
+        "obj": AdminDataset,
+        "reqKwargs" : ["token","data"]
+    },
     ##performance data sharing
     {
         "url":'/api/admin/shareToken/valid',
@@ -199,7 +206,7 @@ mitoCubeResources = [
     {
         "url":'/api/ptm',
         "obj": PTMView,
-        "reqKwargs" : ["token","ptm"]
+        "reqKwargs" : ["token","ptm","libs"]
     }
 ]
 

@@ -6,7 +6,8 @@ export function MCHeader(props) {
         <div style={{
                 color:hexColor,
                 fontSize:fontSize,
-                fontWeight:fontWeight,
+            fontWeight: fontWeight,
+            fontFamily: "sans-serif",
                 marginTop:"0.1rem",
                 marginBottom: "0.3rem",
                 transitionDuration: "1.5s",

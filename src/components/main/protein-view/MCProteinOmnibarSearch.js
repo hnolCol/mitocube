@@ -9,6 +9,7 @@ import useDebounce from "../../../hooks/useDebounce";
 import { filterArrayBySearchString } from "../../utils/Filter";
 import { MCSimpleResponseCheck } from "../../utils/ResponseChecks";
 import { useQuery } from "react-query"
+import { getFeatureDetails } from "../../../requests/MCFeatureRequests";
 
 // if (!_.isEqual(prevProps.filter,this.props.filter)){
 //     this._asyncDataFetch()
@@ -26,14 +27,17 @@ import { useQuery } from "react-query"
     export function OmnibarItem(props) {
         
         const { item, onSelect, featureLabels, handleClose} = props
-        
         const handleSelectAndClose = (e) => {
-                onSelect(props.item)
+
+            onSelect(props.item)
+            if (_.isFunction(handleClose)) {
                 handleClose()
+            }
+                
             }
     
         return(
-            <div key={item["Entry"]} onClick={handleSelectAndClose} style={{padding:"0em 0.3em"}}>
+            <div key={item["Entry"]} onClick={handleSelectAndClose} style={{padding:"0em 0.3em", maxWidth:"90vh"}}>
             <div className={"omnibar-search-item"} >
     
             <div style={{margin:"3px"}}>
@@ -46,8 +50,10 @@ import { useQuery } from "react-query"
             </div>
             <div style={{fontSize:"10px",marginTop:"2px",marginLeft:"10px",paddingBottom:"4px",clear: "both", wordWrap:"break-word"}}>
                 <p>{`Synonyms: ${item[featureLabels["sub-main"]]}`}</p>
-                <p className="item-organism">{item[featureLabels["bold-sub-text"]]}</p>
+                        <p className="item-organism">{item[featureLabels["bold-sub-text"]]}</p>
+                <div style={{maxWidth:"100$"}}>
                 <p>{item[featureLabels["info"]]}</p>
+                </div>
             </div>
     
             </div>
@@ -59,15 +65,16 @@ import { useQuery } from "react-query"
 
 
 export function MCProteinSearch(props) {
-    
+    // handle search for proteins in the protein centric view.
     const { isOpen, onClose, token, filter, onItemSelect} = props
     const [featureDeatails, setFeatureDetails] = useState({items : [], featureLabels : {}, itemsToShow : [], searchString : "", sortBy : ""})
     const debounceSearchString = useDebounce(featureDeatails.searchString, 400)
     
     const getFeatureDetails = async () => {
+        //fetch data from api
         const res = await axios.post("/api/features/details",
                         { filter: filter, token: token }, 
-            { headers: { 'Content-Type': 'application/json' } })
+                        { headers: { 'Content-Type': 'application/json' } })
         
         return res.data
 
@@ -87,7 +94,7 @@ export function MCProteinSearch(props) {
                 }
             },
             refetchOnWindowFocus: false,
-            enabled: _.isString(token) && _.isObject(filter)
+            enabled: _.isString(token) 
     })
 
     useEffect(() => { 
@@ -130,8 +137,13 @@ export function MCProteinSearch(props) {
               return null;
             }
         return (
-            <OmnibarItem key={item.Entry} item={item} handleClose={onClose} onSelect={onItemSelect} featureLabels={featureDeatails.featureLabels} />
-                //<MenuItem  text={item.Entry} />
+            <OmnibarItem
+                key={item.Entry}
+                item={item}
+                handleClose={onClose}
+                onSelect={onItemSelect}
+                featureLabels={featureDeatails.featureLabels} />
+               
             );
           }
 

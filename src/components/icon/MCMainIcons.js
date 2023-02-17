@@ -7,6 +7,109 @@ const defaultArea = {fill:"#DEDEDE",stroke:"#000000",strokeWidth:0.4,strokeMiter
 const defaultTableCell = {fill:"#FFFFFF",stroke:"#000000",strokeWidth:0.3,strokeMiterlimit:10}
 const lineStyle = {fill:"none",stroke:"#000000",strokeWidth:0.4,strokeMiterlimit:10}
 
+
+export function MCSubmissionIconDash(props) {
+    const {mouseIn, setMouseIn} = props
+    
+
+    const st0Style = {fill : mouseIn?"#D03900":"#2F5598"}
+    const st1Style = {fill: "none", stroke: "#020203", strokeWidth: 0.2, strokeMiterlimit: 10}
+    const st2Style = {fill: "#D4D4D4", stroke: "#000000", strokeWidth: 0.2, strokeMiterlimit: 10}
+    const st3Style = {fill : "#277886"}
+    return (
+        
+        <motion.svg
+            width={"32px"}
+            height={"32px"}
+            viewBox={"0 0 32 32"}
+            xmlns="http://www.w3.org/2000/svg"
+            xmlnsXlink="http://www.w3.org/1999/xlink"
+            >
+        
+            <g>
+                
+            <g>
+                    <path
+                        className="icon-transition"
+                        style={st0Style}
+                        d="M12.2,16.4c0,0-1.6,1.2-2.3,0.4c-0.5-0.5-1.4-0.7-2.2,0c-0.7,0.7-1.9,0.3-2.2,0c-0.7-0.7-1.3-0.4-1.3-0.4v8.9
+                    c0,0,0,0.1,0,0.2c0,1.6,1.8,2.9,4,2.9s4-1.3,4-2.9c0-0.1,0-0.2,0-0.2v-8.9H12.2z"/>
+            </g>
+            <path style={st1Style} d="M12.3,9.6h-8v15.6l0,0c0,0,0,0.1,0,0.2c0,1.6,1.8,2.9,4,2.9s4-1.3,4-2.9c0-0.1,0-0.2,0-0.2l0,0L12.3,9.6
+                L12.3,9.6z"/>
+                <rect x="4.9" y="3.7" style={st2Style} width="6.9" height="3.3"/>
+            <g>
+                <path style={st0Style} className="icon-transition" d="M27.7,21.2l-0.1,3.9c0,0,0,0.1,0,0.2c0,1.6-1.8,3-3.9,3s-4-1.3-4-2.9c0-0.1,0-0.2,0-0.2v-5.4
+                    c0,0,0.2-0.7,1.6,0c0.3,0.1,1.5,0.7,2.2,0c0.7-0.7,1.6-0.6,2.2,0l2.1,0.7"/>
+            </g>
+            <g>
+                <path style={st1Style} d="M27.6,9.5h-8v15.6l0,0c0,0,0,0.1,0,0.2c0,1.6,1.8,2.9,4,2.9s4-1.3,4-2.9c0-0.1,0-0.2,0-0.2l0,0L27.6,9.5
+                    L27.6,9.5z"/>
+                    <rect x="20.3" y="3.7" style={st2Style} width="6.9" height="3.3"/>
+                <path style={st2Style} d="M28.3,9.5H19c-0.7,0-1.3-0.5-1.3-1.3V8.1c0-0.7,0.5-1.3,1.3-1.3h9.5c0.7,0,1.3,0.5,1.3,1.3v0.1
+                    C29.6,8.9,29.1,9.5,28.3,9.5z"/>
+            </g>
+            <path style={st3Style} d="M23.8,20.4"/>
+                <path style={st2Style} d="M13,9.6H3.6c-0.7,0-1.3-0.5-1.3-1.3V8.2C2.3,7.6,2.8,7,3.6,7H13c0.7,0,1.3,0.5,1.3,1.3v0.1
+                C14.2,9.1,13.7,9.6,13,9.6z"/>
+        </g>
+            
+        </motion.svg>
+    )
+}
+
+
+
+export function MCDatasetDashIcon(){
+
+
+    const st0Style = {fill:"none",stroke:"#000000",strokeWidth:0.5,strokeMiterlimit:10}
+	const st1Style ={fill:"#B7B6B6",stroke:"#000000",strokeWidth:0.5,strokeMiterlimit:10} //#2F5598
+    const st2Style = { fill: "#E3E3E3", stroke: "#000000", strokeWidth: 0.8, strokeMiterlimit: 10 }
+        
+    
+    return (
+        
+        <svg
+            width={"32px"}
+            height={"32px"}
+            viewBox={"0 0 32 32"}
+            xmlns="http://www.w3.org/2000/svg"
+            xmlnsXlink="http://www.w3.org/1999/xlink"
+        >
+            <g>
+            <line style={{...st0Style}} x1="4.4" y1="7.8" x2="27.7" y2="7.8"/>
+            <line style={{...st0Style}} x1="4.4" y1="4.1" x2="4.4" y2="28"/>
+            <line style={{...st0Style}} x1="27.7" y1="4.1" x2="27.7" y2="28"/>
+            <path style={{...st0Style}} d="M27.7,11.4"/>
+            <path style={{...st0Style}} d="M4.4,11.4"/>
+            <path style={{...st0Style}} d="M27.7,14.9"/>
+            <path style={{...st0Style}} d="M4.4,14.9"/>
+            <path style={{...st0Style}} d="M27.7,18.5"/>
+            <path style={{...st0Style}} d="M4.4,18.5"/>
+            <path style={{...st0Style}} d="M27.7,22"/>
+            <path style={{...st0Style}} d="M4.4,22"/>
+            <line style={{...st0Style}} x1="4.4" y1="28" x2="27.7" y2="28"/>
+            <rect x="4.4" y="4" style={{...st1Style}} width="23.3" height="3.8"/>
+            <path style={{...st0Style}} d="M13.1,28"/>
+            <path style={{...st0Style}} d="M13.1,4.1"/>
+            <path style={{...st0Style}} d="M18.9,28"/>
+            <path style={{...st0Style}} d="M18.9,4.1"/>
+            <path style={{...st0Style}} d="M7.3,28"/>
+            <path style={{...st0Style}} d="M7.3,4.1"/>
+            <path style={{...st0Style}} d="M24.8,28"/>
+            <path style={{...st0Style}} d="M24.8,4.1"/>
+            <rect x="4.4" y="10.8" style={{...st2Style}} width="23.3" height="2.9"/>
+            <rect x="4.4" y="16.5" style={{...st2Style}} width="23.3" height="2.9"/>
+            <rect x="4.4" y="22.3" style={{...st2Style}} width="23.3" height="2.9"/>
+            <line style={{...st0Style}} x1="10.2" y1="4.1" x2="10.2" y2="28"/>
+            <line style={{...st0Style}} x1="16" y1="4.1" x2="16" y2="28"/>
+            <line style={{...st0Style}} x1="21.8" y1="4.1" x2="21.8" y2="28"/>
+            </g>
+        </svg>
+    )
+}
+
 export const MCNeoNtermiomicsIcon = (props) => {
     const [mouseIn, setMouseIn] = useState(false)
 

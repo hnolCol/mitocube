@@ -58,14 +58,15 @@ class FeatureFinder(object):
 
         return []
 
-    def getFeatureInfoFromDB(self,featureIDs : List[str] = list(), filter = dict()) -> List[Dict[str,str]]:
+    def getFeatureInfoFromDB(self,featureIDs : List[str] = list(), filter = dict(), annotationColumns : List[str] = None) -> List[Dict[str,str]]:
         """
         Returns database annotations for features in list featureIDs. If an empty list is given
         all available features are returned of the datasets that match the filter (dict).
         """
         
         if hasattr(self,"DB") and self.DB is not None:
-            annotationColumns = self.data.getAPIParam("db-feature-annotations")
+            if annotationColumns is None:
+                annotationColumns = self.data.getAPIParam("db-feature-annotations")
             if len(featureIDs) == 0:
                 featureIDs = self.getFeatures(filter = filter)
             return self.DB.getDBInfoForFeatureList(featureIDs,requiredColNames = annotationColumns)

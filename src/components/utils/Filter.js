@@ -9,3 +9,22 @@ export function filterArrayBySearchString(searchString, array, searchColumns) {
     const isMatch = arrayItem => _.filter(searchColumns.map(v => re.test(arrayItem[v]))).length > 0
     return _.filter(array, isMatch)
 }
+
+export function filterDatasetsByDataIDs (datasets, dataIDs) {
+        // filter the array of objects datasets using another array of dataIDs.
+        if (_.isArray(dataIDs) && _.isArray(datasets)) {
+            return _.filter(datasets, (datasetProps) => dataIDs.includes(datasetProps.dataID))
+        }
+        return []
+  }
+    
+export function handleSearchTagBasedFiltering (datasets, searchTags, searchNames) {
+    //and based filtering
+    let filteredDataIDs = searchTags.map(searchTag => {
+        return (
+            filterArrayBySearchString(searchTag,datasets,searchNames).map(o=>o.dataID) //easier to compare just dataIDs to find intersection.
+        )
+    })
+    let dataIDs = _.intersection(...filteredDataIDs)
+    return filterDatasetsByDataIDs(datasets, dataIDs)
+}

@@ -14,35 +14,56 @@ class PTMView(Resource):
         """
         self.token = kwargs["token"]
         self.ptmManager  = kwargs["ptm"]
+        self.libs = kwargs["libs"]
 
     def get(self):
         ""
         token = request.args.get('token', default="None", type=str)
         featureID = request.args.get('featureID', default="None", type=str)
+        #print(featureID)
+        r = self.libs.getLibEntriesByFeatureID([featureID])
+        print(r)
+        print("///")
+        libPeptidePositions, N = self.ptmManager.localizeLibFeatures(featureID,r)
+        print(libPeptidePositions)
+        print("====")
+       # print(r)
+        #fake data to mimic something.
         pepitdes  = np.array([[5,34],[-5,34],[15,30],[45,60],[29,46],[61,70],[1,4],[250,290],[240,295],[230,260]])#start, end, id
         peptides2 = np.array([[6,34],[13,30],[45,60],[29,46],[61,70],[1,4]])#start, end, id
         peptides3 = np.array([[126,134],[220,246]])#start, end, id
         activeSites = np.array([[20,25]])
 
+
+
         self.ptmManager.getPTMPeptides([featureID])
-        N = 300
-        r = {}
+       # N = 300
+        response = {}
         annotations = OrderedDict([
                 ("Active Site" , pd.DataFrame(activeSites,columns=["start","end"])), 
                 ("Phosphorylation" , pd.DataFrame(pepitdes,columns=["start","end"])), 
                 ("Acetlyation" , pd.DataFrame(peptides2,columns=["start","end"])),
-                ("Glocylsation" , pd.DataFrame(peptides3,columns=["start","end"]))
-            ])
+                ("Glocylsation" , pd.DataFrame(peptides3,columns=["start","end"]))] + [(libName,pd.DataFrame(libPeptidePos,columns=["start","end"])) for libName, libPeptidePos in libPeptidePositions.items()])
+               
+            
+        # else:
+        #     annotations = OrderedDict([
+        #         ("Active Site" , pd.DataFrame(activeSites,columns=["start","end"])), 
+        #         ("Phosphorylation" , pd.DataFrame(pepitdes,columns=["start","end"])), 
+        #         ("Acetlyation" , pd.DataFrame(peptides2,columns=["start","end"])),
+        #         ("Glocylsation" , pd.DataFrame(peptides3,columns=["start","end"])),
+        #         ("HEK-GFP" , pd.DataFrame(libPeptidePositions,columns=["start","end"]))
+        #     ])
 
         
-        annotationPositioned, sites = self.ptmManager.annotations(N,annotations).calculatePostions()
+        annotationPositioned, sites = self.ptmManager.annotations(N,annotations).calculatePostions(False)
        # print(ptmAnnotations)
-        r["annotations"] = annotationPositioned
-        r["sites"] = sites
-        r["length"] = N 
-        r["success"] = True
+        response ["annotations"] = annotationPositioned
+        response ["sites"] = sites
+        response ["length"] = N 
+        response ["success"] = True
             
-        return r
+        return response
 
 class PTMItems(Resource):
     def __init__(self,*args,**kwargs):
