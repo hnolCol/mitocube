@@ -51,7 +51,7 @@ staticDatasets, staticUniprot = os.path.join(pathToStaticData,"datasets"), os.pa
 pathToPerformance = os.path.join(pathToDynamicData,"performance")
 pathToSubmission = os.path.join(pathToDynamicData,"submissions")
 #creating folders if they do not exists, should actually only happen on first start.
-for p in [pathToStaticData,pathToDynamicData,staticDatasets, staticUniprot,pathToPerformance,pathToSubmission,pathToArchive]:
+for p in [pathToStaticData,pathToDynamicData,staticDatasets, staticUniprot, pathToPerformance, pathToSubmission, pathToArchive, pathToLibs]:
         if not os.path.exists(p):
                 Path(p).mkdir(parents=True,exist_ok=True)
 
