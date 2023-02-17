@@ -89,7 +89,7 @@ class Libraries(object):
 
     def addLibsFromFolder(self,folderToLibs : str) -> None:
         """"""
-        
+       
         libs = [libName for libName in os.listdir(folderToLibs) if os.path.isdir(os.path.join(folderToLibs,libName))]
         for libName in libs:
             pathToLib = os.path.join(folderToLibs,libName)

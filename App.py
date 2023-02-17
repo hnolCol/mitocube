@@ -45,19 +45,15 @@ pathToAPIConfig = os.path.join(app.root_path,"backend","config","docs") #should 
 pathToStaticData = os.path.join(pathToDataFolder,"static")
 pathToLibs = os.path.join(pathToStaticData,"dbs","library")
 
-if not os.path.exists(pathToDataFolder):
-        #move to separate function and do more checking!
-        pathToStaticData = os.path.join(pathToDataFolder,"static")
-        pathToDynamicData = os.path.join(pathToDataFolder,"dynamic")
-        staticDatasets, staticUniprot = os.path.join(pathToStaticData,"datasets"), os.path.join(pathToStaticData,"dbs","uniprot")
-        pathToPerformance = os.path.join(pathToDynamicData,"performance")
-        pathToSubmission = os.path.join(pathToDynamicData,"submissions")
-        #creating folders if they do not exists, should actually only happen on first start.
-        for p in [pathToStaticData,pathToDynamicData,staticDatasets, staticUniprot,pathToPerformance,pathToSubmission]:
+pathToStaticData = os.path.join(pathToDataFolder,"static")
+pathToDynamicData = os.path.join(pathToDataFolder,"dynamic")
+staticDatasets, staticUniprot = os.path.join(pathToStaticData,"datasets"), os.path.join(pathToStaticData,"dbs","uniprot")
+pathToPerformance = os.path.join(pathToDynamicData,"performance")
+pathToSubmission = os.path.join(pathToDynamicData,"submissions")
+#creating folders if they do not exists, should actually only happen on first start.
+for p in [pathToStaticData,pathToDynamicData,staticDatasets, staticUniprot,pathToPerformance,pathToSubmission,pathToArchive]:
+        if not os.path.exists(p):
                 Path(p).mkdir(parents=True,exist_ok=True)
-
-elif not os.path.exists(pathToArchive):
-        os.mkdir(pathToArchive)
 
 #define data helpers
 dbManager = DBFeatures(pathToDB=pathToDB)
