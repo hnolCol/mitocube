@@ -24,13 +24,14 @@ import { MCSampleSubmission } from './components/submission/MCSampleSubmission';
 import { MCAdminLogin } from './components/main/admin/Login';
 import { getMitoCubeAdminToken } from './components/utils/Misc';
 import { MCSubmissionAdminView  } from './components/main/admin/submission/MCSubmissionAdminView';
-import { MCPerformanceView } from "./components/performance/MCPerformanceView"
+import { MCPerformanceView } from "./components/main/admin/performance/MCPerformanceView"
 import { MCAdminUserView } from './components/main/admin/user/User';
 import { removeMitoCubeAdminToken } from "./components/utils/Misc"
 import { MCPTMView } from './components/main/ptm-view/MCPTMView';
 import { MCInstallationHelp } from './components/main/help/Installation';
 import { MCConfigHelp } from './components/main/help/Config';
 import { MCAdminDatasets } from './components/main/admin/datasets/MCAdminDatasets';
+import _ from 'lodash';
 
 
 
@@ -67,7 +68,7 @@ MCHelpText.defaultProps = {
 
 function App() {
 
-  const [isAuthenthicated, setAuthenticationState] = useState({isAuth:false,token:null})
+  const [isAuthenthicated, setAuthenticationState] = useState({isAuth:false,token:null,pages:{}})
   const [isAdminAuthenthicated, setAdminAuthenticationState] = useState({isAuth:false,token:null,superAdmin:false})
   const location = useLocation();
   const navigate = useNavigate();
@@ -75,16 +76,17 @@ function App() {
   useEffect(() => {
     
     const tokenString = getMitoCubeToken()
-    if (tokenString === undefined && tokenString !== "") setAuthenticationState({isAuth:false,token:null})
+    if (tokenString === undefined && tokenString !== "") setAuthenticationState(prevValues => {return {...prevValues,isAuth:false,token:null}})
     axios.post('/api/token/valid',
           {token:tokenString}, 
-          {headers : {'Content-Type': 'application/json'}}).then(response => {
-            if (response.status === 200 & response.data) {
-                setAuthenticationState({isAuth:true,token:tokenString})
+      { headers: { 'Content-Type': 'application/json' } }).then(response => {
+            let responseData = response.data
+            if (response.status === 200 && _.has(responseData,"success") && responseData["success"] && _.has(responseData,"pages")) {
+                setAuthenticationState(prevValues => {return {...prevValues,isAuth:responseData["success"],token:tokenString, pages : responseData["pages"]}})
                 navigate(location)
             }
             else {
-              setAuthenticationState({isAuth:false,token:null})
+              setAuthenticationState(prevValues => {return {...prevValues,isAuth:false,token:null}})
             }
       })
   },[]);
@@ -121,7 +123,7 @@ function App() {
     <div className='App-header'>
       {/* < MCIcon width = {"200px"}/> */}
       <Routes>
-        <Route path="/" element={<Welcome isAuthenthicated = {isAuthenthicated.isAuth} setAuthenticationSate = {setAuthenticationState}/>} />
+        <Route path="/" element={<Welcome isAuthenthicated={isAuthenthicated.isAuth} setAuthenticationSate={setAuthenticationState} pages={isAuthenthicated.pages}/> } />
         {/* <Route path="/h" element={<MCCubeButton/>} /> */}
         <Route path="/dataset/:dataID" element={
             <MCProtectedRoute isAuthenthicated={isAuthenthicated.isAuth}>

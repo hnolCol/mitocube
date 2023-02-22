@@ -28,12 +28,13 @@ class LoginWebsite(Resource):
         self.pwHash = generate_password_hash(self.data.getWebsitePassword())
         
     def post(self):
-        "Returns features in data"
+        "Returns Token String and Pages to be shown"
         data = json.loads(request.data, strict=False)
+        pages = self.data.getAPIParam("pages")
         if "pw" in data:
             if check_password_hash(self.pwHash,data["pw"]):
                 tokenString = self.token.createToken()
-                return {"success":True,"token":tokenString}
+                return {"success":True,"token":tokenString,"pages" : pages}
     
         return {"success":False,"token":None}
 
@@ -151,14 +152,18 @@ class TokenValid(Resource):
         """
         """
         self.token = kwargs["token"]
+        self.data = kwargs["data"]
     
     def post(self):
         "Returns features in data"
         data = json.loads(request.data, strict=False)
+        pages = self.data.getAPIParam("pages")
         if "token" in data:
-            return self.token.isValid(data["token"])
+            return {
+                "success" : self.token.isValid(data["token"]), 
+                "pages" : pages}
             
-        return False
+        return {"success" : False}
         
 class AdminTokenValid(Resource):
     def __init__(self,*args,**kwargs):

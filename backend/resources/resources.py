@@ -1,7 +1,7 @@
 from .dataset.AdminDataset import AdminDataset
 from .dataset.Summary import DatasetsSummary
 from .dataset.Params import DatasetParams
-from .dataset.FileStorage import FileStorageService
+from .dataset.FileStorage import FileStorageService, FileStorageServiceWithoutToken
 from .dataset.Details import DatasetDetails, DatasetGroupings, DatasetExperimentalInfo, DatasetsHeatmap, DatasetsVolcano, DatasetSearch
 from .dataset.MitoMap import DatasetsMitoMap
 from .feature.Features import Features, FeaturesInDatasets, FeatureDetails, FeatureDBInfo, FeatureSummary
@@ -34,7 +34,7 @@ mitoCubeResources = [
     {
         "url":'/api/token/valid',
         "obj":  TokenValid,
-        "reqKwargs" : ["token"]
+        "reqKwargs" : ["token","data"]
     },
     {
         "url":'/api/token/admin/valid',
@@ -44,6 +44,11 @@ mitoCubeResources = [
     {
         "url":'/api/dataset',
         "obj": FileStorageService,
+        "reqKwargs" : ["data","token"]
+    },
+    {
+        "url":'/api/dataset/instantclue',
+        "obj": FileStorageServiceWithoutToken,
         "reqKwargs" : ["data","token"]
     },
     # {

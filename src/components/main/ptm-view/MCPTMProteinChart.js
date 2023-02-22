@@ -54,7 +54,7 @@ function MCPTMPeptide(props) {
 
     const handleMouseOver = (e) => {
         setMouseOverMe(true)
-        setMouseOverItem(xStart,xEnd,y,annotationID,data.start,data.end)
+        setMouseOverItem(xStart,xEnd,y,annotationID,data.start,data.end,data.pepSequence)
     } 
 
     const handleMouseLeave = (e) => {
@@ -161,7 +161,7 @@ function MCPTMView (props) {
        
     }),[margin.left,width,margin.right,chartData.length])
 
-    const handleMouseOverItem = (xStart, xEnd, yStart, itemID, pepStart, pepEnd) => {
+    const handleMouseOverItem = (xStart, xEnd, yStart, itemID, pepStart, pepEnd, pepSequence) => {
         if (yStart === undefined){
             setMouseOverItem(undefined)
             return
@@ -171,16 +171,12 @@ function MCPTMView (props) {
         let siteTextLabel = _.isArray(chartData.sites[itemID])?_.join(chartData.sites[itemID].map(siteDetails => siteDetails.label),", "):""
         let margin = 5
         let placeToRight = xStart < width *0.6
-        let toolTipWidth = 110 // widht et lteast 200 
+        let toolTipWidth = pepSequence !== undefined && pepSequence.length * 8 > 120 ? pepSequence.length * 8  : 120 // widht et lteast 200 
         let toolTipHeight = numberOfTextLines * 13
-        let toolTipTop = yStart < height / 1.5
+        let toolTipTop = yStart + toolTipHeight > 0.75 * height
         let xTooltip = placeToRight ? xEnd + margin : xStart - toolTipWidth - margin
-        var yTooltip = toolTipTop ? yStart + itemHeight / 2 : yStart - toolTipHeight + itemHeight/2
-        
-        if (yTooltip + toolTipHeight > height) {
-            // mare sure tooltip does not fall out
-            yTooltip = yTooltip - (yTooltip + toolTipHeight - height + margin)
-        }
+        var yTooltip = toolTipTop ? yStart - toolTipHeight - itemHeight: yStart + itemHeight / 2 
+
 
         
         setMouseOverItem({
@@ -189,9 +185,10 @@ function MCPTMView (props) {
                 peptiderect : {xStart: xStart, xEnd : xEnd, yStart : yStart},
                 width : toolTipWidth, 
                 height : toolTipHeight,
-                texts : [`Sites : ${siteTextLabel}`, 
-                        `Length : ${pepEnd-pepStart+1}`,
-                        `Span : ${pepStart} - ${pepEnd}`]
+            texts: [`Sites : ${siteTextLabel}`, 
+                    `${pepSequence}`,
+                    `Length : ${pepEnd-pepStart+1}`,
+                    `Span : ${pepStart} - ${pepEnd}`]
             })
     }
 
@@ -242,7 +239,7 @@ function MCPTMView (props) {
                                             handleClick = {handleOnAnnotationClick}
                                             data={peptidePositions} 
                                             xscale={xscale}
-                                            yStart = {yStart} 
+                                            yStart={yStart} 
                                             itemHeight= {itemHeight}
                                             fillColor = {mouseOverIdx===undefined?annotationColors[v]:mouseOverIdx===idx?annotationColors[v]:"grey"}
                                             setMouseOverItem = {handleMouseOverItem}

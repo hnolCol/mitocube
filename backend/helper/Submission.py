@@ -226,7 +226,6 @@ class Submission(object):
         ""
         dataIDs = self._getListOfSubmissions()
         submissionStates = self.data.getAPIParam("submission-states")
-        #submissionSatesCounts = dict([(s,0) for s in submissionStates])
         submissions = []
         for dataID in dataIDs:
             params = self._readParams(dataID)
@@ -253,6 +252,7 @@ class Submission(object):
         if "dataID" not in sampleSubmission:
             return False
         dataID = sampleSubmission["dataID"]
+        #check folder
         if dataID in self._getListOfSubmissions():
             return False
         _, pathToParamFile = self._createFolder(dataID)

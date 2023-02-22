@@ -155,6 +155,7 @@ class DataSubmissionDetails(Resource):
                 sampleSubmission = OrderedDict() 
                 #extract time and State from submission
                 submissionDetails = self.submission.data.getAPIParam("submission-details")
+                dateSubmissionHeader = [submissionDetail["name"] for submissionDetail in submissionDetails if submissionDetail["field"] == "date-input" and "name" in submissionDetail]
                 experimentalInfoHeaders = ["Research Aim","Sample Preparation","Additional Information"] #these are combined to create hierarchy. (admins can add further methods)
                 submissionHeaders = ["Creation Date","State","dataID"] + [submissionDetail["name"] for submissionDetail in  submissionDetails if  
                                 "name" in submissionDetail and submissionDetail["name"] not in experimentalInfoHeaders]
@@ -163,9 +164,15 @@ class DataSubmissionDetails(Resource):
                     if submissionHeader in submission: #likely only dataID
                         sampleSubmission[submissionHeader] = submission[submissionHeader]
                     elif submissionHeader in submission["details"]:
-                        sampleSubmission[submissionHeader] = submission["details"][submissionHeader]
+                        if submissionHeader in dateSubmissionHeader:
+                            dateString = submission["details"][submissionHeader]
+                            if "-" in dateString:
+                                dateString = dateString.replace("-","")
+                            sampleSubmission[submissionHeader] = dateString
+                        else:
+                            sampleSubmission[submissionHeader] = submission["details"][submissionHeader]
                     else: 
-                        return {"success":False,"msg":"Could not find: {}.".format(submissionHeader)}
+                        return {"success":False,"msg":"The API expected more information. Could not find: {}.".format(submissionHeader)}
                 #manage experimental info 
                 sampleSubmission["Experimental Info"] = [
                     {

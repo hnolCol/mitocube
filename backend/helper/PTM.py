@@ -54,7 +54,7 @@ class PTMPeptidePosition:
 
 class PTMAnnotations:
 
-    def __init__(self, proteinLength : int, annotations : Dict[str,np.array]) -> None:
+    def __init__(self, proteinLength : int, annotations : Dict[str,np.array], peptideSequences = Dict[str,np.array]) -> None:
         """
         annotations :   The key of the dict indicates the annotation (PTM, secondary structures)
                         Values are np arrays of length of at least n column 2 indicating start and stop.
@@ -62,6 +62,7 @@ class PTMAnnotations:
         self.proteinLength = proteinLength
         self.annotations = annotations
         self.NAnnotatios = len(self.annotations)
+        self.peptideSequences = peptideSequences
         self.annotationLabelPositions = OrderedDict([(k,0) for k in self.annotations])
         self.annotationPositions = OrderedDict()
 
@@ -74,6 +75,8 @@ class PTMAnnotations:
         for annotation, positions in self.annotations.items():
             positionArray, foundPositions = PTMPeptidePosition(self.proteinLength,positions)()
             positions = pd.DataFrame(foundPositions, columns=["idx","rowIdx","start","end"])
+            if annotation in self.peptideSequences:
+                positions["pepSequence"] = self.peptideSequences[annotation]
             positions["id"] = [getRandomString(4) for _ in range(positions.index.size)]
             if ptm:
                 sites = dict([(peptideID,[{
@@ -119,11 +122,12 @@ class PTMManger:
     def localizeLibFeatures(self,featureID, libSearch : dict):
         ""
         
-        featureSequence = self.featureFinder.getFeatureInfoFromDB([featureID],annotationColumns = ["Sequence"])
+        featureSequence = self.featureFinder.getFeatureInfoFromDB([featureID], annotationColumns = ["Sequence"])
         sequence = featureSequence[0]["Sequence"]
         r = {}
         for libName, libData in libSearch.items():
             libEntries = []
+            
             libfeatures = libData["Stripped.Sequence"].values
             if libfeatures.size == 0:
                 continue
@@ -131,12 +135,15 @@ class PTMManger:
                 start = sequence.find(libFeature)
                 end = start + len(libFeature)
                 libEntries .append([start,end])
-            r[libName] = np.array(libEntries)
-        return r, len(sequence)
+            r[libName] = {}
+            r[libName]["positions"] = np.array(libEntries)
+            r[libName]["features"] = libfeatures
+        return r, len(sequence), sequence
+
     def getPTMPeptides(self, featureIDs):
         """"""
         dataIDsMapper = self.featureFinder.getDatasets(featureIDs,filter={"PTM":"True"},featureSpecFilter = {})
-        print(featureIDs,dataIDsMapper)
+       # print(featureIDs,dataIDsMapper)
         for featureID, dataIDs in dataIDsMapper.items():
             print(dataIDs)
             for dataID in dataIDs:

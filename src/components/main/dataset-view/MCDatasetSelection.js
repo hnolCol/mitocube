@@ -179,14 +179,19 @@ function MCSearchDatasetsDialog(props) {
         onClose()
     }
 
+    const resetSearch = (e) => {
+        setSearchProps(initialSearchPropState) 
+        setTags([])
+    }
+
     return (
         <Dialog
             style = {{width:"100vh"}}
             {...{ isOpen }}
             onClose={handleClose}
-            onClosing={() => setSearchProps(initialSearchPropState)}
-            canEscapeKeyClose={false}
-            canOutsideClickClose={false}>
+            onClosing={resetSearch}
+            canEscapeKeyClose={true}
+            canOutsideClickClose={true}>
                 <div className="middle-m">
                     <MCHeader text="Search for protein in datasets." />
                 <p>Please enter a search string and select features, you will be able to filter the datasets based on the fact if the protein(s) was/were found in the dataset.</p>
@@ -413,6 +418,7 @@ export function MCDatasetSelection (props) {
 
     const resetTagsAndFilters = () => {
         // reset all filter options. (e.g. show all datasets)
+        console.log("worked?")
         setDataSummary(prevValues => {
             return {
                 ...prevValues,
@@ -433,27 +439,28 @@ export function MCDatasetSelection (props) {
             <MCHeader text="Dataset Selection" fontSize="1.5rem"/>
             </div>
             <MCSearchDatasetsDialog isOpen={searchDialogOpen} onClose={() => setSearchDialogOpen(false)} {...{token, "setFilter" : handleFeatureIDFilter}} /> 
-            <div className="hor-aligned-div" style={{minWidth:"100%",paddingRight:"1rem"}}>
-                <div style={{width:"100%",display:"flex",alignItems:"center"}}>
+            <div className="hor-aligned-div" style={{ minWidth: "100%", paddingRight: "1.5rem"}}>
+                
                 <InputGroup 
                         leftIcon={"filter"} 
                         value={dataSummary.searchString}
                         fill={true}
                         placeholder="Search through datasets. Click enter to add a search tag." 
-                        small={true}
+                        small={false}
                         onChange={onInputChange} 
                         onKeyUp={handleKeyUp}
                         rightElement={<div style={{marginRight:"0.5rem",marginTop:"0.2rem"}}><p>{`${dataSummary.toShow.length}/${dataSummary.raw.length}`}</p></div>}
-                />
+                        />
+        
+                <div>
+                    <Button icon="search" onClick={() => setSearchDialogOpen(true)} small={false} intent="primary"/>
                 </div>
                 <div>
-                    <Button icon="search" onClick={() => setSearchDialogOpen(true)} small={true} intent="primary"/>
+                    <Button icon="reset" onClick={resetTagsAndFilters} small={false} intent="danger"/>
                 </div>
-                <div>
-                    <Button icon="reset" onClick={resetTagsAndFilters} small={true} intent="danger"/>
-                </div>
-                
+               
             </div>
+                
 
             <MCTagContainer searchTags={dataSummary.searchTags} handleRemove={removeSearchTag} />
 
@@ -483,11 +490,13 @@ export function MCDatasetSelection (props) {
                         onMouseEnter = {(e) => {setMouseOverDataID(dataset.dataID)}}>
 
                         <div className="little-m"> 
+                            <Link to={`/dataset/${dataset.dataID}?type=summary`} style={{textDecoration:"none",cursor:"pointer"}}>
                             <MCHeader
                                 text={dataset[dataSummary.headerName]}
                                 hexColor={mouseOverDataID === dataset.dataID ? "#2F5597" : mouseOverDataID !== undefined ? "darkgrey" : "#2F5597"}
                                 fontSize={"1.15rem"}
-                                fontWeight={400} />
+                                    fontWeight={400} />
+                            </Link>
                         </div>
 
                         <div className="dataset-tag-box">
@@ -516,7 +525,7 @@ export function MCDatasetSelection (props) {
                         </div>
                        
                 )
-            }):<div><p>No datasets returned from API.</p></div>}
+            }) : <div><p>{dataSummary.toShow.length === 0 && dataSummary.raw.length > 0? "No dataset matches the defined tag and/or search strings." : "No datasets found.returned from API."}</p></div>}
             </div>
 
 

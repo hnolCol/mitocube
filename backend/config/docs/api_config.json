@@ -16,6 +16,13 @@
     "api":{
         "token-valid(h)" : 48,
         "share-token-valid(h)" : 3000,
+        "pages" : {
+            "protein" : 1,
+            "dataset" : 1,
+            "ptm" : 1,
+            "submission" : 1,
+            "admin" : 1  
+        },
         "entries": [
             {
                 "sub":"dataset",

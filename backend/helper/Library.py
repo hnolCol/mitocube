@@ -59,10 +59,11 @@ class Library:
 
     def readEntries(self):
         ""
-        entriesInLib = self.__readDataFile(usecols=["Entry"])
+        entriesInLib = self.__readDataFile(usecols=["Entry"]) #define in config
         self.entries = entriesInLib.loc[~entriesInLib["Entry"].str.contains(";"),:]
+       
 
-        print(self.entries)
+        #print(self.entries)
 
 
 class Libraries(object):

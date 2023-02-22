@@ -670,8 +670,9 @@ hr {
   left: 50%;
   top: 0%;
   font-size: 0.95rem;
+  padding: 1rem;
   height: 90%;
-  width: 80%;
+  width: 85%;
   /* -webkit-transform: translate(50%, 0%);*/
   transform: translateX(-50%);
 }
@@ -769,16 +770,6 @@ hr {
 }
 
 
-.admin-nav-box{
-  min-width: 150px;
-  height : 30px;
-  margin: 2rem;
-  border-radius: 0.25rem;
-  }
-
-.admin-nav-box:hover{
-  background-color: white;
-}
 
 .volcano-container{
   display: grid;
@@ -1157,20 +1148,29 @@ input[type="file"] {
 .admin-navbar{
   position: absolute;
   left: 0;
-  top: 0;
-  height: 100vh;
-  width : 3rem;
-  background-color: white;
+  height: 2rem;
+  width : 100vw;
+  background-color: #efefef;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  align-content: center;
+}
+
+.admin-nav-box{
+  min-width: 150px;
+  border-radius: 0.25rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-
+  font-weight: 200;
+  color: #2F5597;
+  font-size: 1rem;
 }
-.admin-header{
-  transform: rotate(-90deg);
-  color : #b66476;
-  height: 5rem;
 
+
+.admin-nav-box:hover{
+  background-color: white;
 }
 
 .admin-dataset-container {

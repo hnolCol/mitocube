@@ -1,5 +1,6 @@
-import { Button, Navbar, NavbarGroup } from "@blueprintjs/core";
+import { Button, Navbar, NavbarGroup, H1 } from "@blueprintjs/core";
 import _ from "lodash";
+import { Link } from "react-router-dom";
 import { MCDatasetDashIcon, MCDatasetSearchIcon, MCSubmissionIconDash } from "../../../icon/MCMainIcons";
 
 
@@ -10,11 +11,12 @@ export function MCAdminSideNavigation(props) {
 
     return (
         <div className="admin-navbar">
-            <div className="admin-header">
-                Admin
-            </div>
-            <MCSubmissionIconDash />
-            <MCDatasetDashIcon />
+            {["Submissions", "Performance", "Datasets"].map(v => 
+                <div key={v} className="admin-nav-box">
+                <Link style={{textDecoration: "none"}} to = {`/admin/${v.toLowerCase()}`}>
+                        {v}
+                </Link>
+            </div>)}
             
             <div>
                 

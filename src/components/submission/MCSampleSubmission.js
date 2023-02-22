@@ -62,7 +62,6 @@ export function MCSampleSubmission (props) {
     const { isLoading } = useQuery(["getSubID"], getSubmissionID, {
         onSuccess: (data) => {
             if (MCSimpleResponseCheck(data)) {
-                console.log("Hello")
                 setSubmission(
                     {
                         ...data,
@@ -75,32 +74,6 @@ export function MCSampleSubmission (props) {
         enabled : !checkForSavedSubmission()
     })
 
-
-
-    // useEffect(() => {
-    //     //load saved submission.
-    //     let s = getSavedSubmission()
-    //     let submissionHeaders = isObject(s)?Object.keys(s):[]
-    //     if (submissionHeaders.includes("dataID")&&submissionHeaders.includes("time")){
-    //         setSubmission(prevValues => { return { prevValues, ...s } })
-    //     }
-    //     else {
-    //     axios.get('/api/data/submission/id',{params:{token:token}}).then(response => {
-    //             if (response.status === 200 & response.data["success"]){
-    //                     setSubmission({
-    //                         dataID:response.data["dataID"],
-    //                         time:response.data["time"],
-    //                         details:submission.details,
-    //                         groupingTable: initSubmission.groupingTable
-    //                     })
-    //             }
-    //             else {
-    //                 setAlertDetails({isOpen:true,children:<div>{response.data.msg}</div>,icon:"issue"})
-    //             }
-    //         })}
-    //   }, []);
-
-    
     useEffect(() => {
         axios.get('/api/data/submission/details',{params:{token:token}}).then(response => {
             if (response.status === 200 & response.data["success"]) {
@@ -114,7 +87,7 @@ export function MCSampleSubmission (props) {
 
     
     const saveSubmissionValue = (detailName,value,minValue = undefined) => {
-        // handle submission values 
+        // handle submission values , Experimentator is hard coded which should not be - remove! get from API. 
         if (minValue !==undefined && value < minValue) value = ""
         let subDetails = submission.details
         subDetails[detailName] = value
@@ -160,7 +133,7 @@ export function MCSampleSubmission (props) {
 
     const resetForm = () => {
   
-        let detailsWithDefault = Object.fromEntries(details.filter(detailItem => detailItem.default!== undefined && detailItem.default !== "").map(detailItem => [detailItem.name, detailItem.default]))  
+        let detailsWithDefault = Object.fromEntries(details.items.filter(detailItem => detailItem.default!== undefined && detailItem.default !== "").map(detailItem => [detailItem.name, detailItem.default]))  
         setSubmission(prevValues => {
             return { ...prevValues, "details": detailsWithDefault, "groupingTable":initSubmission["groupingTable"]}})
         saveSubmission(null)
@@ -185,7 +158,6 @@ export function MCSampleSubmission (props) {
     }
 
     const handleDataEditing = (value, rowIndex, columnIndex) => {
-        console.log(value, rowIndex, columnIndex)
        
         let tableData = submission.groupingTable
         
@@ -475,6 +447,7 @@ function MCDateInput(props) {
     const handleDateChange = (date) => {
 
         setDateValue(date)
+        
         cb(detailName,date)
 
     }

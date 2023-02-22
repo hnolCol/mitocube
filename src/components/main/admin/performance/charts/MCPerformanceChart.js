@@ -5,9 +5,9 @@ import _ from "lodash"
 import { motion } from "framer-motion"
 import { Text } from "@visx/text"
 
-import { computeMovingAverage, getDomainFromArray, quantile } from "../../utils/Misc"
+import { computeMovingAverage, getDomainFromArray, quantile } from "../../../../utils/Misc"
 import {format} from "d3-format"
-import { sortDates } from "../../utils/Misc"
+import { sortDates } from "../../../../utils/Misc"
 import { localPoint } from "@visx/event"
 
 const scientificNotation = format(".1e")

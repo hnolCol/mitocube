@@ -80,6 +80,10 @@ class DBFeatures:
         ""
         return [colName for colName in columnNames if colName in self.DBs.columns]
 
+    def _getColumnNames(self) -> pd.Series:
+        ""
+        return self.DBs.columns
+
     def update(self) -> None:
         ""
         self.__readData()
@@ -104,7 +108,7 @@ class DBFeatures:
                 return DB.to_dict(orient="index")
             else:
                 DB = self.DBs.loc[idxIntersection,matchedColNames].reset_index().dropna(how="all",axis=1).fillna("-")
-                if  plainExport:
+                if  plainExport: #for export from api 
                     #dict works best
                     return DB.to_dict(orient="records")
                 else:
@@ -142,6 +146,16 @@ class DBFeatures:
                 return self.DBs.loc[idxIntersection,columnName]
             else:
                 return pd.Series([self.DBs.loc[idx,columnName] if idx in idxIntersection else "-" for idx in featureIDs], index=featureIDs)
+    
+    def getPlainDBInfoForFeatureList(self,featureIDs,columnNames = ["Gene names  (primary )"]):
+        ""
+        if len(columnNames) == 0:
+            matchingColumnNames = self._getColumnNames()
+        else:
+            matchingColumnNames = self._findMatchingColumns(columnNames)
+        idxIntersection = self.DBs.index.intersection(featureIDs)
+        return self.DBs.loc[idxIntersection,matchingColumnNames]
+          
 
 
 
@@ -156,6 +170,13 @@ class Dataset:
     data : pd.DataFrame
     params : dict
     dbManager : DBFeatures
+
+
+    def annotateData(self) -> pd.DataFrame:
+        ""
+        DB = self.dbManager.getPlainDBInfoForFeatureList(self.getFeatures(), columnNames=[]) #no columnNames returns all
+       
+        return pd.concat([self.data,DB],join="inner",axis=1).dropna(how="all",axis=1)
 
     def getIsInMask(self,featureIDs) -> Tuple[np.ndarray,bool]:
         """Returns mask and true if featureIDs were found in data.index (bool)"""
@@ -793,6 +814,12 @@ class Data(object):
         """Returns the quantitaive matrix"""
         if self.dataIDExists(dataID):
             return self.dataCollection[dataID].getData()
+
+    def getDataByDataIDWithAnnotations(self,dataID) -> pd.DataFrame:
+        ""
+        if self.dataIDExists(dataID):
+            return self.dataCollection[dataID].annotateData()
+
 
     def getMedianExpression(self,featureIDs,dataID,returnDataQuantiles=False):
         ""

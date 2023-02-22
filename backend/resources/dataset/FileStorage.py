@@ -3,6 +3,40 @@ from flask_restful import Resource
 import json 
 import pandas as pd 
 from ..misc import isTokenInRequestDataValid, isTokenValid, adminTokenInValidResponse, isAdminValid, formatDateAndAddIndexInParam
+from werkzeug.security import generate_password_hash, check_password_hash
+
+
+class FileStorageServiceWithoutToken(Resource):
+    ""
+    def __init__(self,*args,**kwargs):
+        """
+        """
+        self.data = kwargs["data"]
+        self.token = kwargs["token"]
+        self.pwHash = generate_password_hash(self.data.getWebsitePassword())
+
+    def post(self):
+        "Should be post due to pw sending in plaint text"
+        #this should not be the case, showing prupose for seminar.
+        #would be better to login first, then save the token in InstantClue 
+        #add shareToken? 
+        data = json.loads(request.data, strict=False)
+        if "dataID" not in data:
+            return {"success":False,"msg":"DataID not found."}
+        if "pw" in data:
+            if check_password_hash(self.pwHash,data["pw"]):
+                dataID = data["dataID"]
+                if not self.data.dataIDExists(dataID):
+                    return {"success" : False, "msg" : "DataID does not exist."}
+                matrix = self.data.getDataByDataIDWithAnnotations(dataID).reset_index()
+                params = self.data.getParams(dataID)
+                return {
+                    "success" : True, 
+                    "msg" : "Login successful. Data and Groupings will be added to the data frames.", 
+                    "data" : matrix.fillna("NaN").to_dict(), 
+                    "params" : params}
+
+        return {"success" : False, "msg" : "Login not successful. Please check the password."}
 
 class FileStorageService(Resource):
     "Download quantitative matrix."

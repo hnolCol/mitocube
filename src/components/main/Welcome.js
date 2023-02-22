@@ -7,6 +7,7 @@ import { InputGroup, Button, } from "@blueprintjs/core";
 import axios from "axios";
 import { MCHeader } from "../utils/components/MCHeader";
 import { motion } from "framer-motion";
+import { useMutation, useQuery } from "react-query";
 import _ from "lodash"
 
 const WelcomeIcons = {
@@ -40,44 +41,42 @@ function MCWelcomeMenuIcon(props) {
 
 export function Welcome(props) {
 
-    const [pw, pwChange] = useState("")
-    const [infoObject, setInfoObj] = useState({
-            isLoading : false,
-            infoText : ""
-    })
-
+  const { setAuthenticationSate, isAuthenthicated, pages } = props
+  const [pw, pwChange] = useState("")
+  const [infoText, setInfoText] = useState("")
+  
+  const checkWebsitePW = async () => {
+    let res = await axios.post('/api/login',{pw:pw}, {headers : {'Content-Type': 'application/json'}})
+    return res.data
+  }
+  
+  const { isLoading, isFetching, isError, error, refetch } = useQuery("webSitePWCheck", checkWebsitePW, {
+    onSuccess: (data) => {
+      if (_.has(data, "token") && _.has(data, "success") && _.isString(data["token"]) && data["success"]) {
+        localStorage.setItem("mitocube-token", data["token"])
+        if (_.isFunction(setAuthenticationSate)) {
+          setAuthenticationSate(prevValues => { return { ...prevValues, "token": data["token"], isAuth: true, pages : data["pages"]} })
+          setInfoText("")
+        }
+      }
+      else if (_.has(data, "success") && !data["success"]) {
+        setInfoText("Incorrect password. Please try again.")
+      }
+    },
+    onError: () => {setInfoText("")}, //simply reset the info
+    enabled: false,
+    retry: false,
+    refetchOnWindowFocus : false
+  })
+  
+  
    const handleKeyPress = (e) => {
     
      if (e.key === "Enter") {
 
-      checkPW(e)
+      refetch()
    }
   }
-
-    const checkPW =(e) => {
-
-      e.preventDefault() 
-      if (pw.length === 0) {
-        setInfoObj({isLoading:false,"infoText":"Please provide password."})
-        return
-      }
-      setInfoObj({isLoading:true,"infoText":"Password is being checked."})
-      if (props.setAuthenticationSate !== undefined) {
-        axios.post('/api/login' ,
-            {pw:pw}, 
-            {headers : {'Content-Type': 'application/json'}}).then(response => {
-            if (response.status === 200 & "success" in response.data & response.data["success"]) {
-                  setInfoObj({isLoading:false,"infoText":""}) //info text is not visible
-                  localStorage.setItem("mitocube-token",response.data["token"])
-                  props.setAuthenticationSate({isAuth:true,token:response.data["token"]})
-              }
-            else {
-                setInfoObj({isLoading:false,"infoText":"Password is incorrect or API not reached."})
-              }
-        })
-      }
-    }
-    
     return (
       <div>
       <div className="welcome-content">
@@ -100,14 +99,44 @@ export function Welcome(props) {
            */}
         
           
-          {props.isAuthenthicated?
+          {isAuthenthicated?
             <div className="tag-container-evenly">
-               
-              <Link to="/protein"><MCProteinSearchIcon/></Link>
+              {[
+                {
+                  to: "/protein",
+                  icon: <MCProteinSearchIcon />,
+                  pageName: "protein"
+                },
+                {
+                  to: "/ptm",
+                  icon: <MCNeoNtermiomicsIcon />,
+                  pageName: "ptm"
+                },
+                {
+                  to: "/dataset",
+                  icon: <MCDatasetSearchIcon/>,
+                  pageName: "dataset"
+                },
+                {
+                  to: "/submission",
+                  icon: <MCSubmissionIcon />,
+                  pageName: "submission"
+                },
+                {
+                  to: "/admin",
+                  icon: <MCAdministrationIcon/>,
+                  pageName: "admin"
+                },
+              ].map(linkPage => {
+                return(
+                  _.has(pages, linkPage.pageName) && pages[linkPage.pageName] === 1 ? <Link key={linkPage.to} to={linkPage.to}>{linkPage.icon}</Link> : null
+                )
+              })}
+              {/* <Link to="/protein"><MCProteinSearchIcon/></Link>
               <Link to="/ptm"><MCNeoNtermiomicsIcon/></Link>
               <Link to="/dataset"><MCDatasetSearchIcon/></Link>
               <Link to="/submission"><MCSubmissionIcon /></Link>
-              <Link to="/admin"><MCAdministrationIcon/></Link>
+              <Link to="/admin"><MCAdministrationIcon/></Link> */}
             </div>
           :
           <div>
@@ -122,10 +151,10 @@ export function Welcome(props) {
                         onChange = {e => pwChange(e.target.value)}
                     />
             
-              <Button icon="log-in" intent={"primary"} onClick = {checkPW} />
+                <Button icon="log-in" intent={"primary"} onClick={refetch} loading= {isLoading || isFetching } />
               </div>
 
-            <p>{infoObject.infoText}</p>
+            <p>{isLoading || isFetching ? "Loading..." : isError ? `API returned an error of status: (${error.response.status})` : infoText}</p>
           </div>}
           
       

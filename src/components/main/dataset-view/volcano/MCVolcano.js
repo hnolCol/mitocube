@@ -20,6 +20,8 @@ import MCScatterPoint from "./MCScatterPoint";
 import _ from "lodash";
 import axios from "axios";
 import { MCSimpleResponseCheck } from "../../../utils/ResponseChecks";
+import useDebounce from "../../../../hooks/useDebounce";
+import { filterArrayBySearchString } from "../../../utils/Filter";
 
 function MCCreateList(props) {
 
@@ -216,7 +218,7 @@ export function MCVolcanoLoader(props) {
     useEffect(() => {
         if (data!==undefined) return 
         axios.get('/api/data/volcano', { params: { dataID: dataID, grouping: grouping, token: token } }).then(response => {
-            console.log(response.data)
+            //console.log(response.data)
                 if (response.status === 200 && MCSimpleResponseCheck(response.data)){
                     volcanoProps.setVolcanoData(response.data.params)
                 }
@@ -266,9 +268,10 @@ export function MCVolcano(props) {
     const [highlightIndex, setHighlightIndex] = useState([undefined])
     const [zoomActive, setZoomActive] = useState(initZoomState)
     const [labels, setLabels] = useState([])
-    const [search, setSearch] = useState(undefined)
+    const [searchString, setSearchString] = useState(undefined)
     const [grid, toggleGrid] = useToggle(false)
-    
+    const debounceSearchString = useDebounce(searchString, 300)
+
     const {
             margin, 
             width, 
@@ -336,13 +339,16 @@ export function MCVolcano(props) {
         minDistanceY = (zoomActive.yDomain[0] - zoomActive.yDomain[1])*0.01
     }
 
-    const searchWordActive = search!==undefined
+    const searchWordActive = debounceSearchString!==undefined
     const regExpMatchingPoints = useMemo(() => {
-        const searchWordActive = search!==undefined
-        const re = new RegExp(_.escapeRegExp(search), 'i')
-        const isMatch = result => [3,4].map(testIndex => re.test(result[testIndex])).some(a => a) // a===true if at least one index matches
-        return searchWordActive?_.filter(pointsToShow, isMatch):[]
-    }, [search ,pointsToShow])
+        if (debounceSearchString === undefined) return []
+        
+        return filterArrayBySearchString(debounceSearchString,pointsToShow,Object.keys(pointsToShow[0]))
+        // const searchWordActive = debounceSearchString!==undefined
+        // const re = new RegExp(_.escapeRegExp(debounceSearchString), 'i')
+        // const isMatch = result => [3,4].map(testIndex => re.test(result[testIndex])).some(a => a) // a===true if at least one index matches
+        // return searchWordActive?_.filter(pointsToShow, isMatch):[]
+    }, [debounceSearchString ,pointsToShow,searchWordActive])
 
     
     // const re = new RegExp(_.escapeRegExp(search), 'i')
@@ -450,7 +456,7 @@ export function MCVolcano(props) {
         setZoomActive(initZoomState)
         if (filterIndex!==undefined) setFilterIndex(undefined)
         if (highlightIndex.length > 1) setHighlightIndex([undefined])
-        if (search!==undefined) setSearch(undefined)
+        if (searchString!==undefined) setSearchString(undefined)
         if (labels.length > 0)setLabels([])
 
     }
@@ -458,12 +464,12 @@ export function MCVolcano(props) {
 
     const handleSearch = (e) => {
         
-        const seachString = e.target.value 
-        if (seachString.length > 2) {
-            setSearch(seachString)  
+        const searchString = e.target.value 
+        if (searchString.length > 2) {
+            setSearchString(searchString)  
         }  
         else {
-            setSearch(undefined)
+            setSearchString(undefined)
         }
     }
 
@@ -640,7 +646,7 @@ export function MCVolcano(props) {
                 {`
                 n = ${pointsToShow.length}${activeFilterColumn.length === 1?` / ${points.length}`:""}
                 ${activeFilterColumn.length === 1?`(filter=${activeFilterColumn[0][0]})`:""} 
-                ${searchWordActive?`(${regExpMatchingPoints.length} matching '${search}')`:""} 
+                ${searchWordActive?`(${regExpMatchingPoints.length} matching '${debounceSearchString}')`:""} 
                 ${zoomActive.xDomain!==undefined?"zoom active":""}`}</Text>
             <Text x = {margin.left+4} y = {margin.top + 12 } verticalAnchor="start" fontSize={12} {...fontProps}>
                 {`# sig = ${n_significant} 

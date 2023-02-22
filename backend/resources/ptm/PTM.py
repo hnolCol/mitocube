@@ -19,22 +19,19 @@ class PTMView(Resource):
     def get(self):
         ""
         token = request.args.get('token', default="None", type=str)
+        if not self.token.isValid(token):
+            return {"success":False,"msg":"Token is not valid.", "tokenIsValid" : False}
+
         featureID = request.args.get('featureID', default="None", type=str)
-        #print(featureID)
         r = self.libs.getLibEntriesByFeatureID([featureID])
-        print(r)
-        print("///")
-        libPeptidePositions, N = self.ptmManager.localizeLibFeatures(featureID,r)
-        print(libPeptidePositions)
-        print("====")
-       # print(r)
+       
+        libPeptidePositions, N, proteinSequence = self.ptmManager.localizeLibFeatures(featureID,r)
+        
         #fake data to mimic something.
         pepitdes  = np.array([[5,34],[-5,34],[15,30],[45,60],[29,46],[61,70],[1,4],[250,290],[240,295],[230,260]])#start, end, id
         peptides2 = np.array([[6,34],[13,30],[45,60],[29,46],[61,70],[1,4]])#start, end, id
         peptides3 = np.array([[126,134],[220,246]])#start, end, id
         activeSites = np.array([[20,25]])
-
-
 
         self.ptmManager.getPTMPeptides([featureID])
        # N = 300
@@ -43,21 +40,11 @@ class PTMView(Resource):
                 ("Active Site" , pd.DataFrame(activeSites,columns=["start","end"])), 
                 ("Phosphorylation" , pd.DataFrame(pepitdes,columns=["start","end"])), 
                 ("Acetlyation" , pd.DataFrame(peptides2,columns=["start","end"])),
-                ("Glocylsation" , pd.DataFrame(peptides3,columns=["start","end"]))] + [(libName,pd.DataFrame(libPeptidePos,columns=["start","end"])) for libName, libPeptidePos in libPeptidePositions.items()])
-               
-            
-        # else:
-        #     annotations = OrderedDict([
-        #         ("Active Site" , pd.DataFrame(activeSites,columns=["start","end"])), 
-        #         ("Phosphorylation" , pd.DataFrame(pepitdes,columns=["start","end"])), 
-        #         ("Acetlyation" , pd.DataFrame(peptides2,columns=["start","end"])),
-        #         ("Glocylsation" , pd.DataFrame(peptides3,columns=["start","end"])),
-        #         ("HEK-GFP" , pd.DataFrame(libPeptidePositions,columns=["start","end"]))
-        #     ])
-
-        
-        annotationPositioned, sites = self.ptmManager.annotations(N,annotations).calculatePostions(False)
-       # print(ptmAnnotations)
+                ("Glycolysation" , pd.DataFrame(peptides3,columns=["start","end"]))] + [(libName,pd.DataFrame(libPeptides["positions"],columns=["start","end"])) for libName, libPeptides in libPeptidePositions.items()])
+        peptideSequences = dict([(libName,libPeptides["features"]) for libName, libPeptides in libPeptidePositions.items()])
+        annotationPositioned, sites = self.ptmManager.annotations(N,annotations,peptideSequences).calculatePostions(False)
+        #pack everything into the response
+       
         response ["annotations"] = annotationPositioned
         response ["sites"] = sites
         response ["length"] = N 
@@ -76,7 +63,7 @@ class PTMItems(Resource):
         token = request.args.get('token', default="None", type=str)
         
         if token == "None" or not self.token.isValid(token):
-            return {"success":False,"error":"Token is not valid. Please login again."}
+            return {"success":False,"msg":"Token is not valid", "tokenIsValid" : False}
         
         
         #get colors for annotations

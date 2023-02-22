@@ -28,9 +28,9 @@ def getRandomString(N  : int = 20) -> str:
     "returns a random string of N characters"
     return ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k=N))
 
-def getCurrentDate(format : str = "%Y%m%d") -> str:
+def getCurrentDate(dateFormat : str = "%Y%m%d") -> str:
     """Returns the current day in desired format"""
-    return date.today().strftime("%Y%m%d")
+    return date.today().strftime(dateFormat)
 
 def corr2_coeff_rowwise2(A,B):
     A_mA = A - A.mean(1)[:,None]
