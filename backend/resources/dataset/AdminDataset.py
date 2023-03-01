@@ -36,18 +36,3 @@ class AdminDataset(Resource):
         else:
             return {"success":False,"msg":"No datasets found.","tokenIsValid" : True}
 
-        # if params is not None:
-        #     groupItems = OrderedDict([(groupingName, list(groupingItems.keys())) for groupingName, groupingItems in params["groupings"].items()])
-        #     numberFeatures, _ = self.data.dataCollection[dataID].getDataShape()
-        #     details = OrderedDict([("DataID",dataID)] + [(h,params[h]) for h in self.detailHeaders if h in params] + [("groupItems",groupItems)])
-        #     details["Number of Proteins"] = numberFeatures
-
-        #     orderedColumnNames = list(details.keys())
-        #     if "Experimental Info" in orderedColumnNames: #ugly fix to put i
-        #         orderedColumnNames.remove("Experimental Info")
-        #         orderedColumnNames.append("Experimental Info")
-                
-
-
-            return {"success":True,"details":details,"names":orderedColumnNames}
-        return {"success":False,"error":"Parameter file not found."}

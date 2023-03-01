@@ -45,6 +45,14 @@ export function Welcome(props) {
   const [pw, pwChange] = useState("")
   const [infoText, setInfoText] = useState("")
   
+
+  const getWebsiteText = async () => {
+    let res = await axios.get('/api/website/welcome')
+    return res.data
+  }
+
+  const { isLoading: websiteTextLoading, data: welcomeText } = useQuery('websiteText', getWebsiteText, { refetchOnWindowFocus: false })
+  
   const checkWebsitePW = async () => {
     let res = await axios.post('/api/login',{pw:pw}, {headers : {'Content-Type': 'application/json'}})
     return res.data
@@ -83,9 +91,12 @@ export function Welcome(props) {
        
         {/* <div style={{width:"100px"}}><MCIcon /></div> */}
           <MCSpinner initialText={""} textAnchor="middle" textX={25} />
-          <MCHeader text="Welcome to MitoCube" fontSize="1.6rem"/>
-        
-          <p>MitoCube offers protein-centric searches to explore the expression of a protein in all acquired proteomic datasets.</p>
+          {websiteTextLoading ? <div>Loading ...</div> :
+            <div>
+              <MCHeader text={`Welcome to ${welcomeText["appName"]}`} fontSize="1.6rem" />
+              <p>{welcomeText["welcomeText"]}</p>
+            </div>
+          }
           {/* {[
             { text: "Protein Centric", icon: "submission", link: "/protein" },
             { text: "Sample Submission", icon: "submission", link: "/submission" },

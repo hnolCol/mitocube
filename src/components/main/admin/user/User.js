@@ -36,7 +36,7 @@ export function MCAdminUserView (props) {
 
     const [userInfo,setUserInfo] = useState(initUserInfo)
     const [APICallback, setAPICallback] = useState({addUser:"",users:[],shareToken:{msg:"",token:undefined}})
-    const [APILoading, setAPILoading] = useState({addUser:false,users:false,deleteUser:false,shareToken:false})
+    const [APILoading, setAPILoading] = useState({addUser:false,deleteUser:false,shareToken:false})
     const [alterProps, setAlertProps] = useState(initAltertState)
 
 
@@ -47,8 +47,13 @@ export function MCAdminUserView (props) {
     const { isLoading: userIsLoading } = useQuery("getAdminUsers", getAdminUsers, {
         refetchOnWindowFocus: false,
         onSuccess: (data) => {
-            let users = data.users !== undefined ? data.users : []
-            setAPICallbackMsg("users",users)
+            if (_.isArray(data)) {
+                setAPICallbackMsg("users", data)
+            }
+            
+        },
+        onError: (error) => {
+            setAPICallbackMsg("users", [])
         }
     })
     

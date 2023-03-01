@@ -92,7 +92,6 @@ class AdminUser(Resource):
         if token == "None" or not self.token.isAdminTokenValidated(token):
             return {"success":False,"error":"Token is not valid."}
         ok, users = self.users.getUsers()
-
         return {"success":ok, "users":users}
 
 

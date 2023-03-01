@@ -71,6 +71,7 @@ export function MCSampleSubmission (props) {
                 )
             }
         },
+        refetchOnWindowFocus : false,
         enabled : !checkForSavedSubmission()
     })
 
