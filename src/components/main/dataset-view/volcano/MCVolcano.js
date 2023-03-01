@@ -628,7 +628,6 @@ export function MCVolcano(props) {
             onMouseUp={handleMouseUp} 
             id = {svgID}
             ref={svgRef}>
-            
            
             {grid?
                 <g>

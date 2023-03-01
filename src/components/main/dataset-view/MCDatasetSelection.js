@@ -208,13 +208,15 @@ function MCSearchDatasetsDialog(props) {
                         <ButtonGroup>
                             <Button
                                 text="Search"
+                                icon = "search"
                                 loading={searchProps.isLoading}
                                 onClick={performSearch}
                                 disabled={tags.length === 0} />
                             <Button
-                                text="Apply"
+                            text="Apply Filter"
+                            i   con= "filter-keep"
                                 disabled={_.isEmpty(searchProps.featureIDMapper) || searchProps.numberOfDatasets === 0}
-                            onClick={saveFilterAndClose} />
+                                onClick={saveFilterAndClose} />
                             <Button
                                 text="Reset"
                                 onClick={() => setTags([])} />
@@ -247,7 +249,7 @@ export function MCDatasetSelection (props) {
         const res = await axios.get("/api/data/summary", { params: { token: token } })
         return res.data
     }
-    const { isLoading } = useQuery("getDatasetsSummary", getDatasetSummary,
+    const { isLoading, isError } = useQuery("getDatasetsSummary", getDatasetSummary,
         {
             refetchOnWindowFocus : false,
             onSuccess: (data) => {
@@ -418,7 +420,7 @@ export function MCDatasetSelection (props) {
 
     const resetTagsAndFilters = () => {
         // reset all filter options. (e.g. show all datasets)
-        console.log("worked?")
+        
         setDataSummary(prevValues => {
             return {
                 ...prevValues,
@@ -475,11 +477,10 @@ export function MCDatasetSelection (props) {
                                 {`${featureID} (${dataSummary.featureIDFilter[featureID].length})`}
                             </Tag>
                         </div>)
-                    
                 }): null}
             </div>
             <div className="dataset-selection-container">
-                {isLoading?<p>Loading..</p>:null}
+                {isLoading?<p>Loading..</p>:isError?<p>An error occured trying to reach the API.</p>:null}
             {dataSummary.toShow.length>0?dataSummary.toShow.map(dataset => {
                 return (
                 
@@ -525,7 +526,7 @@ export function MCDatasetSelection (props) {
                         </div>
                        
                 )
-            }) : <div><p>{dataSummary.toShow.length === 0 && dataSummary.raw.length > 0? "No dataset matches the defined tag and/or search strings." : "No datasets found.returned from API."}</p></div>}
+            }) : <div><p>{dataSummary.toShow.length === 0 && dataSummary.raw.length > 0? "No dataset matches the defined tag and/or search strings." : "No datasets returned from API."}</p></div>}
             </div>
 
 

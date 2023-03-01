@@ -22,9 +22,10 @@ export function MCAdminDatasets(props) {
     const { logoutAdmin, token } = props
 
     const [datasetItems, setDatasetItems] = useState({ itemsToShow: [], headers: [], items: [], lastSearch: {}, emailParamName: "" })
-    const [alertDetails, setAlertDetails] = useState({isOpen : false, children : <div></div>, cancelButtonText : "", confirmButtonText : ""})
+    const [alertDetails, setAlertDetails] = useState({isOpen : false, children : <div></div>, cancelButtonText : "", confirmButtonText : "Ok"})
     const [searchDetails, setSearchDetails] = useState({searchString : "", searchTags : []})
     const [errorMsg, setErrorMsg] = useState("") 
+    const [topButtonLoading, setTopButtonLoadings] = useState({"paramsExample":false,"datasetExample":false,"addDataset" : false})
     const [datasetDialog, setDatasetDialog] = useState({isOpen:false,params:{},paramNames:[],onClose : () => console.log("close")})
     const debouncedSearchString = useDebounce(searchDetails.searchString, 200)
     
@@ -88,7 +89,7 @@ export function MCAdminDatasets(props) {
 
         const res = await axios.delete('/api/dataset', { data: { token: token, dataID: dataID } })
         
-        console.log(res)
+        
         // more checking! 
         let updatedDataParams = res.data.data.params
         if (debouncedSearchString !== "") {
@@ -205,18 +206,68 @@ export function MCAdminDatasets(props) {
         }
     }
     
+
+    const fetchAndDownloadParamExample = (e) => {   
+        setTopButtonLoadings(prevValues => {return {...prevValues,"paramsExample":true}})
+        axios.get('/api/dataset/params/example', { params: {token} }).then(response => {
+            let responseData = response.data
+
+            
+            
+            if (MCSimpleResponseCheck(responseData) && _.has(responseData,"paramsFile")) {
+                downloadJSONFile(responseData.paramsFile,"paramsExample")
+            }
+            else if (!responseData["success"]) {
+                if (!responseData["tokenIsValid"]) {
+                    //if admin token is not valid, logout directly.
+                    logoutAdmin()
+                    //reset loading
+                    setTopButtonLoadings(prevValues => { return { ...prevValues, "paramsExample": false } })
+                    return
+                }
+                setAlertDetails(prevValues => {return {...prevValues, "isOpen" : true, "children" : <div>{responseData["msg"]}</div>}})
+            }
+            else {
+                setAlertDetails(prevValues => {
+                    return {
+                        ...prevValues,
+                        "isOpen": true,
+                        "children": <div>API unexpected data.</div>
+                    }
+                })
+            }
+            //set loading to false 
+            setTopButtonLoadings(prevValues => { return { ...prevValues, "paramsExample": false } })
+            
+        })
+       
+
+    }
+
     return (
         <div>
             <MCSubmissionOverviewDialog {...datasetDialog} />
-            <Alert {...alertDetails} />
+            <Alert {...alertDetails} canEscapeKeyCancel={true} onClose ={() => setAlertDetails(prevValues => {return {...prevValues,"isOpen":false}})} />
             <div className="admin-dataset-container">
                 <div className="admin-dataset-top-container">
                 <MCHeader text="Datasets Manager" />
                 <div className="vert-align-div-flexStart">
                 <div className="admin-dataset-header">
-                    <MCTooltipButton  icon="info" content={<p>View Information about datasets in MitoCube.</p>} />    
-                    <MCTooltipButton text="Example (Dataset)" content={<p>Download a dataset example.</p>} />
-                    <MCTooltipButton text="Example (Params)" content={<p>Download a params.json example which fits to the dataset example.</p>} />
+                            <MCTooltipButton icon="info" content={<p>View Information about datasets in MitoCube.</p>}/>    
+                            <MCTooltipButton
+                                text="Example (Dataset)"
+                                content={<p>Download a dataset example.</p>}
+                                loading={topButtonLoading.datasetExample} />
+                            <MCTooltipButton
+                                text="Example (Params)"
+                                content={<p>Download a params.json example which fits to the dataset example.</p>}
+                                loading={topButtonLoading.paramsExample}
+                                onClick={fetchAndDownloadParamExample} />
+                            <MCTooltipButton
+                                text="Add new dataset"
+                                intent="success"
+                                loading={topButtonLoading.addDataset}
+                                content={<p>Add a new dataset using the params file annd txt file.</p>} />
                 </div>
                 <div style={{paddingLeft:"1rem",paddingRight:"1.5rem", width: "100vw"}}>
                         <InputGroup
@@ -333,7 +384,7 @@ function MCAdminDatasetTable(props) {
                                             iconName: "eye-open",
                                             content: <p>View dataset details.</p>,
                                             intent: mouseIsOverThisDataset ? "primary" : "none",
-                                            onClick : () => handleView(item.dataID, item,Object.keys(item))},
+                                            onClick : () => handleView(item.dataID, item, Object.keys(item))},
                                         {
                                             iconName: "envelope",
                                             content: item[emailParamName]===undefined?undefined:<p>Wirte an email to experimentator.</p>,

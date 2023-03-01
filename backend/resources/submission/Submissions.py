@@ -155,8 +155,9 @@ class DataSubmissionDetails(Resource):
                 sampleSubmission = OrderedDict() 
                 #extract time and State from submission
                 submissionDetails = self.submission.data.getAPIParam("submission-details")
+                experimentalInfoHeaders = self.submission.data.getAPIParam("submission-summarize-as-experimentalInfo")
                 dateSubmissionHeader = [submissionDetail["name"] for submissionDetail in submissionDetails if submissionDetail["field"] == "date-input" and "name" in submissionDetail]
-                experimentalInfoHeaders = ["Research Aim","Sample Preparation","Additional Information"] #these are combined to create hierarchy. (admins can add further methods)
+                #experimentalInfoHeaders = ["Research Aim","Sample Preparation","Additional Information"] #these are combined to create hierarchy. (admins can add further methods)
                 submissionHeaders = ["Creation Date","State","dataID"] + [submissionDetail["name"] for submissionDetail in  submissionDetails if  
                                 "name" in submissionDetail and submissionDetail["name"] not in experimentalInfoHeaders]
 

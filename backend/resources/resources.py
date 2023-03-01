@@ -1,6 +1,7 @@
 from .dataset.AdminDataset import AdminDataset
 from .dataset.Summary import DatasetsSummary
 from .dataset.Params import DatasetParams
+from .dataset.Examples import DatasetExample, DatasetParamsExample
 from .dataset.FileStorage import FileStorageService, FileStorageServiceWithoutToken
 from .dataset.Details import DatasetDetails, DatasetGroupings, DatasetExperimentalInfo, DatasetsHeatmap, DatasetsVolcano, DatasetSearch
 from .dataset.MitoMap import DatasetsMitoMap
@@ -13,7 +14,13 @@ from .login.Login import LoginWebsite, TokenValid, AdminLoginWebsite, AdminLogin
 from .performance.ShareToken import ShareTokenValid, ShareToken
 from .performance.ShareData import ShareData, ShareDataDetails
 from .ptm.PTM import PTMView, PTMItems
+from .website.Welcome import WelcomeText
 mitoCubeResources = [
+    {
+        "url":'/api/website/welcome',
+        "obj":  WelcomeText,
+        "reqKwargs" : ["data"]
+    },
     {
         "url":'/api/login',
         "obj":  LoginWebsite,
@@ -29,8 +36,6 @@ mitoCubeResources = [
         "obj":  AdminLoginValidation,
         "reqKwargs" : ["token"]
     },
-
-    
     {
         "url":'/api/token/valid',
         "obj":  TokenValid,
@@ -47,6 +52,11 @@ mitoCubeResources = [
         "reqKwargs" : ["data","token"]
     },
     {
+        "url":'/api/dataset/example',
+        "obj": DatasetExample,
+        "reqKwargs" : ["data","token"]
+    },
+    {
         "url":'/api/dataset/instantclue',
         "obj": FileStorageServiceWithoutToken,
         "reqKwargs" : ["data","token"]
@@ -56,9 +66,14 @@ mitoCubeResources = [
     #     "obj": FileStorageService,
     #     "reqKwargs" : ["data","token"]
     # },
+    # {
+    #     "url":'/api/dataset/params',
+    #     "obj": DatasetParams,
+    #     "reqKwargs" : ["data","token"]
+    # },
     {
-        "url":'/api/dataset/params',
-        "obj": DatasetParams,
+        "url":'/api/dataset/params/example',
+        "obj": DatasetParamsExample,
         "reqKwargs" : ["data","token"]
     },
     {
