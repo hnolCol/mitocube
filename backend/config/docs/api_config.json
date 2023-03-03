@@ -26,6 +26,8 @@
             "performance" : 0,
             "admin" : 1  
         },
+        "colors-default-cmaps" : ["Blues","Set7","Spectral","Greys"],
+        "colors-overwrite-by-defaults" : 1,
         "db-feature-annotations" : ["Entry","Protein names","Gene names","Gene names  (primary )","Organism"],
         "db-summary-params" : [
                 "Gene names",

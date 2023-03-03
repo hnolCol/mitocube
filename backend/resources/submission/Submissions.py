@@ -8,6 +8,7 @@ import json
 from datetime import date
 from ..utils.html import *
 from ..misc import isAdminValid, adminTokenInValidResponse
+from ...helper.Misc import getCurrentDate
 
 def handleDetailInputs(submissionDetail):
     """"""
@@ -172,6 +173,8 @@ class DataSubmissionDetails(Resource):
                             sampleSubmission[submissionHeader] = dateString
                         else:
                             sampleSubmission[submissionHeader] = submission["details"][submissionHeader]
+                    elif submissionHeader == "Creation Date":
+                        sampleSubmission[submissionHeader] = getCurrentDate()
                     else: 
                         return {"success":False,"msg":"The API expected more information. Could not find: {}.".format(submissionHeader)}
                 #manage experimental info 
