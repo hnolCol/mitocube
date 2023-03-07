@@ -529,14 +529,21 @@ class DatasetCollection:
         "Returns the items (dataID, Dataset)"
         return self.collection.items() 
 
-    def addDatasetFromPath(self, dataID : str, paramPath : str, dataPath: str) -> None:
+    def addDatasetFromPath(self, dataID : str, paramPath : str, dataPath: str, cmapDefaults : List[str], overwriteCmapsByDefault : bool = True) -> None:
         "Adds a dataframe using the file path."
         if os.path.exists(dataPath) and os.path.exists(paramPath):
 
             data = pd.read_csv(dataPath,sep="\t",index_col="Key")
             params = json.load(open(paramPath))
+
+            #move checking to new function.
             if "dataID" not in params or params["dataID"] != dataID: #double check dataID.
                 params["dataID"] = dataID
+            if (overwriteCmapsByDefault or "groupingCmap" not in params) and "groupings" in params:
+                
+                if isinstance(cmapDefaults,list) and len(cmapDefaults) >= len(params["groupings"]):
+                    params["groupingCmap"] = OrderedDict([(groupingName,cmapDefaults[n]) for n,groupingName in enumerate(params["groupings"])])
+        
             if "PTM" not in params:
                 params["PTM"] = False #assume it is not PTM
             if not params["PTM"]: #if not ptm, remove duplicate keys
@@ -601,12 +608,12 @@ class Data(object):
     def __readData(self) -> None:
         """Read data by scanning through the folder"""
         
-
         for dataID in self.getDataIDsInFolder():
             paths = self.__getPaths(dataID) #checks for existance.
             if all(path is not None for path in paths) and dataID not in self.dataCollection:
                 try:
-                    self.dataCollection.addDatasetFromPath(dataID,paths[0],paths[1])
+                    defaultCmaps, overwriteCmapsByDefault = self.__getGroupingColors()
+                    self.dataCollection.addDatasetFromPath(dataID,paths[0],paths[1],defaultCmaps,overwriteCmapsByDefault)
                 except Exception as e:
                     print(f"There was an error for dataset {dataID}")
                     self.checkedDataThatCouldNotLoad.append(dataID)
@@ -626,35 +633,11 @@ class Data(object):
         if isinstance(availableColors,list) and len(availableColors) > 0:
             self.shortcutFilterColors = dict([(filterName,availableColors[n % len(availableColors)]) for n,filterName in enumerate(sorted(shortCutFilterValues))])
     
-    def checkForMissingDataset(self):
-        """Checks if the folder for datasets contains dataIDs that were not loaded yet."""
-        
-        foundMissing = False
-        dataIDs = self.getDataIDsInFolder()
-        dataIDsNotMatchingFolder = [dataID for dataID in self.dataCollection.keys() if dataID not in self.dataCollection]
-        
-        if len(dataIDsNotMatchingFolder) > 0:
-            print(dataIDsNotMatchingFolder)
-            print("DELETE dataIDs from collection.")
-            for dataID in dataIDsNotMatchingFolder:
-                self.dataCollection.remove(dataID)
-        for dataID in dataIDs:
-            if not dataID in self.dataCollection and dataID not in self.checkedDataThatCouldNotLoad: #dont use dataIDExists - ednless loop - dont reload fialed dfs
-                paths = self.__getPaths(dataID) #checks for existance.
-                if all(path is not None for path in paths):
-                    try:
-                        self.dataCollection.addDatasetFromPath(dataID,paths[0],paths[1])
-                        foundMissing = True #when at least one file was successsfully loaded
-                    except Exception as e:
-                        print(e)
-                        self.checkedDataThatCouldNotLoad.append(dataID)
-
-        if foundMissing:
-            #creates summary datasets
-            self.__handleShortCutFilters()
-            self.__readDataInfo()
-
-        return foundMissing
+    def __getGroupingColors(self) -> Tuple[List[str],bool]:
+        ""
+        defaultCmaps = self.getAPIParam("colors-default-cmaps")
+        overwriteCmapsInParams = self.getAPIParam("colors-overwrite-by-defaults")
+        return defaultCmaps,overwriteCmapsInParams
 
     def __readDataInfo(self):
         """
@@ -753,6 +736,38 @@ class Data(object):
         pvalueNames = p.columns.values.tolist()
         selectionpvalues = [p.loc[boolIdx].reset_index()]       
         return boolIdx,selectionpvalues,pvalueNames
+
+    def checkForMissingDataset(self):
+        """Checks if the folder for datasets contains dataIDs that were not loaded yet."""
+        
+        foundMissing = False
+        dataIDs = self.getDataIDsInFolder()
+        dataIDsNotMatchingFolder = [dataID for dataID in self.dataCollection.keys() if dataID not in self.dataCollection]
+        
+        if len(dataIDsNotMatchingFolder) > 0:
+            print(dataIDsNotMatchingFolder)
+            print("DELETE dataIDs from collection.") #good idea?
+            for dataID in dataIDsNotMatchingFolder:
+                self.dataCollection.remove(dataID)
+        for dataID in dataIDs:
+            if not dataID in self.dataCollection and dataID not in self.checkedDataThatCouldNotLoad: #dont use dataIDExists - ednless loop - dont reload fialed dfs
+                paths = self.__getPaths(dataID) #checks for existance.
+                if all(path is not None for path in paths):
+                    try:
+                        defaultCmaps, overwriteCmapsByDefault = self.__getGroupingColors()
+                        self.dataCollection.addDatasetFromPath(dataID,paths[0],paths[1],defaultCmaps,overwriteCmapsByDefault )
+                        foundMissing = True #when at least one file was successsfully loaded
+                    except Exception as e:
+                        print(e)
+                        self.checkedDataThatCouldNotLoad.append(dataID)
+
+        if foundMissing:
+            #creates summary datasets
+            self.__handleShortCutFilters()
+            self.__readDataInfo()
+
+        return foundMissing
+
 
     def addDatasetToStorage(self, dataID : str, data: pd.DataFrame, paramsFile : dict): #shit name?
         """Adds a dataset on the harddrive and updates the DataCollection"""
@@ -1411,6 +1426,7 @@ class Data(object):
             "chart":chartData,
             "statsData":jsonStatsData
             }
+
     def transferDataToArchive(self,dataID):
         """Transfer Data to Archive"""
         pathToDataID = os.path.join(self.pathToData,dataID)

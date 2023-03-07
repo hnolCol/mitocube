@@ -254,7 +254,7 @@ export function MCGroupingTable(props) {
                     const runNames = _.uniq(dataArray.map(v => v[_.indexOf(columnNames, "Run")]))
                     
                  
-                    const dataTable = dataArray.map((rowData,rowIdx) => Object.fromEntries(rowData.map((v, i) => {
+                    let dataTable = dataArray.map((rowData,rowIdx) => Object.fromEntries(rowData.map((v, i) => {
                         if (allowCustomRunNames && columnNames[i] === "Run") {
                             
                             return ([columnNames[i], runNames[rowIdx]])
@@ -262,8 +262,7 @@ export function MCGroupingTable(props) {
                         return ([columnNames[i], v])
                     })))
                    
-                   
-                    console.log(dataTable)
+                    dataTable = _.filter(dataTable, rowData => Object.keys(rowData).length > 0) // remove lines that are empty
                     const numberOfGroupings = columnNames.length - 2 // Run and Replicate must be the in the file
                     handleTemplateInput(columnNames,dataTable,replicates.length,numSamples,numberOfGroupings)
 

@@ -60,5 +60,8 @@ class DatasetParamsExample(Resource):
                 "title" : expHeader,
                 "details" : "Fill details here..."
             })
-        return {"success" : False, "msg" : "not all params found.","tokenIsValid":True}
+        ##add MitoCube internal groupings
+        paramsExample["groupings"] = {"groupingName1" : {"groupName-1" : ["sampleName01","sampleName02"], "groupName-2" : ["sampleNames03","sampleName04"]}}
+        paramsExample["groupingNames"] = ["groupingName1"]
+        paramsExample["groupingCmap"] = {"groupingName1" : "<string>: Blues color palette"}
         return {"success" : True, "paramsFile" : paramsExample, "tokenIsValid" : True}

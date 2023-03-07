@@ -247,10 +247,17 @@ class Submission(object):
             return params
         else:
             return {}
+
     def add(self,sampleSubmission) -> bool:
         ""
         if "dataID" not in sampleSubmission:
             return False
+        if "groupingCmap" not in sampleSubmission and "groupings" in sampleSubmission:
+            cmapDefaults = self.data.getAPIParam("default-cmaps")
+            if isinstance(cmapDefaults,list) and len(cmapDefaults) >= len(sampleSubmission["groupings"]):
+                sampleSubmission["groupingCmap"] = OrderedDict([(groupingName,cmapDefaults[n]) for n,groupingName in enumerate(sampleSubmission["groupings"])])
+            else:
+                return False
         dataID = sampleSubmission["dataID"]
         #check folder
         if dataID in self._getListOfSubmissions():
