@@ -302,7 +302,7 @@ class Dataset:
         
         groupingNames = self.getGroupingNames()
         sampleNames = self.getSamplesNamesByGroupingName(groupingName=groupingNames[0])
-
+        print(sampleNames)
         if len(groupingNames) == 1:
 
             return  sampleNames
@@ -1260,6 +1260,7 @@ class Data(object):
             annotationColumn,filterColumns,highlightColumns,highlightColumnSepForMenu = self.getAPIParams(paramNames)
 
             groupings, groupingNames, groupingMapper, groupingColorMapper, groupColorValues, groupingItems = self.getGroupingDetails(dataID,expColumns)
+            print(groupings)
             data = self.dataCollection[dataID].getData()
             #does not seem efficient, get all data from db in one go?
             filterColumnDBInfo = [self.dbManager.getDBInfoForFeatureListByColumnName(data.index,colName,checkShape=False).fillna("-") for colName in filterColumns ]
@@ -1277,8 +1278,11 @@ class Data(object):
 
                     columnNamesGroup1 = [colName for colName in columnNamesGroup1 if colName in withinGroupingColumnNames]
                     columnNamesGroup2 = [colName for colName in columnNamesGroup2 if colName in withinGroupingColumnNames]
-               
-            #get highlight column data 
+            # print(columnNamesGroup1,columnNamesGroup2)
+            # print(data)
+            # print([colName in data.columns for colName in columnNamesGroup1])
+            # #get highlight column data 
+            # print(data.columns.values.tolist())
      
             highlightFeatures = OrderedDict() 
             if len(highlightColumns) > 0:
@@ -1294,6 +1298,7 @@ class Data(object):
                         del vs['nan']
 
                     highlightFeatures[highlightColumn] = vs 
+            print(data)
             tTestResult = calculateTTest(data,columnNamesGroup1,columnNamesGroup2)
             # add filter and annotation columns
            

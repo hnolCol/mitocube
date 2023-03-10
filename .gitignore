@@ -17,8 +17,10 @@ __pycache__/
 /coverage
 
 # production
+/backend_fast
 /build
 /backend/data
+/backend/neo4j
 /backend/data_
 /backend/data/data.zip
 /backend/data.zip

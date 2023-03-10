@@ -342,8 +342,8 @@ export const MCAdministrationIcon = (props) => {
                 <path style={{fill:"#F6F6F6",stroke:"#000000",strokeWidth:0.3,strokeMiterlimit:10}} d="M98.6,88.3H15.7c-2.1,0-3.7-1.7-3.7-3.7V15.4
                         c0-2.1,1.7-3.7,3.7-3.7h82.9c2.1,0,3.7,1.7,3.7,3.7v69.2C102.3,86.6,100.7,88.3,98.6,88.3z"/>
                 <motion.g 
-                    animate={mouseIn?{ rotate: 360 }:null}
-                    transition={mouseIn?{ ease: "linear", duration: 4, repeat: Infinity,repeatType: "mirror"}:null}>
+                    animate={mouseIn ? { rotate: 360 } : {rotate : 0}}
+                    transition={mouseIn ? { ease: "linear", duration: 4, repeat: Infinity, repeatType: "mirror" } : {}}>
 
                     <path style={{fill:"#FF5A2A"}} stroke="black" strokeWidth={0.3} d="M75.8,41.6c-0.4-3.1-1.7-6-3.6-8.4l2.9-3.7
                         L74,28.4l-1.4-1.4l-3.8,3c-2.3-1.6-4.9-2.7-7.8-3.1l-0.5-3.9h-1.6h-2l-0.5,3.9c-3.4,0.5-6.5,1.9-9,4L43.7,28l-1.2,1.2l-1.4,1.4

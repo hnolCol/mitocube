@@ -1207,3 +1207,34 @@ input[type="file"] {
   padding-left: 0.3rem;
   font-size: 0.70vw ;
 }
+
+
+
+.leftbar-container{
+  background-color: #ffffff;
+  font-size : 1.2rem;
+  padding : 3rem;
+  height : 100vh;
+  border-right: solid black 0.5px;
+  
+}
+
+
+.container {
+  margin: 4.5rem 1.4rem;
+}
+
+.btn-container {
+  position: fixed;
+  top : 0;
+
+}
+
+.leftbar-container div {
+  color: black;
+  text-decoration: none;
+  font-size: 1.5rem;
+  font-weight: 600;
+  display: block;
+  margin-left : 1rem;
+}

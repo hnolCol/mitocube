@@ -32,6 +32,7 @@ import { MCInstallationHelp } from './components/main/help/Installation';
 import { MCConfigHelp } from './components/main/help/Config';
 import { MCAdminDatasets } from './components/main/admin/datasets/MCAdminDatasets';
 import _ from 'lodash';
+import { MCLeftbar } from './components/navigation/Leftbar';
 
 
 
@@ -122,6 +123,7 @@ function App() {
   return (
     <div className='App-header'>
       {/* < MCIcon width = {"200px"}/> */}
+      {/* <MCLeftbar secondLevelItems =  {{"Datasets" : [{name : "asd23asd"}]}}/> */}
       <Routes>
         <Route path="/" element={<Welcome isAuthenthicated={isAuthenthicated.isAuth} setAuthenticationSate={setAuthenticationState} pages={isAuthenthicated.pages}/> } />
         {/* <Route path="/h" element={<MCCubeButton/>} /> */}

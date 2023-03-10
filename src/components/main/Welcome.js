@@ -51,7 +51,7 @@ export function Welcome(props) {
     return res.data
   }
 
-  const { isLoading: websiteTextLoading, data: welcomeText } = useQuery('websiteText', getWebsiteText, { refetchOnWindowFocus: false })
+  const { isLoading: websiteTextLoading, data: welcomeText, isError : websiteTextError  } = useQuery('websiteText', getWebsiteText, { refetchOnWindowFocus: false })
   
   const checkWebsitePW = async () => {
     let res = await axios.post('/api/login',{pw:pw}, {headers : {'Content-Type': 'application/json'}})
@@ -91,7 +91,7 @@ export function Welcome(props) {
        
         {/* <div style={{width:"100px"}}><MCIcon /></div> */}
           <MCSpinner initialText={""} textAnchor="middle" textX={25} />
-          {websiteTextLoading ? <div>Loading ...</div> :
+          {websiteTextLoading? <div>Loading ...</div> : websiteTextError ? <div>Server not reached..</div> : 
             <div>
               <MCHeader text={`Welcome to ${welcomeText["appName"]}`} fontSize="1.6rem" />
               <p>{welcomeText["welcomeText"]}</p>
@@ -106,8 +106,8 @@ export function Welcome(props) {
             return (
               <Link to={link} style={{textDecoration:"none"}}><MCWelcomeMenuIcon key={welcomeIcon.text} {...rest} /></Link>
             )
-          })} 
-           */}
+          })}  */}
+          
         
           
           {isAuthenthicated?
@@ -137,7 +137,7 @@ export function Welcome(props) {
                   to: "/admin",
                   icon: <MCAdministrationIcon/>,
                   pageName: "admin"
-                },
+                }
               ].map(linkPage => {
                 return(
                   _.has(pages, linkPage.pageName) && pages[linkPage.pageName] === 1 ? <Link key={linkPage.to} to={linkPage.to}>{linkPage.icon}</Link> : null
@@ -165,7 +165,7 @@ export function Welcome(props) {
                 <Button icon="log-in" intent={"primary"} onClick={refetch} loading= {isLoading || isFetching } />
               </div>
 
-            <p>{isLoading || isFetching ? "Loading..." : isError ? `API returned an error of status: (${error.response.status})` : infoText}</p>
+            <p>{isLoading || isFetching ? "Loading..." : isError ? websiteTextError ? "Server probably not reached." : `API returned an error of status: (${error.response.status})` : infoText}</p>
           </div>}
           
       
