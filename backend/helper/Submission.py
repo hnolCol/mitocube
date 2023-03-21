@@ -269,7 +269,7 @@ class Submission(object):
         _, pathToParamFile = self._createFolder(dataID)
         self._writeParams(pathToParamFile,sampleSubmission)
         
-        return True
+        return True, ""
 
 
     def delete(self, dataID) -> Tuple[bool,str]:
