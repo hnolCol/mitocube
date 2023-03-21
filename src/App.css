@@ -1205,36 +1205,71 @@ input[type="file"] {
   border-right: 2px solid #efefef;
   border-top: 3px solid #efefef;
   padding-left: 0.3rem;
-  font-size: 0.70vw ;
-}
+  font-size: 0.70vw ;}
+
 
 
 
 .leftbar-container{
   background-color: #ffffff;
   font-size : 1.2rem;
-  padding : 3rem;
+  padding-left : 0.8rem;
+  padding-top: 40px;
   height : 100vh;
   border-right: solid black 0.5px;
   
 }
 
-
-.container {
-  margin: 4.5rem 1.4rem;
+.hint-div {
+  font-size: 0.8rem
 }
 
-.btn-container {
-  position: fixed;
-  top : 0;
+
+.editable-item-container {
+  background-color: white;
+  border-radius: 0.5rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top : 0.3rem;
+  padding-bottom: 0.4rem;
+  margin : 1rem;
+  width : 25rem;
+  min-height : 150px;
+  max-height: 50vh;
 
 }
 
-.leftbar-container div {
-  color: black;
-  text-decoration: none;
-  font-size: 1.5rem;
-  font-weight: 600;
-  display: block;
-  margin-left : 1rem;
+
+
+.property-table{
+  width : 100%;
+  font-size: 0.9rem;
+  padding-left: 0.3rem;
+  border-collapse: collapse;
+  overflow-y: scroll;
+}
+
+
+.property-table-cell{
+  vertical-align: center;
+  margin: 0.8rem;
+  cursor: default;
+
+}
+
+.property-table-cell:hover{
+  background-color: #efefef;
+}
+
+.property-table-cell-left{
+  text-align:right;
+  padding-right:0.7rem;
+  padding-top:0.1rem;
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+.property-table-cell-right{
+  text-align:left;
+  padding-right:0.7rem;
+  padding-top:0.1rem;
 }

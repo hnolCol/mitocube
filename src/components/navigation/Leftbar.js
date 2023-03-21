@@ -1,7 +1,3 @@
-
-
-
-
 import { Button } from "@blueprintjs/core";
 import { AnimatePresence, motion, useCycle } from "framer-motion";
 import _ from "lodash";
@@ -112,6 +108,6 @@ export function MCLeftbar(props) {
 }
 
 MCLeftbar.defaultProps = {
-    firstLeveItems : [],
-    secondLevelItems: {"Datasets" : [{name : "asd23asd"}]}
+    firstLeveItems: [],
+    secondLevelItems: { "Datasets": [{ name: "asd23asd" }] }
 }

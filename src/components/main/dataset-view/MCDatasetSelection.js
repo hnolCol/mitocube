@@ -230,7 +230,7 @@ function MCSearchDatasetsDialog(props) {
 }
 
 export function MCDatasetSelection (props) {
-    const {token} = props
+    const {token, setInspected} = props
     const [dataSummary, setDataSummary] = useState({
                                                 raw: [],
                                                 filtered: [],
@@ -432,6 +432,11 @@ export function MCDatasetSelection (props) {
 
     }
 
+    const handleDatasetInspection = (dataID) => {
+        let linkInfo = {"to":`/dataset/${dataID}?type=summary`, name : dataID}
+        setInspected(linkInfo)
+    }
+
     return(
         <div className="dataset-selection-content">
             <div className="top-right-absolute-container">
@@ -491,19 +496,19 @@ export function MCDatasetSelection (props) {
                         onMouseEnter = {(e) => {setMouseOverDataID(dataset.dataID)}}>
 
                         <div className="little-m"> 
-                            <Link to={`/dataset/${dataset.dataID}?type=summary`} style={{textDecoration:"none",cursor:"pointer"}}>
+                            <Link to={`/dataset/${dataset.dataID}?type=summary`} style={{ textDecoration: "none", cursor: "pointer" }} onClick={() => handleDatasetInspection(dataset.dataID)}>
                             <MCHeader
                                 text={dataset[dataSummary.headerName]}
-                                hexColor={mouseOverDataID === dataset.dataID ? "#2F5597" : mouseOverDataID !== undefined ? "darkgrey" : "#2F5597"}
-                                fontSize={"1.15rem"}
-                                    fontWeight={400} />
+                                hexColor={mouseOverDataID === dataset.dataID ? "#2F5597" : mouseOverDataID !== undefined ? "darkgrey" : "#000000"}
+                                fontSize={"1.10rem"}
+                                    fontWeight={300} />
                             </Link>
                         </div>
 
                         <div className="dataset-tag-box">
                             {dataSummary.tagNames.map(k => {
                                 return (
-                                    <div key={k} className="little-m" style={{opacity:mouseOverDataID === dataset.dataID ?"1":"0.5",cursor:"default"}}>
+                                    <div key={k} className="little-m" style={{opacity:mouseOverDataID === dataset.dataID ?"1":"0.7",cursor:"default"}}>
                                         <Tag style={{ fontSize: "0.8rem" }} minimal={true}>{dataset[k]}</Tag>
                                 </div>
                                 )

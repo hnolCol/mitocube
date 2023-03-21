@@ -193,10 +193,11 @@ class DataSubmissionDetails(Resource):
                     return {"success":False,"msg":"The grouping table row number does not match the number of samples."}
                 
                 #extracting the replicates
+                #ensure it is a string.
                 if "Replicate" in groupingDf.columns:
-                    replicates = OrderedDict((replicateID,[]) for replicateID in groupingDf["Replicate"].unique())
+                    replicates = OrderedDict((str(replicateID),[]) for replicateID in groupingDf["Replicate"].unique())
                     for runName, replicateID in groupingDf[["Run","Replicate"]].values:
-                        replicates[replicateID] = runName
+                        replicates[str(replicateID)].append(runName)
                     sampleSubmission["Replicates"] = replicates 
                 
                 #extract grouping names

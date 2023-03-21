@@ -49,8 +49,11 @@ class Submission(object):
         "Loads the json file for a parameter."
         pathToParam = self._getPathToParam(dataID)
         if os.path.exists(pathToParam):
-            params = json.load(open(pathToParam))
-            return params
+            try:
+                params = json.load(open(pathToParam))
+                return params
+            except: 
+                pass
 
     def _writeParams(self,pathToParamFile,sampleSubmission):
         ""

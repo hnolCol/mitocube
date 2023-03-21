@@ -33,7 +33,11 @@ import { MCConfigHelp } from './components/main/help/Config';
 import { MCAdminDatasets } from './components/main/admin/datasets/MCAdminDatasets';
 import _ from 'lodash';
 import { MCLeftbar } from './components/navigation/Leftbar';
-
+import { MCInputByFieldsFromBackend } from "./components/input/MCInputs"
+import { MCEditableItem } from './components/input/MCEditableItem';
+import { Button } from '@blueprintjs/core';
+import { motion } from 'framer-motion';
+import { MCItemView } from './components/configitems/MCItemView';
 
 
 export function MCHelpText(props) {
@@ -70,49 +74,63 @@ MCHelpText.defaultProps = {
 function App() {
 
   const [isAuthenthicated, setAuthenticationState] = useState({isAuth:false,token:null,pages:{}})
-  const [isAdminAuthenthicated, setAdminAuthenticationState] = useState({isAuth:false,token:null,superAdmin:false})
+  const [isAdminAuthenthicated, setAdminAuthenticationState] = useState({ isAuth: false, token: null, superAdmin: false })
+  const [inspected, setInspected] = useState({})
   const location = useLocation();
   const navigate = useNavigate();
 
-  useEffect(() => {
+  // useEffect(() => {
     
-    const tokenString = getMitoCubeToken()
-    if (tokenString === undefined && tokenString !== "") setAuthenticationState(prevValues => {return {...prevValues,isAuth:false,token:null}})
-    axios.post('/api/token/valid',
-          {token:tokenString}, 
-      { headers: { 'Content-Type': 'application/json' } }).then(response => {
-            let responseData = response.data
-            if (response.status === 200 && _.has(responseData,"success") && responseData["success"] && _.has(responseData,"pages")) {
-                setAuthenticationState(prevValues => {return {...prevValues,isAuth:responseData["success"],token:tokenString, pages : responseData["pages"]}})
-                navigate(location)
-            }
-            else {
-              setAuthenticationState(prevValues => {return {...prevValues,isAuth:false,token:null}})
-            }
-      })
-  },[]);
+  //   const tokenString = getMitoCubeToken()
+  //   if (tokenString === undefined && tokenString !== "") setAuthenticationState(prevValues => {return {...prevValues,isAuth:false,token:null}})
+  //   axios.post('/api/token/valid',
+  //         {token:tokenString}, 
+  //     { headers: { 'Content-Type': 'application/json' } }).then(response => {
+  //           let responseData = response.data
+  //           if (response.status === 200 && _.has(responseData,"success") && responseData["success"] && _.has(responseData,"pages")) {
+  //               setAuthenticationState(prevValues => {return {...prevValues,isAuth:responseData["success"],token:tokenString, pages : responseData["pages"]}})
+  //               navigate(location)
+  //           }
+  //           else {
+  //             setAuthenticationState(prevValues => {return {...prevValues,isAuth:false,token:null}})
+  //           }
+  //     })
+  // },[]);
 
 
-  useEffect(() => {
+  // useEffect(() => {
     
-    const tokenString = getMitoCubeAdminToken()
-    if (tokenString === undefined) setAdminAuthenticationState({isAuth:false,token:"",superAdmin:false})
+  //   const tokenString = getMitoCubeAdminToken()
+  //   if (tokenString === undefined) setAdminAuthenticationState({isAuth:false,token:"",superAdmin:false})
    
-    axios.post('/api/token/admin/valid',
-          {token:tokenString}, 
-          {headers : {'Content-Type': 'application/json'}}).then(response => {
-            if (response.status === 200 && response.data.success) {
-                setAdminAuthenticationState({isAuth:response.data.valid,token:tokenString,superAdmin:response.data.superAdmin})
-                navigate(location)
-            }
-            else {
-              //setAuthenticationState({isAuth:false,token:null})
-              setAdminAuthenticationState({isAuth:false,token:"",superAdmin:false})
+  //   axios.post('/api/token/admin/valid',
+  //         {token:tokenString}, 
+  //         {headers : {'Content-Type': 'application/json'}}).then(response => {
+  //           if (response.status === 200 && response.data.success) {
+  //               setAdminAuthenticationState({isAuth:response.data.valid,token:tokenString,superAdmin:response.data.superAdmin})
+  //               navigate(location)
+  //           }
+  //           else {
+  //             //setAuthenticationState({isAuth:false,token:null})
+  //             setAdminAuthenticationState({isAuth:false,token:"",superAdmin:false})
 
-            }
-      })
-  },[]);
+  //           }
+  //     })
+  // },[]);
 
+  const handleDatasetInspection = (linkInfo) => {
+    let insp = { ...inspected }
+    let datasetLinks = []
+    if (_.has(insp, "Datasets")) {
+      datasetLinks = _.unionBy(_.concat(insp["Datasets"],[linkInfo]),"name")
+      
+    }
+    else {
+      datasetLinks = [linkInfo]
+    }
+    insp["Datasets"] = datasetLinks
+    setInspected(insp)
+  }
 
   const loggingAdminOut = () => {
     //log admin out
@@ -123,7 +141,32 @@ function App() {
   return (
     <div className='App-header'>
       {/* < MCIcon width = {"200px"}/> */}
-      {/* <MCLeftbar secondLevelItems =  {{"Datasets" : [{name : "asd23asd"}]}}/> */}
+      {/* <MCItemView /> */}
+      {/* <MCInputByFieldsFromBackend /> */}
+      {/* <div style={{ display: "flex", flexDirection:"row", flexWrap : "wrap" }}>
+        <MCEditableItem /> 
+        <MCEditableItem /> 
+        <MCEditableItem /> 
+        <MCEditableItem /> 
+        <MCEditableItem />  
+        <div className='editable-item-container'>
+          <div style={{height : "100%"} } className='vert-align-div-center'>
+            <div>
+              <motion.svg width={"200px"} height={"200px"}>
+                <motion.g whileHover={{scale:1.1}}>
+                  <circle cx={100} cy={100} r={70} fill="#efefef" stroke="none" />
+                  <line x1={50} x2={150} y1={100} y2={100} stroke="#2F5597" strokeWidth={7}/>
+                  <line x1={100} x2={100} y1={50} y2={150} stroke="#2F5597" strokeWidth={7} />
+                </motion.g>
+              </motion.svg>
+            </div>
+          </div>
+            
+        </div>
+
+      </div> */}
+      
+      {/* <MCLeftbar /> */}
       <Routes>
         <Route path="/" element={<Welcome isAuthenthicated={isAuthenthicated.isAuth} setAuthenticationSate={setAuthenticationState} pages={isAuthenthicated.pages}/> } />
         {/* <Route path="/h" element={<MCCubeButton/>} /> */}
@@ -140,7 +183,7 @@ function App() {
   
         <Route path="/dataset" element={
               <MCProtectedRoute isAuthenthicated={isAuthenthicated.isAuth}>
-                <MCDatasetSelection token={isAuthenthicated.token} setAuthenticationSate={setAuthenticationState}/>
+            <MCDatasetSelection token={isAuthenthicated.token} setAuthenticationSate={setAuthenticationState} setInspected={handleDatasetInspection} />
               </MCProtectedRoute>} />
 
         <Route path="/protein" element={
