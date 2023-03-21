@@ -155,7 +155,7 @@
                 "title" : "Research Aim",
                 "q" : "Research Aim (at least 100 characters)",
                 "default" : "",
-                "placeholder" : "Please provide a short description of your project and it's research aims."
+                "placeholder" : "Please provide a short description of your project and it's research aims. Enter at least 100 characters."
             },
             {
                 "field" : "text-input",
