@@ -251,20 +251,21 @@ class Submission(object):
         else:
             return {}
 
-    def add(self,sampleSubmission) -> bool:
+    def add(self,sampleSubmission) -> Tuple[bool,str]:
         ""
         if "dataID" not in sampleSubmission:
-            return False
+            return False, "DataID is missing in sample submission."
         if "groupingCmap" not in sampleSubmission and "groupings" in sampleSubmission:
-            cmapDefaults = self.data.getAPIParam("default-cmaps")
+            cmapDefaults = self.data.getAPIParam("colors-default-cmaps")
+
             if isinstance(cmapDefaults,list) and len(cmapDefaults) >= len(sampleSubmission["groupings"]):
                 sampleSubmission["groupingCmap"] = OrderedDict([(groupingName,cmapDefaults[n]) for n,groupingName in enumerate(sampleSubmission["groupings"])])
             else:
-                return False
+                return False, "Default colors are missing in config. Parameter 'colors-default-cmaps'"
         dataID = sampleSubmission["dataID"]
         #check folder
         if dataID in self._getListOfSubmissions():
-            return False
+            return False, "DataID exists already"
         _, pathToParamFile = self._createFolder(dataID)
         self._writeParams(pathToParamFile,sampleSubmission)
         

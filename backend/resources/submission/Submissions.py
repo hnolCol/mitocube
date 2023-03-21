@@ -216,15 +216,15 @@ class DataSubmissionDetails(Resource):
                     groupings[groupingName.strip()] = grouping
                 #adding groupings to the submisison
                 sampleSubmission["groupings"] = groupings
-
-                if self.submission.add(sampleSubmission):
+                ok, msg = self.submission.add(sampleSubmission)
+                if ok:
                     emailSubmission = [sampleSubmission["Email"]] if "," not in sampleSubmission["Email"] else sampleSubmission["Email"].split(",")
                     self.email.sendEmail(title="MitoCube - Submission Complete {}".format(sampleSubmission["dataID"]), 
                                         html= emailProjectSummary(sampleSubmission), 
                                         recipients = emailSubmission + self.submission.data.getConfigParam("email-cc-submission-list"))
                     return {"success":True,"msg":"Confirmation email was sent.","paramsFile":self.submission.getParamFile(sampleSubmission["dataID"])}
                 else:
-                    return {"success": False, "msg":"DataID exists already. Please contact the administrator, if you want to make changes."}
+                    return {"success": False, "msg":msg}
             except Exception as e:
                 
                 return {"success":False,"msg":f"There was an error extracting the submission details: {e}"}
