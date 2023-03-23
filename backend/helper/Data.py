@@ -1352,8 +1352,9 @@ class Data(object):
         elif len(groupingNames) >= 2:
             tickLabel = [group for group in groupings[groupingNames[0]].keys()]
             #calculate statistics
-
-            groupedBoxData = boxplotData.groupby(groupingNames,sort=False)
+            #print(groupingNames[0:2])
+            groupedBoxData = boxplotData.groupby(by = groupingNames[0:2],sort=False)
+          
             for groupName1 in groupings[groupingNames[0]].keys():
                 vi = []
                 for groupName2 in groupings[groupingNames[1]].keys():
@@ -1387,6 +1388,8 @@ class Data(object):
         minValue, maxValue = meltedData["value"].quantile(q=[0,1]).values
         marginRange = getChartMarginFromMinMaxValues(minValue,maxValue) 
         # group data on groupingNames meltedData function adds them
+        if len(groupingNames) > 2:
+            groupingNames = groupingNames[0:2]
         groupedData = meltedData.groupby(by = groupingNames,sort=False) #level_X == quantile due to reset_index
         quantileData = groupedData.quantile(q=[0,0.25,0.5,0.75,1]).reset_index() 
         quantileColumnName = "level_{}".format(len(groupingNames)) # get name for quantile
