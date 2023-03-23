@@ -1349,7 +1349,7 @@ class Data(object):
             legendTitle = groupingNames[0]
             v = [v]
 
-        elif len(groupingNames) > 2:
+        elif len(groupingNames) >= 2:
             tickLabel = [group for group in groupings[groupingNames[0]].keys()]
             #calculate statistics
 
