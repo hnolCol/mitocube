@@ -27,11 +27,11 @@ function InputField(props) {
 }
 
 export function MCInputFieldDialog(props) {
-    const { url, header, token, onClose, ...rest } = props 
+    const { url, header, token, onClose, postUrl, ...rest } = props 
     return (
         <Dialog {...rest} title={header} onClose={onClose}>
             <div style={{margin:"1rem"}}>
-                <MCInputByFieldsFromBackend {...{ header, url, token }} onClose={onClose} />
+                <MCInputByFieldsFromBackend {...{ header, url, token, postUrl }} onClose={onClose} />
             </div>
         </Dialog>
     )
@@ -79,6 +79,8 @@ export function MCInputByFieldsFromBackend(props) {
                 return {
                     ...prevValues,
                     "isOpen": true,
+                    "intent": "danger",
+                    "icon" : "warning-sign",
                     "children": <div>The following required inputs are missing: {_.join(emptyRequiredUserInput,", ")}</div>
                 }
             })
@@ -87,17 +89,19 @@ export function MCInputByFieldsFromBackend(props) {
 
         const headers = {
             "Content-Type": "application/json",
-            "Authorization" : `${token.access_type} ${token.access_token}`
+            "Authorization" : `${token.token_type} ${token.access_token}`
         }
-
+        console.log(postUrl)
         if (submitMode) {
             axios.post(postUrl, userInput, {headers : headers}).then(
                 response => {
-                    
+                    console.log(response)
                     setAlert(prevValues => {
                         return {
                             ...prevValues,
                             "isOpen": true,
+                            "intent": "success",
+                            "icon" : "tick",
                             "children": <div>The item was added to the database.</div>
                         }
                     })

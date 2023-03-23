@@ -32,12 +32,14 @@ import { MCInstallationHelp } from './components/main/help/Installation';
 import { MCConfigHelp } from './components/main/help/Config';
 import { MCAdminDatasets } from './components/main/admin/datasets/MCAdminDatasets';
 import _ from 'lodash';
-import { MCLeftbar } from './components/navigation/Leftbar';
-import { MCInputByFieldsFromBackend } from "./components/input/MCInputs"
-import { MCEditableItem } from './components/input/MCEditableItem';
-import { Button } from '@blueprintjs/core';
-import { motion } from 'framer-motion';
-import { MCItemView } from './components/configitems/MCItemView';
+// import { MCLeftbar } from './components/navigation/Leftbar';
+// import { MCInputByFieldsFromBackend } from "./components/input/MCInputs"
+// import { MCEditableItem } from './components/input/MCEditableItem';
+// import { Button } from '@blueprintjs/core';
+// import { motion } from 'framer-motion';
+// import { MCItemView } from './components/configitems/MCItemView';
+// import { MCItemConfiguration } from './components/configitems/MCItemConfig';
+// import Navigation from './components/navigation/LeftbarAnimated';
 
 
 export function MCHelpText(props) {
@@ -79,44 +81,44 @@ function App() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // useEffect(() => {
+  useEffect(() => {
     
-  //   const tokenString = getMitoCubeToken()
-  //   if (tokenString === undefined && tokenString !== "") setAuthenticationState(prevValues => {return {...prevValues,isAuth:false,token:null}})
-  //   axios.post('/api/token/valid',
-  //         {token:tokenString}, 
-  //     { headers: { 'Content-Type': 'application/json' } }).then(response => {
-  //           let responseData = response.data
-  //           if (response.status === 200 && _.has(responseData,"success") && responseData["success"] && _.has(responseData,"pages")) {
-  //               setAuthenticationState(prevValues => {return {...prevValues,isAuth:responseData["success"],token:tokenString, pages : responseData["pages"]}})
-  //               navigate(location)
-  //           }
-  //           else {
-  //             setAuthenticationState(prevValues => {return {...prevValues,isAuth:false,token:null}})
-  //           }
-  //     })
-  // },[]);
+    const tokenString = getMitoCubeToken()
+    if (tokenString === undefined && tokenString !== "") setAuthenticationState(prevValues => {return {...prevValues,isAuth:false,token:null}})
+    axios.post('/api/token/valid',
+          {token:tokenString}, 
+      { headers: { 'Content-Type': 'application/json' } }).then(response => {
+            let responseData = response.data
+            if (response.status === 200 && _.has(responseData,"success") && responseData["success"] && _.has(responseData,"pages")) {
+                setAuthenticationState(prevValues => {return {...prevValues,isAuth:responseData["success"],token:tokenString, pages : responseData["pages"]}})
+                navigate(location)
+            }
+            else {
+              setAuthenticationState(prevValues => {return {...prevValues,isAuth:false,token:null}})
+            }
+      })
+  },[]);
 
 
-  // useEffect(() => {
+  useEffect(() => {
     
-  //   const tokenString = getMitoCubeAdminToken()
-  //   if (tokenString === undefined) setAdminAuthenticationState({isAuth:false,token:"",superAdmin:false})
+    const tokenString = getMitoCubeAdminToken()
+    if (tokenString === undefined) setAdminAuthenticationState({isAuth:false,token:"",superAdmin:false})
    
-  //   axios.post('/api/token/admin/valid',
-  //         {token:tokenString}, 
-  //         {headers : {'Content-Type': 'application/json'}}).then(response => {
-  //           if (response.status === 200 && response.data.success) {
-  //               setAdminAuthenticationState({isAuth:response.data.valid,token:tokenString,superAdmin:response.data.superAdmin})
-  //               navigate(location)
-  //           }
-  //           else {
-  //             //setAuthenticationState({isAuth:false,token:null})
-  //             setAdminAuthenticationState({isAuth:false,token:"",superAdmin:false})
+    axios.post('/api/token/admin/valid',
+          {token:tokenString}, 
+          {headers : {'Content-Type': 'application/json'}}).then(response => {
+            if (response.status === 200 && response.data.success) {
+                setAdminAuthenticationState({isAuth:response.data.valid,token:tokenString,superAdmin:response.data.superAdmin})
+                navigate(location)
+            }
+            else {
+              //setAuthenticationState({isAuth:false,token:null})
+              setAdminAuthenticationState({isAuth:false,token:"",superAdmin:false})
 
-  //           }
-  //     })
-  // },[]);
+            }
+      })
+  },[]);
 
   const handleDatasetInspection = (linkInfo) => {
     let insp = { ...inspected }
@@ -140,8 +142,12 @@ function App() {
 
   return (
     <div className='App-header'>
+
+
+      <div></div>
       {/* < MCIcon width = {"200px"}/> */}
-      {/* <MCItemView /> */}
+      {/* <MCItemConfiguration /> */}
+      {/* <Navigation /> */}
       {/* <MCInputByFieldsFromBackend /> */}
       {/* <div style={{ display: "flex", flexDirection:"row", flexWrap : "wrap" }}>
         <MCEditableItem /> 

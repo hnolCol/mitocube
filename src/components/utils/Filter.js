@@ -17,9 +17,17 @@ export function filterDatasetsByDataIDs (datasets, dataIDs) {
         }
         return []
   }
-    
+
+export function handleSearchTagFiltering(items, searchTags, headers) {
+    let itemsMatchingSearchTags = searchTags.map(searchTag => {
+        return filterArrayBySearchString(searchTag,items,headers)
+    })
+    return  _.uniq(_.intersection(...itemsMatchingSearchTags))
+}
+
 export function handleSearchTagBasedFiltering (datasets, searchTags, searchNames) {
     //and based filtering
+    //terrible function
     let filteredDataIDs = searchTags.map(searchTag => {
         return (
             filterArrayBySearchString(searchTag,datasets,searchNames).map(o=>o.dataID) //easier to compare just dataIDs to find intersection.

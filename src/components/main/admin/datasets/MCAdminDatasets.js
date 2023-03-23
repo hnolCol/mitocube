@@ -165,7 +165,7 @@ export function MCAdminDatasets(props) {
         if (removeFromTags) {
             
             let itemsToShow = updatedSearchTags.length === 0 ? datasetItems.items.slice(): handleSearchTagBasedFiltering(datasetItems.items, updatedSearchTags, datasetItems.headers)
-            console.log(itemsToShow)
+            
             setDatasetItems(prevValues => {
                 return {
                     ...prevValues,

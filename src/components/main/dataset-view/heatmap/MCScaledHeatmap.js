@@ -217,7 +217,7 @@ export function MCScaledHeatmap(props) {
    
     //fixed margins
     const marginForLabel = nExtraColumns*10+4
-    const marginForLegend = 30
+    const marginForLegend = 30 + groupingNames.length * binHeight
     const itemHighlighted = highlightedItem !== undefined
     
 

@@ -1130,7 +1130,7 @@ class Data(object):
             nClusters = self.getAPIParam("default-number-clusters-heatmap")
 
             groupings, groupingNames, groupingMapper, groupingColorMapper, groupColorValues, groupingItems = self.getGroupingDetails(dataID,expColumns)
-
+            
             propsDetected, properties = self._getOneWayANOVASignificanceHits(anovaDetails)
             if not propsDetected:
                 return False, "Not all required ANOVA properties detected."
@@ -1143,7 +1143,7 @@ class Data(object):
 
             if anovaType == "1-way ANOVA":
                 boolIdx, selectionpvalues, pvalueNames =  calculateOneWayANOVA(X,groupings,grouping1,anovaCutoff)
-                
+
             elif anovaType == "2-way ANOVA":
                 ok, ds = self._checkTwoWayANOVADetails(anovaDetails,groupingNames)
                 if not ok:
@@ -1207,9 +1207,9 @@ class Data(object):
             groupsColorMapper = []
             for x in clustersMediansGrouped.columns:
                 if isinstance(x,tuple): #two groupings (e.g. 2WAY ANOVA)
-                    groupName1,groupName2 = x 
+                    #groupName1,groupName2 = x 
                     #get colors for groups
-                    groupColors = groupingColorMapper[groupingNames[0]][groupName1],groupingColorMapper[groupingNames[1]][groupName2]
+                    groupColors = [groupingColorMapper[groupingNames[n]][groupName] for n,groupName in enumerate(x)]
                 elif isinstance(x,str): #one grouping (e.g 1W ANOVA)
                     groupColors = [groupingColorMapper[groupingNames[0]][x]]
                 groupsColorMapper.append([[x],groupColors])

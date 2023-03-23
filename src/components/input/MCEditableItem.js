@@ -5,6 +5,7 @@ import _ from "lodash"
 export function MCEditableItem(props) {
 
     const { name, buttonProps, ...rest } = props 
+    console.log(rest)
     return (
         <div className="editable-item-container">
             <div className="hor-aligned-center-div-between">
@@ -40,10 +41,6 @@ export function MCEditableItem(props) {
 
 
 MCEditableItem.defaultProps = {
-    name : "Aurora 60cm",
-    buttonProps: { small: true, minimal: true },
-    company: "Thermo Fisher",
-    serial_number: "123ASD",
-    product_number: "123ASD",
-    product_url : "https://github.com"
+    name : "Item name.",
+    buttonProps: { small: true, minimal: true }
 }
