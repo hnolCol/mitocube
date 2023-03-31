@@ -147,10 +147,9 @@ export function MCProteinLayout(props) {
             {headers : {'Content-Type': 'application/json'}}).then(response => {
               if (response.status === 200){
                 const responseData = response.data
-                if ("error" in responseData & responseData["error"] === "Token is not valid.") {
+                if(responseData.hasOwnProperty("error") & responseData["error"] === "Token is not valid.") {
                   resetAuthStatus()
-                }
-                else if ("layout" in responseData) {
+                } else if (responseData.hasOwnProperty("layout")) {
                   const ll = {...responseData["layout"],...layoutAndCards.layout} //saved layout should overwrite "old" ones
                   responseData["layout"] = ll
                   setLayoutAndCards(responseData)
