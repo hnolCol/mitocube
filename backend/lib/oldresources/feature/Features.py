@@ -65,11 +65,17 @@ class FeatureDetails(Resource):
         self.token = kwargs["token"]
 
     def post(self):
+        print("FeatureDetails.post()")
         "Returns feature information in data"
+        print(" ? 1")
         featureFilter = getFilterFromRequest(request)
+        print(" ? 2")
         features = self.featureFinder.getFeatureInfoFromDB(filter=featureFilter)
+        print(" ? 3")
         featureLabels = self.featureFinder.getFeatureLabels()
+        print(" ? 4")
         sortByColumnName = self.featureFinder.getFeatureSortByColumnName()
+        print(" ? 5")
         return {
             "success":True,
             "features":features,

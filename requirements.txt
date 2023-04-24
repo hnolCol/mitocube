@@ -16,3 +16,6 @@ scipy==1.7.3
 seaborn==0.11.2
 statsmodels==0.13.2
 Werkzeug==2.0.2
+psycopg2-binary==2.9.5
+Deprecated~=1.2.13
+setuptools~=65.5.1

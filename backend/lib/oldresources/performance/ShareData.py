@@ -1,11 +1,8 @@
-from ast import Or
-from re import M
 from typing import OrderedDict
-from flask import request, jsonify
+from flask import request
 from flask_restful import Resource
-from werkzeug.security import generate_password_hash, check_password_hash
 import json
-from ..misc import isAdminValid, adminTokenInValidResponse
+from backend.lib.oldresources.misc import isAdminValid, adminTokenInValidResponse
 
 
 REQUIRED_INFO = ["General","Metrices","Properties","Distributions","QC-Peptides"]

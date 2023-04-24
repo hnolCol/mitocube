@@ -1,10 +1,10 @@
 
-from flask import request, jsonify
+from flask import request
 from flask_restful import Resource
-from ..misc import isTokenValid
+from backend.lib.oldresources.misc import isTokenValid
 from collections import OrderedDict
-import json 
-import os
+import json
+
 
 class DatasetDetails(Resource):
     def __init__(self,*args,**kwargs):

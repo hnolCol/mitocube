@@ -1,20 +1,19 @@
-from .dataset.AdminDataset import AdminDataset
-from .dataset.Summary import DatasetsSummary
-from .dataset.Params import DatasetParams
-from .dataset.Examples import DatasetExample, DatasetParamsExample
-from .dataset.FileStorage import FileStorageService, FileStorageServiceWithoutToken
-from .dataset.Details import DatasetDetails, DatasetGroupings, DatasetExperimentalInfo, DatasetsHeatmap, DatasetsVolcano, DatasetSearch
-from .dataset.MitoMap import DatasetsMitoMap
-from .feature.Features import Features, FeaturesInDatasets, FeatureDetails, FeatureDBInfo, FeatureSummary
-from .feature.cards.Correlations import CorrelationsToFeature
-from .feature.cards.Layout import CardLayout
-from .submission.Submissions import DataSubmissionID, DataSubmissionDetails, DataSubmissions, SampleList
-from .filter.Filter import Filter
-from .login.Login import LoginWebsite, TokenValid, AdminLoginWebsite, AdminLoginValidation, AdminTokenValid, AdminUser
-from .performance.ShareToken import ShareTokenValid, ShareToken
-from .performance.ShareData import ShareData, ShareDataDetails
-from .ptm.PTM import PTMView, PTMItems
-from .website.Welcome import WelcomeText
+from backend.lib.oldresources.dataset.AdminDataset import AdminDataset
+from backend.lib.oldresources.dataset.Summary import DatasetsSummary
+from backend.lib.oldresources.dataset.Examples import DatasetExample, DatasetParamsExample
+from backend.lib.oldresources.dataset.FileStorage import FileStorageService, FileStorageServiceWithoutToken
+from backend.lib.oldresources.dataset.Details import DatasetDetails, DatasetGroupings, DatasetExperimentalInfo, DatasetsHeatmap, DatasetsVolcano, DatasetSearch
+from backend.lib.oldresources.dataset.MitoMap import DatasetsMitoMap
+from backend.lib.oldresources.feature.Features import Features, FeaturesInDatasets, FeatureDetails, FeatureDBInfo, FeatureSummary
+from backend.lib.oldresources.feature.cards.Correlations import CorrelationsToFeature
+from backend.lib.oldresources.feature.cards.Layout import CardLayout
+from backend.lib.oldresources.submission.Submissions import DataSubmissionID, DataSubmissionDetails, DataSubmissions, SampleList
+from backend.lib.oldresources.filter.Filter import Filter
+from backend.lib.oldresources.login.Login import LoginWebsite, TokenValid, AdminLoginWebsite, AdminLoginValidation, AdminTokenValid, AdminUser
+from backend.lib.oldresources.performance.ShareToken import ShareTokenValid, ShareToken
+from backend.lib.oldresources.performance.ShareData import ShareData, ShareDataDetails
+from backend.lib.oldresources.ptm.PTM import PTMView, PTMItems
+from backend.lib.oldresources.website.Welcome import WelcomeText
 mitoCubeResources = [
     {
         "url":'/api/website/welcome',

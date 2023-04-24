@@ -6,9 +6,9 @@ from flask import request
 from flask_restful import Resource
 import json
 from datetime import date
-from ..utils.html import *
-from ..misc import isAdminValid, adminTokenInValidResponse
-from ...helper.Misc import getCurrentDate
+from backend.lib.oldresources.utils.html import *
+from backend.lib.oldresources.misc import isAdminValid, adminTokenInValidResponse
+from backend.helper.Misc import getCurrentDate
 
 def handleDetailInputs(submissionDetail):
     """"""

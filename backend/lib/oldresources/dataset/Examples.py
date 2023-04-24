@@ -1,7 +1,7 @@
 
-from flask import request, jsonify
+from flask import request
 from flask_restful import Resource
-from ..misc import isAdminValid, adminTokenInValidResponse
+from backend.lib.oldresources.misc import isAdminValid, adminTokenInValidResponse
 
 from collections import OrderedDict
 

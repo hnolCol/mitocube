@@ -1,10 +1,9 @@
-from requests import delete
-from flask import request, jsonify
+from flask import request
 from flask_restful import Resource
 from werkzeug.security import generate_password_hash, check_password_hash
 
 import json
-from ..utils.html import * 
+from backend.lib.oldresources.utils.html import *
 
 
 def createValidationCodeEmail(validationCode):

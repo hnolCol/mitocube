@@ -24,6 +24,7 @@ __pycache__/
 /backend/data_
 /backend/data/data.zip
 /backend/data.zip
+/backend/resources/data/setup/sql_dump_*
 # misc
 .DS_Store
 .env.local
