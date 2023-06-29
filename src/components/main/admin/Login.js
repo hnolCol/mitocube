@@ -6,13 +6,12 @@ import { useState } from "react"
 import axios from "axios"
 import { MCHeader } from "../../utils/components/MCHeader"
 import { Link } from "react-router-dom"
-import { removeMitoCubeAdminToken, setMitoCubeAdminToken } from "../../utils/Misc"
 import { MCAdminSideNavigation } from "./navbar/SideNavigation"
 
 
 export function MCAdminLogin(props) {
 
-    const {isAuthenthicated,isAdminAuthenthicated, token, setAdminAuthenticationState, ...rest} = props
+    const {isAuthenthicated,isAdminAuthenthicated, token, setAdminAuthenticationState, logout} = props
     const [loginInfo,setLoginInfo] = useState({pw:"",email:"",validationCode:""})
     const [adminTokenDetails,setAdminToken] = useState({adminToken:undefined,superAdmin:false,validated:false})
     const [infoText, setInfoText] = useState("")
@@ -25,11 +24,6 @@ export function MCAdminLogin(props) {
             return { ...prevValues, [id] : e.target.value}})
         }
       
-    const logout = (e) => {
-      removeMitoCubeAdminToken()
-      setAdminAuthenticationState({isAuth:false,token:null,superAdmin:false})
-
-    }
     
 
     const validateCode = (e) => {
@@ -47,7 +41,7 @@ export function MCAdminLogin(props) {
                             superAdmin:adminTokenDetails.superAdmin,
                             validateCode:loginInfo.validationCode
                         })
-            setMitoCubeAdminToken(adminTokenDetails.adminToken)
+            // setMitoCubeAdminToken(adminTokenDetails.adminToken)
           }
         })
     }

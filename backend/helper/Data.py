@@ -1354,7 +1354,8 @@ class Data(object):
             #calculate statistics
             #print(groupingNames[0:2])
             groupedBoxData = boxplotData.groupby(by = groupingNames[0:2],sort=False)
-          
+            # for groupName , _ in groupedBoxData:
+            #     print(groupName)
             for groupName1 in groupings[groupingNames[0]].keys():
                 vi = []
                 for groupName2 in groupings[groupingNames[1]].keys():
@@ -1376,7 +1377,7 @@ class Data(object):
         return v, legendTitle, legendData, tickLabel, legendItems
 
     def getDataForCard(self, dataID : str,featureID : list, filterName : str) -> Dict[str,Any]:
-        """Extracts data for boxplot visualization"""
+        """Extracts data for visualization"""
         
         dataset = self.getDataset(dataID)
         if dataset is None : return {"success" : False, "msg" : "DataID not found."}
@@ -1384,7 +1385,20 @@ class Data(object):
         meltedData = dataset.getMeltedData([featureID])
         groupingColorMapper = dataset.getGroupingColorMapper()
         groupings, groupingNames = dataset.getGroupingsAndNames()
-        
+        try:
+            statsData = anova(meltedData,dv="value",between=groupingNames)
+            statsData.columns = [pingouinColumn[colName] if colName in pingouinColumn else colName for colName in statsData.columns]
+            anovaSignificant = bool(np.any(statsData["p-value (uncorrected)"].values < 0.05)) #numpy bool_ cannot be used for JSON
+        except:
+            statsData = pd.DataFrame(["ANOVA could not be calculated."], columns=["Error"])
+            anovaSignificant = False
+
+        return {"data" : meltedData.to_dict(orient="records"), "groupings" : groupings}
+        print(meltedData)
+        print(groupings)
+
+
+
         minValue, maxValue = meltedData["value"].quantile(q=[0,1]).values
         marginRange = getChartMarginFromMinMaxValues(minValue,maxValue) 
         # group data on groupingNames meltedData function adds them
@@ -1409,7 +1423,6 @@ class Data(object):
                                                                     groupingNames,
                                                                     groupingColorMapper,
                                                                     quantileColumnName)
-        
             
         chartData = {"graphType":{
                     "1":"boxplot"},

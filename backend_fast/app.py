@@ -3,6 +3,7 @@ import os
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
 
 from .config.environment.Settings import get_general_settings
 
@@ -12,7 +13,14 @@ from .system.instruments import instruments
 from .users import users
 from .auth import auth
 from .frontend import frontend
+from .infrastructure import infrastructure
 from .database.neo4DB import DB
+
+from .helper.User import UserManagement
+
+
+print(UserManagement(auth="aodad"))
+print(UserManagement(auth="aasdad").DB.ad)
 general_settings = get_general_settings()
 
 
@@ -32,10 +40,25 @@ app = FastAPI(
             redoc_url = "/api/docs"
             )
 
+
+origins = [
+    "http://localhost:5000",
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 app.include_router(
     frontend.router,
     prefix="/api/v1/frontend",
-    tags = ["Frontend"]
+    tags = ["Input Fields"]
 )
 
 app.include_router(
@@ -67,6 +90,13 @@ app.include_router(
     prefix='/auth',
     tags=['Authorisation']
 )
+
+app.include_router(
+    infrastructure.router,
+    prefix = "/api/v1/affiliations",
+    tags = ["Infrastructure"]
+)
+
 
 templates = Jinja2Templates(directory=f"{os.path.dirname(__file__)}/../build/")
 

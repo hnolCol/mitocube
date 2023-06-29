@@ -19,10 +19,10 @@ class DatasetDetails(Resource):
     def get(self):
         "Returns a formatted way way of params"
         
-        token = request.args.get('token', default="None", type=str)
-        ok, msg = isTokenValid(token,self.token)
-        if not ok:
-            return {"success":False,"msg":msg}
+        # token = request.args.get('token', default="None", type=str)
+        # ok, msg = isTokenValid(token,self.token)
+        # if not ok:
+        #     return {"success":False,"msg":msg}
 
         dataID = request.args.get('dataID', default="None", type=str)
         params = self.data.getParams(dataID)

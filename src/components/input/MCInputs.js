@@ -8,6 +8,7 @@ import { fromDateToString } from "../utils/DateFormatting";
 import _ from "lodash";
 import { MCHeader } from "../utils/components/MCHeader";
 import { Tooltip2 } from "@blueprintjs/popover2";
+import { handleBackendError } from "../main/Login";
 
 const inputFields = {
     text: MCTextInput,
@@ -27,11 +28,13 @@ function InputField(props) {
 }
 
 export function MCInputFieldDialog(props) {
-    const { url, header, token, onClose, postUrl, ...rest } = props 
+    const { url, header, token, onClose, postUrl, tokenRequired, ...rest } = props 
+    console.log(tokenRequired)
+    console.log(rest)
     return (
         <Dialog {...rest} title={header} onClose={onClose}>
             <div style={{margin:"1rem"}}>
-                <MCInputByFieldsFromBackend {...{ header, url, token, postUrl }} onClose={onClose} />
+                <MCInputByFieldsFromBackend {...{ header, url, token, postUrl, tokenRequired }} onClose={onClose} />
             </div>
         </Dialog>
     )
@@ -44,7 +47,7 @@ MCInputFieldDialog.defaultProps = {
 }
 
 export function MCInputByFieldsFromBackend(props) {
-    const { url, postUrl, token, onClose, submitMode} = props
+    const { url, postUrl, token, onClose, submitMode, tokenRequired} = props
     const [userInput, setUserInput] = useState({})
     const [alert, setAlert] = useState({isOpen : false, children : <div></div>, intent : "danger", icon:"warning-sign"})
 
@@ -86,16 +89,21 @@ export function MCInputByFieldsFromBackend(props) {
             })
             return
         }
-
-        const headers = {
-            "Content-Type": "application/json",
-            "Authorization" : `${token.token_type} ${token.access_token}`
+        let headers = {}
+        if (tokenRequired) {
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization" : `Bearer ${token.access_token}`
+            }
         }
-        console.log(postUrl)
+        else {
+            headers = {
+                "Content-Type": "application/json"
+            }
+        }
         if (submitMode) {
             axios.post(postUrl, userInput, {headers : headers}).then(
                 response => {
-                    console.log(response)
                     setAlert(prevValues => {
                         return {
                             ...prevValues,
@@ -106,7 +114,15 @@ export function MCInputByFieldsFromBackend(props) {
                         }
                     })
                 }
-            ).catch(error => console.log(error.response))
+            ).catch(error => setAlert(prevValues => {
+                return {
+                    ...prevValues,
+                    "isOpen": true,
+                    "intent": "danger",
+                    "icon" : "warning",
+                    "children": <div>{handleBackendError(error)}</div>
+                }
+            }))
         }
         else {
             axios.put(postUrl,{},{headers : headers}).then(response => console.log(response))
@@ -162,8 +178,8 @@ export function MCInputByFieldsFromBackend(props) {
                 }
                 )
                             : null}
-            <div className="hor-aligned-div">
-                            <Button text={submitMode ? "Submit" : "Update"} onClick={handleSubmission}/>
+            <div className="hor-aligned-div little-m">
+                <Button text={submitMode ? "Submit" : "Update"} onClick={handleSubmission} intent="primary"/>
                 <Button text="Cancel" onClick={onClose}/>
             </div>
             </div>
@@ -173,7 +189,8 @@ export function MCInputByFieldsFromBackend(props) {
 }
 
 MCInputByFieldsFromBackend.defaultProps = {
-    submitMode : true,
+    submitMode: true,
+    tokenRequired : true,
     header : "Create New User",
     url : "/api/v1/frontend/input_fields/user"
 }
@@ -300,7 +317,7 @@ function MCDateInput(props) {
 function MCComboInput(props) {
     // Combobox Input field. Items can either be a dict or a list.
     // If a dict, itemKey must match. This allows for a dynamic selection based on another state.
-    const { name, type, hint, style, items, onChange, userInput, itemKey, optional, ...rest } = props 
+    const { name, type, hint, style, items, onChange, userInput, itemKey, optional, darkMode, ...rest } = props 
     const handleValueChange = (selectedItem) => {
         onChange(name, selectedItem, "combo")
     }

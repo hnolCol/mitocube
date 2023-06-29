@@ -112,48 +112,46 @@ export function MCDataset(props) {
 
     return(
 
-        <div>
+        <div className="fill-grid margin-for-grid-item">
             {dataDetails.dataExist?
-                <div style={{fontSize:"0.75rem",outline:"none",marginTop:"40px"}}>
-                    <div className="topbar-fixed-dataset">
-                    <div className="hor-aligned-out">
-                        <div className="hor-aligned-center-div-sapce-between">
+                // <div style={{fontSize:"0.75rem",outline:"none"}}>
+                //     <div className="topbar-fixed-dataset">
+                //     <div className="hor-aligned-out">
+                //         <div className="hor-aligned-center-div-sapce-between">
 
-                            <div style={{color:"#2F5597",marginLeft:"2rem"}}> 
-                                <h3 >{dataDetails.details["shortDescription"]}</h3>
-                            </div>
+                //             <div style={{color:"#2F5597",marginLeft:"2rem"}}> 
+                //                 <h3 >{dataDetails.details["shortDescription"]}</h3>
+                //             </div>
                                 
-                                {plotTypes.map(plotTypeItem => {
-                                    return (
-                                        <div className="navbar-link" key={plotTypeItem.typeName}>
-                                            <Link
-                                                style={
-                                                    {
-                                                        textDecoration: "none",
-                                                        color: plotType === plotTypeItem.typeName ? "#2F5597" : "grey",
-                                                        fontWeight: "light"
-                                                    }}
-                                                to={`/dataset/${props.dataID}?type=${plotTypeItem.typeName}`}>{plotTypeItem.label}</Link>
-                                        </div>
-                                )
-                            })}
+                //                 {plotTypes.map(plotTypeItem => {
+                //                     return (
+                //                         <div className="navbar-link" key={plotTypeItem.typeName}>
+                //                             <Link
+                //                                 style={
+                //                                     {
+                //                                         textDecoration: "none",
+                //                                         color: plotType === plotTypeItem.typeName ? "#2F5597" : "grey",
+                //                                         fontWeight: "light"
+                //                                     }}
+                //                                 to={`/dataset/${props.dataID}?type=${plotTypeItem.typeName}`}>{plotTypeItem.label}</Link>
+                //                         </div>
+                //                 )
+                //             })}
                             
-                        </div>
+                //         </div>
 
-                        <div className="hor-aligned-center-div-sapce-between">
-                            <div className="navbar-link">
-                                <Link style={{textDecoration:"none", color:"grey"}} to = {`/dataset/`}><Icon icon="database"/></Link>
-                            </div>
-                            <div className="navbar-link">
-                                <Link style={{textDecoration:"none", color:"grey"}} to = {`/`}><Icon icon="home"/></Link>
-                            </div>
+                //         <div className="hor-aligned-center-div-sapce-between">
+                //             <div className="navbar-link">
+                //                 <Link style={{textDecoration:"none", color:"grey"}} to = {`/dataset/`}><Icon icon="database"/></Link>
+                //             </div>
+                //             <div className="navbar-link">
+                //                 <Link style={{textDecoration:"none", color:"grey"}} to = {`/`}><Icon icon="home"/></Link>
+                //             </div>
 
-                        </div>
-                    </div>
-                    </div>
-
-                    <div className="dataset-container">
-                    {plotType==="heatmap"?
+                //         </div>
+                //     </div>
+                //     </div>
+                    plotType==="heatmap"?
                     
                         <MCHeatmapWrapper 
                             token = {props.token} 
@@ -194,9 +192,8 @@ export function MCDataset(props) {
                             <div>
                                         <MCDatasetSummary details={dataDetails.details} names={dataDetails.names} token={token} dataID={dataID} />
                             </div>
-                        : null}
-                    </div>
-                </div>:
+                        : null
+                :
                 
                 <p>Data ID not found. Please check url.</p>}
         </div>

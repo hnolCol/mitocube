@@ -34,8 +34,7 @@ export function MCHeatmapWrapper(props) {
     
    
     useEffect(() => {
-       
-
+    
         if (Object.keys(responseData.data).length !== 0) return 
         if (!_.isFunction(saveHeatmapData)) return 
         if (responseData.anovaDetails===undefined  ||  Object.keys(responseData.anovaDetails).length === 0) return 

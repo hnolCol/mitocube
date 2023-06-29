@@ -5,8 +5,8 @@ export function MCDatasetMainView(props) {
     const params = useParams();
     
     return(
-        <div>
-            <MCDataset dataID={params.dataID} token={props.token}/>   
-        </div>
+        
+        <MCDataset dataID={params.dataID} token={props.token}/>   
+    
     )
 }

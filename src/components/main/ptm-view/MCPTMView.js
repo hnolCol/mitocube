@@ -163,14 +163,10 @@ export function MCPTMView(props) {
 
     let showAllItems = search.itemsToShow.length<=50
     return(
-        <div>
-            <div className="top-right-absolute-container">
-            <Link to="/">Home</Link>
-            </div>
-        <div className="ptm-view vert-align-div">
+        <div className="fill-grid margin-for-grid-item vert-align-div">
             
-                <MCHeader text={"Post translational modification (PTM) View"} />
-                <p>Under construction. </p>
+            <MCHeader text={"Post translational modification (PTM) View"} />
+            <p>Under construction. </p>
             <MCPTMSearch 
                 filter = {search.filter} 
                 categoricalColumns = {search.categoricalColumns}
@@ -196,6 +192,6 @@ export function MCPTMView(props) {
                 handlePinnedChange = {handlePinnedChange} 
                 categoricalColumns={search.categoricalColumns}/>
         </div>
-        </div>
+    
     )
 }

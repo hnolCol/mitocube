@@ -6,12 +6,12 @@ import { MCItemHeaders } from "./MCItemHeader";
 import { useQuery } from "react-query";
 import axios from "axios";
 import _ from "lodash"
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export function MCItemConfiguration(props) {
     const { token, url } = props
     const [selectedHeader, setSelectedHeader] = useState(undefined)
-    console.log(url)
+
     const getConfigItems = async () => {
 
         const res = await axios.get(

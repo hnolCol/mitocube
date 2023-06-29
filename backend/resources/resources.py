@@ -14,8 +14,30 @@ from .login.Login import LoginWebsite, TokenValid, AdminLoginWebsite, AdminLogin
 from .performance.ShareToken import ShareTokenValid, ShareToken
 from .performance.ShareData import ShareData, ShareDataDetails
 from .ptm.PTM import PTMView, PTMItems
-from .website.Welcome import WelcomeText
+from .website.Welcome import WelcomeText, News, KeyFigures, DendrogramTest, DataTest
+
+
 mitoCubeResources = [
+    {
+        "url":'/api/features/data',
+        "obj":  DataTest,
+        "reqKwargs" : ["token","featureFinder","data"]
+    },
+    {
+        "url":'/api/dendro',
+        "obj":  DendrogramTest,
+        "reqKwargs" : ["token"]
+    },
+    {
+        "url":'/api/keyfigures',
+        "obj":  KeyFigures,
+        "reqKwargs" : ["token"]
+    },
+    {
+        "url":'/api/news',
+        "obj":  News,
+        "reqKwargs" : ["token"]
+    },
     {
         "url":'/api/website/welcome',
         "obj":  WelcomeText,

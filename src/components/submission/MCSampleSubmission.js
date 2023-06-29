@@ -36,7 +36,7 @@ function buildRunName (time,researcher,dataID,nrows,index) {
 }
 
 export function MCSampleSubmission (props) {
-    const { token } = props
+    const { token, darkMode } = props
     //const [submissionID, setsubmissionID] = useState(initDetails)
     const [submission, setSubmission] = useState(initSubmission)
     const [details, setDetails] = useState({items : [], allowCustomRunNames : false})
@@ -285,8 +285,9 @@ export function MCSampleSubmission (props) {
    
     return(
 
-        <div style={{fontSize:"0.80rem","width":"100vw",paddingBottom:"3rem", paddingLeft : "5vw", paddingRight: "5vw"}}>
-            <Alert {...alertDetails} canOutsideClickCancel = {true} onClose = {closeAlert}/>
+        <div className="fill-grid margin-for-grid-item">
+            
+            <Alert {...alertDetails} canOutsideClickCancel={true} onClose={closeAlert} />
             
             <div style={
                 {marginTop:"2px",
@@ -311,9 +312,9 @@ export function MCSampleSubmission (props) {
             </div>
             <div>
                     <div className="middle-m">               
-                        <MCHeader text="Sample Submission" />
+                    <MCHeader text="Sample Submission" {...{ darkMode }}/>
                         <div className="little-m">
-                            <MCHeader text = {submission.dataID} fontSize="0.8rem"/>
+                            <MCHeader text = {submission.dataID} fontSize="0.8rem" {...{ darkMode }}/>
                         </div>
                     </div>
                 <p>
@@ -323,11 +324,10 @@ export function MCSampleSubmission (props) {
             </div>
             <div style={{height : "75vh", overflowY : "scroll", paddingRight:"1rem",marginTop:"0.7rem",marginBottom:"0.7rem"}} onScroll={onScroll}>
                 <MCSubmissionDetails
-                    token={props.token}
                     submission={submission.details}
                     date={submission.time}
-                    saveSubmissionValue={saveSubmissionValue}
                     details={details.items}
+                    {...{ darkMode, saveSubmissionValue, token }}
                 />
                 <div>
                     <MCGroupingTable 
@@ -381,15 +381,16 @@ function checkDetailInput(submission,details) {
 
 
 function MCSubmissionDetails (props) {
-    const {submission,saveSubmissionValue, details, date} = props
+    const {submission,saveSubmissionValue, details, date, darkMode} = props
 
 
     return(
 
         <div style={{display:"flex",flexDirection:"column",justifyItems:"center",justifyContent:"center"}}>
             {details.map(v => 
-
-                {   
+                
+            {   
+                    v["darkMode"] = darkMode
                     if (v.field === "numeric-input"){
                         v["value"] = submission[v.name]!==undefined?`${submission[v.name]}`:""
                         return (
@@ -481,9 +482,9 @@ function MCTextFieldInput(props) {
     
     const {q,field, detailName, cb, title, ...rest} = props 
     return (
-        <div style={{width:"100%",minHeight:"7rem",maxHeight:"7rem",marginTop:"10px",backgroundColor:"white"}}>
+        <div style={{width:"100%",minHeight:"7rem",maxHeight:"7rem",marginTop:"10px"}}>
             {title!==undefined?<div style={{fontSize:"0.85rem",fontWeight:"bold"}}>{title}</div>:null}
-            <div style={{overflowY:"hidden",overflowX:"hidden",height:"5rem",marginTop:"2px",marginRight:"2px"}}>
+            <div style={{overflowY:"hidden",overflowX:"hidden",height:"5rem",marginTop:"2px",marginRight:"2px",color:"white"}}>
             <EditableText {...rest} onChange={value => props.cb(props.detailName,value)} multiline={true} minLines={8}/>
             </div>
         </div> 
@@ -491,7 +492,7 @@ function MCTextFieldInput(props) {
 }
 
 function MCTextInput (props) {
-    const {q,field, detailName, cb, ...rest} = props 
+    const {q,field, detailName, cb, darkMode, ...rest} = props 
 
     useEffect(()=>{
 
@@ -502,10 +503,10 @@ function MCTextInput (props) {
             }
         
         }, [])
-    
+    console.log(darkMode)
     return(
         <div style={{minHeight:"3rem",maxHeight:"3rem"}}>
-            <div style={{minHeight:"0.8rem",fontSize:"0.6rem"}}>
+            <div className={darkMode?"darkmode-color":""} style={{minHeight:"0.8rem",fontSize:"0.8rem",color:darkMode?"white":"black"}}>
                 {rest.value!==undefined&rest.value!==""?q:" "}
             </div>
         <InputGroup {...rest} onChange={e => props.cb(props.detailName,e.target.value)}/>

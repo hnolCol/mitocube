@@ -35,20 +35,18 @@ export function MCPTMSearch(props) {
     }
 
     return(
-        <div style={{width:"80%", marginTop: "1rem"}}>
-        <div className="hor-aligned-center-flex-start">
-            <div>
+        <div className="hor-aligned-center-flex-start" style={{width:"100%"}}>
             <InputGroup 
                 placeholder="Search ..." 
                 value={searchString} 
-                onChange={handleTextInput} 
+                    onChange={handleTextInput} 
+                    fill={true}
                 small={true}/>
-            </div>
             <div>
                 ({itemsShown} / {totalNumberOfItems})
             </div>
     
-                {categoricalColumns.map(categoricalColumn => {
+                {/* {categoricalColumns.map(categoricalColumn => {
                
                 return(
                     <div key = {categoricalColumn}>
@@ -59,8 +57,8 @@ export function MCPTMSearch(props) {
                         />
                     </div>
                 )
-            })}
+                })}
+        <Checkbox disabled={ !numberPinnedItems > 0} checked={showPinnedOnly} label={`Show pinned items ${numberPinnedItems} only`} onChange={handlePinnedOnlyChange} large={false}/> */}
         </div>
-        <Checkbox disabled={ !numberPinnedItems > 0} checked={showPinnedOnly} label={`Show pinned items ${numberPinnedItems} only`} onChange={handlePinnedOnlyChange} large={false}/>
-        </div>)
+    )
 }

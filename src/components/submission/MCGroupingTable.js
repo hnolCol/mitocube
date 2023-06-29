@@ -252,8 +252,12 @@ export function MCGroupingTable(props) {
                     const numSamples = dataArray.length
                     const replicates = _.uniq(dataArray.map(v => v[_.indexOf(columnNames, "Replicate")]))
                     const runNames = _.uniq(dataArray.map(v => v[_.indexOf(columnNames, "Run")]))
+                    if (runNames.length !== numSamples) {
+                        alert("The run names appear to be not unique. Please check the runs for duplicates.")
+                        return 
+                    }
                     
-                 
+                    // extract the data from the data array (txt file) into an array of objects.
                     let dataTable = dataArray.map((rowData,rowIdx) => Object.fromEntries(rowData.map((v, i) => {
                         if (allowCustomRunNames && columnNames[i] === "Run") {
                             
@@ -279,8 +283,6 @@ export function MCGroupingTable(props) {
         else {
             alert ("Wrong file extension. Requires tab delimted txt.")
         }
-        
-        
     }
  
 

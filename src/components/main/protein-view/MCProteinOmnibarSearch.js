@@ -10,6 +10,7 @@ import { filterArrayBySearchString } from "../../utils/Filter";
 import { MCSimpleResponseCheck } from "../../utils/ResponseChecks";
 import { useQuery } from "react-query"
 import { getFeatureDetails } from "../../../requests/MCFeatureRequests";
+import { useNavigate, Link, Navigate } from "react-router-dom"
 
 // if (!_.isEqual(prevProps.filter,this.props.filter)){
 //     this._asyncDataFetch()
@@ -26,17 +27,19 @@ import { getFeatureDetails } from "../../../requests/MCFeatureRequests";
 
     export function OmnibarItem(props) {
         
-        const { item, onSelect, featureLabels, handleClose} = props
+        const { item, onSelect, featureLabels, handleClose } = props
+        const redirect = useNavigate()
+        
         const handleSelectAndClose = (e) => {
-
-            onSelect(props.item)
-            if (_.isFunction(handleClose)) {
-                handleClose()
-            }
+            // 
+            //redirect(`/protein/${item.Entry}`)
+            onSelect(item)
+            handleClose( )
                 
             }
     
-        return(
+        return (
+            
             <div key={item["Entry"]} onClick={handleSelectAndClose} style={{padding:"0em 0.3em", maxWidth:"90vh"}}>
             <div className={"omnibar-search-item"} >
     
@@ -69,19 +72,18 @@ export function MCProteinSearch(props) {
     const { isOpen, onClose, token, filter, onItemSelect} = props
     const [featureDeatails, setFeatureDetails] = useState({items : [], featureLabels : {}, itemsToShow : [], searchString : "", sortBy : ""})
     const debounceSearchString = useDebounce(featureDeatails.searchString, 400)
-    
+    console.log(debounceSearchString)
     const getFeatureDetails = async () => {
         //fetch data from api
         const res = await axios.post("/api/features/details",
                         { filter: filter, token: token }, 
                         { headers: { 'Content-Type': 'application/json' } })
-        
         return res.data
-
     }
     const { isLoading, isFetching } = useQuery(["getFeatureDetails", filter],
         getFeatureDetails, {
             onSuccess: (data) => {
+                console.log(data,MCSimpleResponseCheck(data))
                 if (MCSimpleResponseCheck(data)) {
                     setFeatureDetails(prevValues => {
                         return {
@@ -94,7 +96,7 @@ export function MCProteinSearch(props) {
                 }
             },
             refetchOnWindowFocus: false,
-            enabled: _.isString(token) 
+            enabled: isOpen
     })
 
     useEffect(() => { 
@@ -122,6 +124,8 @@ export function MCProteinSearch(props) {
     },
         [debounceSearchString,featureDeatails.sortBy])
     
+    useEffect(() => {setSearchString("")},[isOpen])
+    
     const setSearchString = (searchString) => {
         // sets state for search string. 
         setFeatureDetails(prevValues => {
@@ -146,17 +150,18 @@ export function MCProteinSearch(props) {
                
             );
           }
-
-    if (featureDeatails.items === undefined) return <div></div>
+    if (featureDeatails.items === undefined) return <div>No features</div>
     return (
 
         <Omnibar
             itemRenderer={renderItem}
             // itemListPredicate={filterItems}
-            onQueryChange = {setSearchString}
+            query={featureDeatails.searchString}
+            resetOnSelect={true}
+            onQueryChange={setSearchString}
             inputProps={{ placeholder: _.isArray(featureDeatails.items) && featureDeatails.items.length===0?'No feature items available. API is loading or filtering excluded all features.':`Search in ${featureDeatails.items.length} items.. (example: Yme1l1, Uniprot ID) `}}
             style={{ position: "absolute", left: "50%"}}
-            {...{ isOpen, onClose, "items" : featureDeatails.itemsToShow}} />
+            {...{ isOpen, onClose, items : featureDeatails.itemsToShow}} />
     )
 
 }

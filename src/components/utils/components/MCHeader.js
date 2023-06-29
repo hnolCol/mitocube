@@ -1,10 +1,10 @@
 
 
 export function MCHeader(props) {
-    const {hexColor, fontSize, fontWeight} = props
+    const {hexColor, fontSize, fontWeight, darkMode} = props
     return(
         <div style={{
-                color:hexColor,
+                color:darkMode?"white":hexColor,
                 fontSize:fontSize,
             fontWeight: fontWeight,
             fontFamily: "sans-serif",
@@ -22,5 +22,6 @@ MCHeader.defaultProps = {
     text : "Welcome to MitoCube Admin Content",
     hexColor: "#2F5597",
     fontSize: "1.1rem",
-    fontWeight : "bold"
+    fontWeight: "bold",
+    darkMode : false
 }

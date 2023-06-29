@@ -438,10 +438,8 @@ export function MCDatasetSelection (props) {
     }
 
     return(
-        <div className="dataset-selection-content">
-            <div className="top-right-absolute-container">
-            <Link to="/">Home</Link>
-            </div>
+        <div className="fill-grid margin-for-grid-item">
+            
             <div className="middle-m">
             <MCHeader text="Dataset Selection" fontSize="1.5rem"/>
             </div>

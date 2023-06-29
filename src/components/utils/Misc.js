@@ -3,7 +3,9 @@ import { useMemo } from "react";
 import {isObject, join } from "lodash";
 import _ from "lodash"
 
-
+export function downloadSVGAsText() {
+    
+}
 export function areAllValuesArrays(object) {
     let arrayCheckForValues = Object.values(v => _.isArray(v))
     return _.every(areAllValuesArrays)
@@ -152,12 +154,6 @@ export function getMitoCubeToken() {
     return tokenString===undefined || tokenString === null?"":tokenString
 }
 
-
-export function getMitoCubeAdminToken() {
-    const tokenString = localStorage.getItem("mitocube-token-admin")
-    return tokenString===undefined || tokenString === null?"":tokenString
-}
-
 export function removeMitoCubeAdminToken() {
     // removes mitocube-token
     if (localStorage.getItem("mitocube-token-admin") !== null){
@@ -165,10 +161,6 @@ export function removeMitoCubeAdminToken() {
     }
 }
 
-export function setMitoCubeAdminToken(tokenString) {
-    // save token string to local storage
-    localStorage.setItem("mitocube-token-admin",tokenString)
-}
 
 
 export function saveSubmission(submissionState) {
@@ -315,9 +307,11 @@ export function arrayOfObjectsToTabDel(data, headers, groupingMapper){
     
 }   
 
-export function downloadSVGAsText(svgEl,name="download.svg") {
-    svgEl.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-    var svgData = svgEl.outerHTML;
+
+export function downloadSVG(svgElement, name = "download.svg") {
+    //save a SVG file to disc. 
+    svgElement.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    var svgData = svgElement.outerHTML;
     var preface = '<?xml version="1.0" standalone="no"?>\r\n';
     var svgBlob = new Blob([preface, svgData], {type:"image/svg+xml"});
     var svgUrl = URL.createObjectURL(svgBlob);

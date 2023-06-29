@@ -5,13 +5,47 @@ import axios from "axios"
 import { MCHeader } from "../utils/components/MCHeader"
 import _ from "lodash"
 import { MCInputFieldDialog } from "../input/MCInputs"
-import { useEffect, useState } from "react"
-import { InputGroup } from "@blueprintjs/core"
+import { useEffect, useRef, useState } from "react"
+import { Button, InputGroup } from "@blueprintjs/core"
 import { MCTagContainer } from "../utils/components/MCTagContainer"
 import useDebounce from "../../hooks/useDebounce"
 import { filterArrayBySearchString, handleSearchTagBasedFiltering, handleSearchTagFiltering } from "../utils/Filter"
+import { AnimatePresence } from "framer-motion"
 
+function MCAddItem(props) {
+    const { width, height, text, onClick } = props
+    const centerX = width / 2
+    const centerY = height / 2
+    const r = Math.min(width, height) * 0.7 / 2
+    
+    return (
+        <div className="hor-aligned-center-div-between middle-m">
+            <div className="vert-align-div-center">
+                <motion.svg width={width} height={height}>
+                    <motion.g whileHover={{ scale: 1.1 }} onClick={onClick}>
+                        {/* <rect x={0} y={0} width={width} height={height} fill="white"/> */}
+                        <circle cx={centerX} cy={centerY} r={r} fill="white" stroke="none" />
+                        <line x1={centerX - width / 4} x2={centerX + width / 4} y1={centerY} y2={centerY} stroke="#2F5597" strokeWidth={3} />
+                        <line x1={centerX} x2={centerX} y1={centerY - height / 4} y2={centerY + height / 4} stroke="#2F5597" strokeWidth={3} />
+                    </motion.g>
+                </motion.svg>
+            </div>
+            {text !== "" ?
+                <div className="vert-align-div-center">
+                    <div>
+                        <MCHeader text={text} fontWeight={400} />
+                    </div>
+            </div>:null}
+            
+        </div>
+    )
+}
 
+MCAddItem.defaultProps = {
+    width: 200,
+    height: 200,
+    text : ""
+}
 function MCTagSearch(props) {
     const { searchDetails, setSearchDetails} = props
     
@@ -58,40 +92,13 @@ function MCTagSearch(props) {
     )
 }
 
-function MCAddItem(props) {
-    const { width, height, text, onClick} = props
-    const centerX  = width/2 
-    const centerY = height / 2 
-    const r = Math.min(width, height) * 0.7 / 2
-    
-    return (
-        <div className='editable-item-container'>
-            <div style={{ height: "100%" }} className='vert-align-div-center'>
-                
-            <div>
-                <motion.svg width={width} height={height}>
-                        <motion.g whileHover={{ scale: 1.1 }} onClick={onClick}>
-                        <circle cx={centerX} cy={centerY} r={r} fill="#efefef" stroke="none" />
-                        <line x1={centerX-width/4} x2={centerX+width/4} y1={centerY} y2={centerY} stroke="#2F5597" strokeWidth={7}/>
-                        <line x1={centerX} x2={centerX} y1={centerY-height/4} y2={centerY+height/4} stroke="#2F5597" strokeWidth={7} />
-                        </motion.g>
-                </motion.svg>
-                </div>
-                <MCHeader text={text} fontWeight={200} />
-        </div>
-        </div>
-    )
-}
-MCAddItem.defaultProps = {
-    width: 200,
-    height: 200,
-    text : ""
-}
+
 
 export function MCItemView(props) {
+
     const [itemDialog, setItemDialog] = useState({ isOpen: false })
     const [searchDetails, setSearchDetails] = useState({searchTags : [], searchString : "", itemsToShow : [], items : []})
-    const { token, url, urlInputFields, itemHeader } = props 
+    const { token, url, urlInputFields, itemHeader} = props 
     const debouncedSearchString = useDebounce(searchDetails.searchString, 150)
 
 
@@ -121,10 +128,11 @@ export function MCItemView(props) {
         })
         return res.data
     }
-    const { data, isLoading, isError, error, refetch } = useQuery(["getItems", url], getItems, {
+    
+    const { isLoading, isError, error, refetch } = useQuery(["getItems", url], getItems, {
         onSuccess : (data) => setSearchDetails(prevValues => {return{...prevValues,"items" : data, "itemsToShow" : data.slice()}}), retry: false})
-        
-    console.log(data)
+    
+
     
     if (isError) {
         return (
@@ -150,22 +158,33 @@ export function MCItemView(props) {
                 postUrl={url}
                 header={`Item: ${itemHeader}`}
                 onClose={handleDialogClosing}
-                {...itemDialog}/>
-            <MCHeader text={itemHeader} fontWeight={400} fontSize={"2rem"} />
+                {...itemDialog} />
+            <div className="hor-aligned-div">
+                <MCHeader text={itemHeader} fontWeight={400} fontSize={"2rem"} />
+                <MCAddItem width={50} height={50} onClick={() => setItemDialog(prevValues => {return{...prevValues,isOpen:true}})}/>
+                
+            </div>
+            
             <div>
                 <p>{searchDetails.itemsToShow!==undefined&&_.isArray(searchDetails.itemsToShow) ?`${searchDetails.items.length} items found. Please use the plus button to add an item to the database.`:""}</p>
             </div>
-            <MCTagSearch {...{searchDetails, setSearchDetails}} />
-            <div style={{ display: "flex", flexDirection: "row", flexWrap: "wrap", overflowY : "scroll", height:"70vh"}}>
-                {isLoading ? <p>Loading...</p> : searchDetails.itemsToShow.map((item,idx) => {
-                console.log(item)
-                return (
-                    <MCEditableItem key={`${idx}-${itemHeader}-itemview`} {...item} />
-                )
+            <MCTagSearch {...{ searchDetails, setSearchDetails }} />
+            {isLoading ? <p>Loading...</p> :
+                // 
+            <ul style={{ display: "flex", flexDirection: "row", flexWrap: "wrap", overflowY: "scroll", height: "70vh" , width : "70vw"}}>
             
-        })}
-                <MCAddItem onClick={() => setItemDialog(prevValues => {return {...prevValues, isOpen:true}})} />
-        </div> 
+                
+                        {!isLoading && searchDetails.itemsToShow.map((item, idx) => {
+                            return (
+                                
+                                <MCEditableItem key={`${idx}`} {...item} idx={idx} totalItems={searchDetails.itemsToShow.length} />
+                                  
+                            )
+                        })}
+                        
+                    
+                    </ul> }
+                {/* */}
         </div>
 
     )

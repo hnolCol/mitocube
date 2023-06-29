@@ -76,10 +76,8 @@ export function MCProteinLayout(props) {
 
       if (lastSavedLayout[s.Entry] === undefined && s.Entry === selectedFeature.Entry){
         lastSavedLayout[s.Entry] = layoutAndCards.layout[selectedFeature.Entry]
-   
       }
      
-
       if (layoutAndCards.layout[selectedFeature.Entry][breakpoint]!==undefined&&layoutAndCards.layout[selectedFeature.Entry][breakpoint].length!== layout.length) {
         const missingLayoutItem = _.differenceWith(lastSavedLayout[s.Entry][breakpoint],layout,_.isEqual)
         activeFilterLayoutItems = _.unionBy(missingLayoutItem,activeFilterLayoutItems,"i")     
@@ -184,7 +182,7 @@ export function MCProteinLayout(props) {
           {
             layoutAndCards.cards.length === 0 || dynamicLayout===undefined || layoutAndCards.cards[selectedFeature.Entry] === undefined?null:
               <ResponsiveGridLayout
-                onLayoutChange={(l,al) => onLayoutChangeCallback(l,al,selectedFeature)} 
+                onLayoutChange={(l, al) => onLayoutChangeCallback(l, al, selectedFeature)} 
                 className="layout"
                 layouts={dynamicLayout}
                 breakpoints={{ lg: 1200 , md: 996, sm: 768, xs: 480, xxs: 0}}

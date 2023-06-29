@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import React from "react";
-import { Link, } from "react-router-dom";
+import { Link, useParams, } from "react-router-dom";
 import { Button } from "@blueprintjs/core";
 
 import { MCIconWithTooltip } from "../../utils/components/IconWithTooltip";
@@ -21,6 +21,9 @@ import { MCProteinSearch } from "./MCProteinOmnibarSearch";
 
 import { useToggle } from "../../../hooks/useToggle";
 import _ from "lodash"
+import { useQuery } from "react-query";
+import axios from "axios";
+import { MCLeftbar } from "../../navigation/Leftbar";
 
 function allObjectsPresent(inArray = [],comArray = []){
   const foundInCom = inArray.map((o) => {
@@ -31,6 +34,8 @@ function allObjectsPresent(inArray = [],comArray = []){
 
 
 export function ProteinMainView(props) {
+  const params = useParams()
+  const proteinID = params.proteinID
     const {token} = props
     // const [loading, setLoading] = useState(false)
     const [filterDialogOpen, setFilterDialogOpen] = useState(false)
@@ -42,9 +47,19 @@ export function ProteinMainView(props) {
     const [dataForTable , setDataForTable] = useState({isOpen:false,data:null,columnNames:[],title:"Data View",fileNameID:"download"})
     //console.log(QueryParam().get("q"))
     // experimental info request (e.g. opening drwaer)
+  // const getProteinInformation = async () => {
+    
+  //   const res = await axios.post()
+  // }
+  
+  // const { isLoading, isFetching} = useQuery(["proteinInfo",proteinID],getProteinInformation)
 
-
-
+  useEffect(() => {
+      if (proteinID === undefined) return 
+      const items = _.concat(featureIDs.items,[proteinID])
+      setfeatureIDs(prevValues => {return { ...prevValues, selected: proteinID,items} })
+    
+    },[proteinID])
 
     const handleExpInfoRequest = (dataID,shoudlClose,isSummary=false) => {
       if (shoudlClose){
@@ -82,7 +97,8 @@ export function ProteinMainView(props) {
 
     }
 
-    const onItemSelect = (id) => {
+  const onItemSelect = (id) => {
+      console.log(id)
       // on search item select
       if (featureIDs["items"].length === 0){
         setfeatureIDs({"items":[id],"selected":id,"invisible":[]})
@@ -117,14 +133,36 @@ export function ProteinMainView(props) {
         setfeatureIDs({"items":newFeatures,"selected":newFeatures[0],"invisible":newInvisibleFeatures}) 
       }
     }
+  
+  const allItemsHidden = allObjectsPresent(featureIDs["items"],featureIDs["invisible"]).every((v) => v)
+  const allItemsForLeftBar = _.isArray(featureIDs.items)?_.map(featureIDs.items, item => { return { name: item } }):[]
 
-
+  console.log(featureIDs )
+  return (
+    <div className='app-grid'>
+    {/* // <div className="top-row-in-grid white-bg">
     
-    const allItemsHidden = allObjectsPresent(featureIDs["items"],featureIDs["invisible"]).every((v) => v)
-    
-    return (
-      <div style={{width:"100%", height: "100vh"}}>
-      <div className="leftbar-fixed">
+    // <MCAddButton callback={setSearchOpen}/> 
+    // </div> */}
+      <div className="left-column-in-grid">
+        
+        <MCLeftbar secondLevelItems={{ Protein: allItemsForLeftBar }} />
+      </div>
+    <div className="fill-grid margin-for-grid-item">
+      {featureIDs["items"].map(v =>{
+      
+      return(
+        _.includes(featureIDs["invisible"],v)?null:
+        <MCTagButton 
+              text={v["Gene names  (primary )"]} 
+              key={v.Entry} 
+              highlighted = {v.Entry===featureIDs["selected"].Entry}
+              handleDelete = {onItemRemove} 
+              handleClick = {onItemClick}
+              id = {v}/>
+      )
+    })}
+      {/* <div className="leftbar-fixed">
           <Link to="/"><Button icon={"home"} minimal={true}/></Link> 
           <MCIconWithTooltip icon={"cog"} tooltipStr={"Opens settings dialog."} onClick = {() => setSettingDialogOpen(true)}/>
           <Button icon={"filter"} 
@@ -142,35 +180,13 @@ export function ProteinMainView(props) {
             minimal={true}
             />
         <hr/>
-        {/* Open link in new tab for help */}
         <Link to="/help" target="_blank" rel="noopener noreferrer"> 
           <Button icon={"help"} minimal={true} intent={"success"}/> 
         </Link>
               
-      </div>
+      </div> */}
 
-        <div className="topbar-fixed">
-
-        {featureIDs["items"].map(v =>{
-          
-          return(
-            _.includes(featureIDs["invisible"],v)?null:
-            <MCTagButton 
-                  text={v["Gene names  (primary )"]} 
-                  key={v.Entry} 
-                  highlighted = {v.Entry===featureIDs["selected"].Entry}
-                  handleDelete = {onItemRemove} 
-                  handleClick = {onItemClick}
-                  id = {v}/>
-          )
-        })}
-        
-        <MCAddButton callback={setSearchOpen}/> 
-        </div>
-
-        
-        <div style={{ marginLeft: "40px", marginTop: "40px", overflowY: "scroll", height: "100%" }}>
-          <MCProteinSearch token={token} isOpen={searchOpen} onItemSelect={onItemSelect} filter = {MCGetFilterFromLocalStorage()} onClose = {setSearchOpen}/>
+      <MCProteinSearch token={token} isOpen={searchOpen} onItemSelect={onItemSelect} filter = {MCGetFilterFromLocalStorage()} onClose = {setSearchOpen}/>
       {/* <OmnibarSearch isOpen={searchOpen} setOpenState = {setSearchOpen} onItemSelect={onItemSelect} filter = {MCGetFilterFromLocalStorage()}/> */}
       <MCAnovaStats 
                 isOpen={dataForTable.isOpen} 
@@ -223,7 +239,7 @@ export function ProteinMainView(props) {
           </div>
         </div>}
 
-  </div>
-  </div>
+      </div>
+      </div>
     );
   }

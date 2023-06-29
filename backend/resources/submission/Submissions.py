@@ -56,8 +56,8 @@ class DataSubmissionID(Resource):
     def get(self):
         "Returns features in data"
         token = request.args.get('token', default="None", type=str)
-        if not self.token.isValid(token):
-            return {"success":False,"msg":"Token is not valid."}
+        # if not self.token.isValid(token):
+        #     return {"success":False,"msg":"Token is not valid."}
 
         dataID = self.submission.getID()
         return {"success":True,"dataID":dataID,"time":date.today().strftime("%Y%m%d")}
@@ -240,9 +240,9 @@ class DataSubmissions(Resource):
 
     def get(self) -> dict:
         
-        token = request.args.get('token', default="None", type=str)
-        if not isAdminValid(token,self.token):
-            return adminTokenInValidResponse
+        # token = request.args.get('token', default="None", type=str)
+        # if not isAdminValid(token,self.token):
+        #     return adminTokenInValidResponse
         
         submissions, submissionStates = self.submission.getSubmission()
        
