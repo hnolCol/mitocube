@@ -3,7 +3,7 @@ from flask import Flask, render_template
 from flask_restful import Api
 
 # import internal helpers/resources ####################################################################################
-from backend.lib.oldresources.resources import mitoCubeResources
+from backend.routes.routes_definitions import mitoCubeResources
 
 from backend.helper.Data import OldData, OldDBFeatures
 from backend.helper.Token import Token
@@ -55,21 +55,6 @@ for p in [pathToStaticData, pathToDynamicData, staticDatasets, staticUniprot, pa
           pathToArchive, pathToLibs]:
     if not os.path.exists(p):
         Path(p).mkdir(parents=True, exist_ok=True)
-
-# Examples / Mini Tests for new MitoCubeDatabase Object
-#  = MitoCubeDatabase.getDatabase()
-# print(dbObj.getNumberOfDatasets())
-# print(dbObj.getSize())
-# print(dbObj.contains(("1d1894ce4999262c6c93df8b5e6dabed",
-#                        "wJlHt1dCPfN4", "8dlTWpi5MMhF", "sdfsd",
-#                        "7e547a0e63ebec0c30d6e47dd06e1e99")))
-# print(dbObj.getDataCollection(ids=("wJlHt1dCPfN4", "8dlTWpi5MMhF")))
-# print(dbObj.getDataCollection(ids=("1d1894ce4999262c6c93df8b5e6dabed", "7e547a0e63ebec0c30d6e47dd06e1e99")))
-# print(dbObj.getDataset(datasetId="1d1894ce4999262c6c93df8b5e6dabed"))  # .getDataObj().getDataTable())
-# print(dbObj.getDataset(datasetId="wJlHt1dCPfN4"))  # .getDataObj().getDataTable())
-# print(dbObj.getDataIDs())
-# print(dbObj.getUniqueFeatures())
-#raise Exception(":-P")
 
 # define data helpers ##################################################################################################
 dbManager = OldDBFeatures(pathToDB=pathToDB)

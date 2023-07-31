@@ -1,0 +1,59 @@
+[
+  {
+    "str": "unstimulated",
+    "group_tag": "att_substance",
+    "tag": "att_substance:none"
+  }, {
+    "str": "DMSO",
+    "group_tag": "att_substance",
+    "tag": "att_substance:dmso"
+  }, {
+    "str": "LPS",
+    "group_tag": "att_substance",
+    "tag": "att_substance:lps"
+  }, {
+    "str": "ATP",
+    "group_tag": "att_substance",
+    "tag": "att_substance:atp"
+  }, {
+    "str": "R837",
+    "group_tag": "att_substance",
+    "tag": "att_substance:r837"
+  }, {
+    "str": "R848",
+    "group_tag": "att_substance",
+    "tag": "att_substance:r848"
+  }, {
+    "str": "PMA",
+    "group_tag": "att_substance",
+    "tag": "att_substance:atp"
+  }, {
+    "str": "Cell Culture",
+    "group_tag": "att_tissue",
+    "tag": "att_tissue:cell_culture"
+  }, {
+    "str": "HeLa",
+    "group_tag": "att_cells",
+    "tag": "att_cells:hela"
+  }, {
+    "str": "THP-1",
+    "group_tag": "att_cells",
+    "tag": "att_cells:thp1"
+  }, {
+    "str": "BMMs",
+    "group_tag": "att_cells",
+    "tag": "att_cells:bmm"
+  }, {
+    "str": "iBMMs",
+    "group_tag": "att_cells",
+    "tag": "att_cells:ibmm"
+  }, {
+    "str": "BMDCs",
+    "group_tag": "att_cells",
+    "tag": "att_cells:bmcd"
+  }, {
+    "str": "U-937",
+    "group_tag": "att_cells",
+    "tag": "att_cells:u937"
+  }
+]

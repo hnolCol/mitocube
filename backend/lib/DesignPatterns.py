@@ -9,7 +9,7 @@ class JsonSerializable(ABC):
     # ToDo: Check if there are useful methods one can implement
 
     @abstractmethod
-    def toJson(self) -> typing.Dict:
+    def toJson(self) -> typing.Dict[str, typing.Any]:
         """"""
         # ToDo: Write documentation
         pass

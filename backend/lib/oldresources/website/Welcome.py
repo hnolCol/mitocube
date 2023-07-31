@@ -13,5 +13,6 @@ class WelcomeText(Resource):
         appName = self.data.getConfigParam("app-name")
         welcomeText = self.data.getConfigParam("welcome-text")
 
-        return {"appName":appName if not None else "Welcome to MitoCube.","welcomeText":welcomeText if not None else "MitoCube offers protein-centric information of proteomics experiments."}
+        return {"appName":appName if not None else "Welcome to MitoCube.",
+                "welcomeText":welcomeText if not None else "MitoCube offers protein-centric information of proteomics experiments."}
         

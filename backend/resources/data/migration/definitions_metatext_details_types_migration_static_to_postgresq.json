@@ -1,0 +1,36 @@
+[
+  {
+    "str": "Protein Digestion",
+    "tag": "protein_digestion"
+  }, {
+    "str": "Liquid Chromatography & Mass Spectrometry",
+    "tag": "chromatography_ms"
+  }, {
+    "str": "Research Aim",
+    "tag": "research_aim"
+  }, {
+    "str": "Sample Preparation",
+    "tag": "sample_preparation"
+  }, {
+    "str": "Research Question",
+    "tag": "research_question"
+  }, {
+    "str": "Protein of Interest",
+    "tag": "protein_of_interest"
+  }, {
+    "str": "Cell Culture",
+    "tag": "cell_culture"
+  }, {
+    "str": "Research Information",
+    "tag": "research_information"
+  }, {
+    "str": "Data Analysis",
+    "tag": "data_analysis"
+  }, {
+    "str": "Additional Information",
+    "tag": "supplementary_information"
+  }, {
+    "str": "Supplementary Information",
+    "tag": "supplementary_information"
+  }
+]

@@ -67,7 +67,8 @@
         "dataset-search-names" : ["Creation Date","Type","Experimentator","Organism","Material","dataID","Title"],
         "dataset-header" : "Title",
         "dataset-presentation" : ["Creation Date","Title","Material","Type","Organism","Experimentator","Number Samples"],
-        "dataset-presentation-sort-by" : ["Organism","Type","Creation Date"],
+        "dataset-presentation-sort-by" : ["#Features"],
+        "dataset-presentation-sort-by_backup" : ["Organism","Type","Creation Date"],
 
         "dataset-admin-table-params" : ["Creation Date","dataID","Title","Experimentator","GroupName","Protein of Interest","Type","Organism","Material","Number Samples"],
         "dataset-admin-email-param" : "Email",

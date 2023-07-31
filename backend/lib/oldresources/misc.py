@@ -38,7 +38,7 @@ def formatDateAndAddIndexInParam(param,idx):
         dateString = param["Creation Date"]
         
         dateStringSplit = dateString.split(" ")[0]
-       
+
         param["Creation Date"] = f"{dateStringSplit[0:4]}-{dateStringSplit[4:6]}-{dateStringSplit[6:]}"
     if "Index" not in param:
         param["Index"] = idx

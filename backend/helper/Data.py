@@ -17,8 +17,8 @@ from dataclasses import dataclass
 import shutil
 
 from deprecated import deprecated
-from backend.lib.data.PostgreSQLHandling import PostgreSQLDataset, PostgreSQLDataCollection, PostgreSQLConnection
-from ..lib.data.DataHandling import MitoCubeDatabase
+
+from ..lib.data.DataHandling import MCDatabase, MCDataset
 
 # move this somewhere else! 
 Set6 = ["#444444", "#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99",
@@ -175,10 +175,10 @@ class OldDataset:
     # data: pd.DataFrame   # AUL remove since its from DB from now on
     # params: dict         # AUL remove since its from DB from now on
     dbManager: OldDBFeatures
-    dsObj: PostgreSQLDataset
+    dsObj: MCDataset
 
     # def __init__(self, dataID: str, data: pd.DataFrame, params: dict, dbManager: DBFeatures):
-    def __init__(self, dataID: str, dbManager: OldDBFeatures, newDataObj: PostgreSQLDataset = None):
+    def __init__(self, dataID: str, dbManager: OldDBFeatures, newDataObj: MCDataset = None):
         # Dataset(dataID, data, params, self.dbManager)
         """"""
         self.dataID = dataID
@@ -187,7 +187,7 @@ class OldDataset:
         if newDataObj is not None:
             self.dsObj = newDataObj
         else:
-            self.dsObj = PostgreSQLDataset(dataID)
+            self.dsObj = MCDataset(label=dataID, loadFromDatabase=True)
 
     def annotateData(self) -> pd.DataFrame:
         ""
@@ -275,13 +275,13 @@ class OldDataset:
         """
         AUL: Temporarily introduced to return the data object from the DB
         """
-        return self.dsObj.getDataObj().getDataTable().copy()
+        return self.dsObj.getDataTable()
 
     def __getParamsObj(self):
         """
         AUL: Temporarily introduced to return the params JSON object from the DB
         """
-        return self.dsObj.getMetaObj().getDictionary().copy()
+        return self.dsObj.getLegacyMetaJson().copy()
 
     def getData(self) -> pd.DataFrame:
         """Returns the dataset"""
@@ -474,6 +474,8 @@ class OldDataset:
                     meltedData[groupingName] = meltedData["label"].map(mapper)
                 elif "variable" in meltedData:
                     meltedData[groupingName] = meltedData["variable"].map(mapper)
+                elif "measurement" in meltedData:  # ToDo: check why it is called measurement, and why it is added here
+                    meltedData[groupingName] = meltedData["measurement"].map(mapper)
                 else:
                     raise Exception("Melted dataframe does not contain label nor variable.")
         
@@ -578,7 +580,7 @@ class OldDatasetCollection:
                 dataID: str,
                 cmapDefaults: List[str],
                 overwriteCmapsByDefault: bool = True,
-                newDataObj: PostgreSQLDataset = None):  # Todo: remove DatasetCollection.addData(...) long-term
+                newDataObj: MCDataset = None):  # Todo: remove DatasetCollection.addData(...) long-term
         """"""
         # TODO: AUL not needed anymore, from database
         if newDataObj is not None:
@@ -676,14 +678,15 @@ class OldData(object):
         """Read data by scanning through the folder"""
         defaultCmaps, overwriteCmapsByDefault = self.__getGroupingColors()
 
-        dbObj = MitoCubeDatabase.getDatabase()
-        labelsInDb = dbObj.getDataIDs()
-        sqlCollection = dbObj.getDataCollection(ids=labelsInDb)
+        db = MCDatabase.getDatabase()
+        # labelsInDb = db.getAllDataIDs()
+        sqlCollection = db.getDatasets()
+        # sqlCollection = db.getJSONDatasets()
 
         # ToDo: Change from memory to DBMS requests
         # Currently still saves (limited n=42) datasets into the memory instead of just requesting them if needed
-        for dSet_id, dSet in sqlCollection.getAll().items():
-            self.dataCollection.addData(dSet_id, defaultCmaps, overwriteCmapsByDefault, dSet)
+        for label, dSet in sqlCollection.items():
+            self.dataCollection.addData(label, defaultCmaps, overwriteCmapsByDefault, dSet)  # ToDo: Database Interaction
 
     
     def __handleShortCutFilters(self) -> None:
@@ -694,9 +697,9 @@ class OldData(object):
 
         # Todo: Not sure what this is doing
 
-        for dataID in self.dataCollection.keys():
-            if  self.dataIDExists(dataID) and shortCutParamName is not None:
-                filterParamName = self.dataCollection[dataID].getParam(shortCutParamName)
+        for dataID in self.dataCollection.keys():    # ToDo: Database Interaction
+            if self.dataIDExists(dataID) and shortCutParamName is not None:
+                filterParamName = self.dataCollection[dataID].getParam(shortCutParamName)    # ToDo: Database Interaction
                 if filterParamName is not None and filterParamName not in shortCutFilterValues:
                     shortCutFilterValues.append(filterParamName)
 
@@ -718,10 +721,10 @@ class OldData(object):
         sortByColumnNames = [colName for colName in self.getAPIParam("dataset-presentation-sort-by") if colName in columnNames]
         r = []
 
-        if len(self.dataCollection) == 0:
+        if len(self.dataCollection) == 0:    # ToDo: Database Interaction
             self.dataSummary = pd.DataFrame(columns=columnNames)
         else:
-            for dataID, dataset in self.dataCollection.items():
+            for dataID, dataset in self.dataCollection.items():    # ToDo: Database Interaction
                 params = dataset.getParams()
                 v = dict([(k, params[k]) for k in columnNames if k in params])
                 features = dataset.getFeatures()
@@ -808,30 +811,6 @@ class OldData(object):
         """Checks if the folder for datasets contains dataIDs that were not loaded yet."""
         # TODO: remove this method: checkForMissingDataset
         return False
-        # foundMissing = False
-        # dataIDs = self.getDataIDsInFolder()
-        # dataIDsNotMatchingFolder = [dataID for dataID in self.dataCollection.keys() if dataID not in self.dataCollection]
-        #
-        # if len(dataIDsNotMatchingFolder) > 0:
-        #     for dataID in dataIDsNotMatchingFolder:
-        #         self.dataCollection.remove(dataID)
-        # for dataID in dataIDs:
-        #     if not dataID in self.dataCollection and dataID not in self.checkedDataThatCouldNotLoad: # dont use dataIDExists - endless loop - dont reload failed dfs
-        #         paths = self.__getPaths(dataID)  # checks for existence.
-        #         if all(path is not None for path in paths):
-        #             try:
-        #                 defaultCmaps, overwriteCmapsByDefault = self.__getGroupingColors()
-        #                 self.dataCollection.addDatasetFromPath(dataID, paths[0], paths[1], defaultCmaps, overwriteCmapsByDefault)
-        #                 foundMissing = True  # when at least one file was successfully loaded
-        #             except Exception as e:
-        #                 self.checkedDataThatCouldNotLoad.append(dataID)
-        #
-        # if foundMissing:
-        #     # creates summary datasets
-        #     self.__handleShortCutFilters()
-        #     self.__readDataInfo()
-        #
-        # return foundMissing
 
     def addDatasetToStorage(self, dataID: str, data: pd.DataFrame, paramsFile: dict) -> bool: # shit name?
         """Adds a dataset on the hard drive and updates the DataCollection"""
@@ -864,12 +843,12 @@ class OldData(object):
     def getDataset(self, dataID) -> OldDataset:
         """Returns Dataset"""
         if self.dataIDExists(dataID):
-            return self.dataCollection[dataID]
+            return self.dataCollection[dataID]  # ToDo: Database Interaction
 
     def getExpressionColumns(self, dataID) -> List[str]:
         """Returns sorted expression columns by dataID."""
         if self.dataIDExists(dataID):
-            return self.dataCollection[dataID].getExpressionColumns()
+            return self.dataCollection[dataID].getExpressionColumns()  # ToDo: Database Interaction
 
     def getFilterColors(self) -> Dict[str, str]:
         """Returns the dict of shortcut filters."""
@@ -879,12 +858,12 @@ class OldData(object):
     def getGroupingMapper(self, dataID) -> Dict[str, dict]:
         """"""
         if self.dataIDExists(dataID):
-            return self.dataCollection[dataID].getGroupingMapper()
+            return self.dataCollection[dataID].getGroupingMapper()  # ToDo: Database Interaction
 
     def getGroupingColorMapper(self, dataID) -> Dict[str, dict]:
         """"""
         if self.dataIDExists(dataID):
-            return self.dataCollection[dataID].getGroupingColorMapper() 
+            return self.dataCollection[dataID].getGroupingColorMapper()  # ToDo: Database Interaction
 
     def getDataIDsInFolder(self) -> List[str]:
         """Datasets are stored in separate folders. Function returns dataID (=folder name)"""
@@ -894,17 +873,17 @@ class OldData(object):
     def getDataByDataID(self, dataID) -> pd.DataFrame:
         """Returns the quantitaive matrix"""
         if self.dataIDExists(dataID):
-            return self.dataCollection[dataID].getData()
+            return self.dataCollection[dataID].getData()  # ToDo: Database Interaction
 
     def getDataByDataIDWithAnnotations(self, dataID) -> pd.DataFrame:
         """"""
         if self.dataIDExists(dataID):
-            return self.dataCollection[dataID].annotateData()
+            return self.dataCollection[dataID].annotateData()  # ToDo: Database Interaction
 
     def getMedianExpression(self, featureIDs, dataID, returnDataQuantiles=False):
         """"""
         if self.dataIDExists(dataID):
-            data = self.dataCollection[dataID].getData()
+            data = self.dataCollection[dataID].getData()   # ToDo: Database Interaction
             idxIntersection = data.index.intersection(featureIDs)
             expColumns = self.getExpressionColumns(dataID)
             if returnDataQuantiles:
@@ -933,10 +912,10 @@ class OldData(object):
     def dataIDExists(self, dataID) -> bool:
         """Checks if dataID is present in the dataCollection."""
         # Todo: remove dataIDExists(), awkwardly used
-        if dataID in self.dataCollection:
+        if dataID in self.dataCollection:  # ToDo: Database Interaction
             return True
         elif self.checkForMissingDataset():
-            return dataID in self.dataCollection
+            return dataID in self.dataCollection  # ToDo: Database Interaction
         return False
 
     def update(self) -> None:
@@ -949,12 +928,12 @@ class OldData(object):
     def getParams(self, dataID: str) -> Dict:
         """Dataset specific parameters"""
         if self.dataIDExists(dataID):
-            return self.dataCollection[dataID].getParams()
+            return self.dataCollection[dataID].getParams()  # ToDo: Database Interaction
 
     def getParam(self, dataID: str, paramName: str) -> Any:
         """Dataset specific parameter"""
         if self.dataIDExists(dataID):
-            return self.dataCollection[dataID].getParam(paramName)
+            return self.dataCollection[dataID].getParam(paramName)  # ToDo: Database Interaction
 
     def getConfigParam(self, configName: str):
         """"""
@@ -980,7 +959,7 @@ class OldData(object):
         if self.dataIDExists(dataID):
             paramNames = self.getAPIParam("experiment-procedure-params")
             if paramNames is not None:  
-                return self.dataCollection[dataID].getExperimentalInformation(paramNames, *args, **kwargs)
+                return self.dataCollection[dataID].getExperimentalInformation(paramNames, *args, **kwargs)  # ToDo: Database Interaction
         return False, [{"title": "Information", "details": "DataID not found."}]
 
     def getDataForFeatures(self,
@@ -990,7 +969,7 @@ class OldData(object):
                            zscore_transform: bool = False) -> pd.DataFrame:
         """Return melted data."""
         if self.dataIDExists(dataID):
-            return self.dataCollection[dataID].getMeltedData(featureIDs,
+            return self.dataCollection[dataID].getMeltedData(featureIDs,  # ToDo: Database Interaction
                                                              addGroupings=addGroupings,
                                                              zscore_transform=zscore_transform)
 
@@ -1005,7 +984,7 @@ class OldData(object):
     def getCorrelatedFeatures(self, dataID: str, featureIDs: list, scale: bool = True, N: int = 20):
         """"""
         if self.dataIDExists(dataID):
-            return self.dataCollection[dataID].getCorrelatedFeatures(featureIDs, scale, N)
+            return self.dataCollection[dataID].getCorrelatedFeatures(featureIDs, scale, N)  # ToDo: Database Interaction
 
     def getFiltersOptions(self) -> Dict[str, pd.Series]:
         """Extracts filter options from the parameters of each dataset."""
@@ -1013,7 +992,7 @@ class OldData(object):
         filterOptions = OrderedDict([(h, []) for h in filterHeaders])
         for filterHeader in filterHeaders:
             availableOptions = []
-            for _, dataset in self.dataCollection.items():
+            for _, dataset in self.dataCollection.items():  # ToDo: Database Interaction
             
                 if dataset.hasParam(filterHeader):
                     availableOptions.append(dataset.getParam(filterHeader))
@@ -1046,7 +1025,7 @@ class OldData(object):
             if not okay:
                 return False, msg
 
-            X = self.dataCollection[dataID].getData()
+            X = self.dataCollection[dataID].getData()  # ToDo: Database Interaction  # ToDo: Database Interaction
             mitoColumns = ["Functional MitoCoP classification", "MitoCarta3.0_MitoPathways"]
             # above should be defined in config.
 
@@ -1216,7 +1195,7 @@ class OldData(object):
             if grouping1 not in groupingNames:
                 return False, "Grouping 1 not found in the dataset."
 
-            X = self.dataCollection[dataID].getData().dropna(subset=expColumns)
+            X = self.dataCollection[dataID].getData().dropna(subset=expColumns)  # ToDo: Database Interaction
 
             if anovaType == "1-way ANOVA":
                 boolIdx, selectionpvalues, pvalueNames = calculateOneWayANOVA(X, groupings, grouping1, anovaCutoff)
@@ -1344,7 +1323,7 @@ class OldData(object):
             annotationColumn, filterColumns, highlightColumns, highlightColumnSepForMenu = self.getAPIParams(paramNames)
 
             groupings, groupingNames, groupingMapper, groupingColorMapper, groupColorValues, groupingItems = self.getGroupingDetails(dataID, expColumns)
-            data = self.dataCollection[dataID].getData()
+            data = self.dataCollection[dataID].getData()  # ToDo: Database Interaction
 
             # does not seem efficient, get all data from db in one go?
             filterColumnDBInfo = [self.dbManager.getDBInfoForFeatureListByColumnName(data.index,
@@ -1533,5 +1512,5 @@ class OldData(object):
             pathToArchive = os.path.join(self.pathToArchive, dataID)
             if not os.path.exists(pathToArchive):  # only copy if it doesn't exist
                 shutil.move(pathToDataID, pathToArchive)
-                self.dataCollection.remove(dataID)
+                self.dataCollection.remove(dataID)  # ToDo: Database Interaction
                 self.checkForMissingDataset()

@@ -14,6 +14,10 @@ from backend.lib.oldresources.performance.ShareToken import ShareTokenValid, Sha
 from backend.lib.oldresources.performance.ShareData import ShareData, ShareDataDetails
 from backend.lib.oldresources.ptm.PTM import PTMView, PTMItems
 from backend.lib.oldresources.website.Welcome import WelcomeText
+
+from backend.routes.pages.landings import InitialLanding
+from backend.routes.security import AdminTokenValidation, TokenValidation, LoginValidation
+
 mitoCubeResources = [
     {
         "url":'/api/website/welcome',
@@ -228,6 +232,4 @@ mitoCubeResources = [
         "reqKwargs" : ["token","ptm","libs"]
     }
 ]
-
-
 

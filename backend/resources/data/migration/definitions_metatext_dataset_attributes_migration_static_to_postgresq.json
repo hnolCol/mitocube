@@ -1,0 +1,50 @@
+[
+  {
+    "str": "Organism",
+    "tag": "att_organism",
+    "default": "att_organism:other",
+    "addIfMissing": false,
+    "items": [
+      {
+        "str": "Homo sapiens (Human)",
+        "tag": "att_organism:human"
+      }, {
+        "str": "Homo sapiens",
+        "tag": "att_organism:human"
+      }, {
+        "str": "Human",
+        "tag": "att_organism:human"
+      }, {
+        "str": "Rat",
+        "tag": "att_organism:rat"
+      }, {
+        "str": "Mice",
+        "tag": "att_organism:mouse"
+      }
+    ]
+  }, {
+    "str": "Type",
+    "tag": "att_experiment",
+    "default": "att_experiment:other",
+    "addIfMissing": false,
+    "items": []
+  }, {
+    "str": "Type",
+    "tag": "att_dataset",
+    "default": "att_dataset:other",
+    "addIfMissing": false,
+    "items": []
+  }, {
+    "str": "LC",
+    "tag": "att_lc",
+    "default": "att_lc:other",
+    "addIfMissing": false,
+    "items": []
+  }, {
+    "str": "Quantification",
+    "tag": "att_quantification",
+    "default": "att_quantification:other",
+    "addIfMissing": false,
+    "items": []
+  }
+]

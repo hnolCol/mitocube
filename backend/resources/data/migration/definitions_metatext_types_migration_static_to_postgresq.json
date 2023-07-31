@@ -1,0 +1,14 @@
+[
+  { "str": "Protein of Interest",
+    "na_values": ["ignarus", "NA", "NaN", "-", ""],
+    "tag": "protein_of_interest"
+  },
+  { "str": "Research Question",
+    "na_values": ["ignarus", "NA", "NaN", "-", ""],
+    "tag": "research_question"
+  },
+  { "str": "Linked data",
+    "na_values": ["ignarus", "NA", "NaN", "-", ""],
+    "tag": "linked_data"
+  }
+]
