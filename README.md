@@ -27,6 +27,11 @@ pw-admin=quispiam
 email-pw=quispiam
 mitocube-pw=quispiam
 global-pw=quispiam
+
+token-datadir=/srv/mitcube_backend/data/dynamic/tokens
+db-featurefile=/srv/mitcube_backend/data/static/dbs/uniprot/features.txt
+
+db-n_max_dataset_cached = 100
 ```
 
 Next one requires to define the data handler (`db-handler`) in `.env`. The `db-handler=pandafiles` is based on the 
@@ -35,8 +40,9 @@ and the feature database file.
 
 ```INI
 db-handler=pandafiles
-db-datadir=~/mitocube/backend/data/static/datasets
-db-featurefile=~/mitocube/backend/data/static/dbs/uniprot/features.txt
+db-datadir=/srv/mitcube_backend/data/static/datasets
+db-attributefile=/srv/mitcube_backend/data/static/attributes.json
+
 ```
 
 Alternatively, the `db-handler=postgresql` is available to store all data in the PostgreSQL  database 
@@ -52,9 +58,11 @@ db-pw=quispiam
 
 ### PostgreSQL database 
 
-The database can be setup using the SQL statements in `setup_empty_postgresql_20230418.sql` found in the 
-`/backend/resources/data/setup/` directory. `/backend/resources/data/` will include scripts to create the initial data
-structure, but also to import existing data saved in the `/backend/data/` directories into the database.
+The database can be setup using the SQL statements in `setup_empty_postgresql_20230531.sql` found in the  `/backend/resources/data/setup/` directory. `/backend/resources/data/` will include scripts to create the initial data structure, but also to import existing data saved in the `/backend/data/` directories into the database.
+
+Edit and run the `setup_default_rows_postgresql_20230629.sql` file to add instruments and attributes to the database.
+
+Scripts in the migration subfolder can be used to migrate old json files into the database. It is requred to edit the json files to match the data to the new database entries.
 
 ### Apache
 
