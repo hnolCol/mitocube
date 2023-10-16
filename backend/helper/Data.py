@@ -97,6 +97,13 @@ class DBFeatures:
                 return self.DBs.index
             else:
                 return self.Dbs[matchedColNames]
+            
+    def getDBCounts(self, colunmName : str, filter : Dict[str,list]):
+        ""
+       
+        boolIdx = np.sum(self.DBs.isin(values=filter),axis=1) == len(filter)
+        return self.DBs.loc[boolIdx,:][colunmName].value_counts()
+
 
     def getDBInfoForFeatureList(self,featureIDs : List[str], requiredColNames : List[str], plainExport : bool = True, entryInfoDictAsOutput : bool = False) -> Dict:
         ""
@@ -302,7 +309,7 @@ class Dataset:
         
         groupingNames = self.getGroupingNames()
         sampleNames = self.getSamplesNamesByGroupingName(groupingName=groupingNames[0])
-        print(sampleNames)
+        
         if len(groupingNames) == 1:
 
             return  sampleNames
@@ -504,7 +511,7 @@ class DatasetCollection:
     Iteration over datasets is realized using dict-like function such as keys() and values().
     A dataset might be returned by using DatasetCollection[dataID] as well. 
     """
-    def __init__(self,dbManager,*args,**kwargs):
+    def __init__(self,dbManager : DBFeatures,*args,**kwargs):
 
         self.dbManager = dbManager
         self.collection= OrderedDict()
@@ -563,6 +570,10 @@ class DatasetCollection:
     def getDataIDsThatContainFeature(self, featureID : str, filter : dict) -> List[str]:
         """"""
         return [dataID for dataID,dataset in self.items() if dataset.matchesFilter(filter) and dataset.isFeatureInDataset(featureID)]
+
+    def getDBFeatureCounts(self,columnName : str, filter : dict):
+        ""
+        return self.dbManager.getDBCounts(columnName,filter)
 
     def getNumberOfDatasets(self) -> int:
         "Returns the number of datasets"
@@ -687,6 +698,7 @@ class Data(object):
 
     def _checkOneWayANOVADetails(self, anovaDetails : dict) -> Tuple[bool,str]:
         ""
+        print(anovaDetails)
         for feature in ["pvalue","anovaType","grouping1"]:
             if feature not in anovaDetails:
                 return False, f"No value for {feature} found"
@@ -923,6 +935,10 @@ class Data(object):
             return self.dataCollection[dataID].getMeltedData(featureIDs, addGroupings=addGroupings, zscore_transform = zscore_transform)
 
         return pd.DataFrame()
+    
+    def getDBFeatureCounts(self,columnName : str, filter : dict):
+        ""
+        return self.dbManager.getDBCounts(columnName,filter)
 
     def getFeatureDBInfo(self,featureIDs : List[str],*args,**kwargs):
         ""
@@ -1223,8 +1239,12 @@ class Data(object):
                     },
 
                 "heatmap" : {
+                        "valueNames" : expColumns,
+                        "colorNames" : extraColumns,
+                        "clusterName" : "clusterIndex",
+                        "labelNames" : ["annotationColumn","idx"],
                         "nColumns" : len(expColumns),
-                        "values" : values.values.tolist(),
+                        "values" : values.to_dict(orient="record"),
                         "groupColorValues" : groupColorValues,
                         "colorPalette" : colorPalette,
                         "colorValues" : colorValues,
@@ -1246,6 +1266,7 @@ class Data(object):
    
             return True, out
         return False, "Unknwon error."
+    
 
     def getVolcanoData(self,dataID : str, grouping : dict) -> Tuple[bool,dict]:
         ""
@@ -1260,7 +1281,6 @@ class Data(object):
             annotationColumn,filterColumns,highlightColumns,highlightColumnSepForMenu = self.getAPIParams(paramNames)
 
             groupings, groupingNames, groupingMapper, groupingColorMapper, groupColorValues, groupingItems = self.getGroupingDetails(dataID,expColumns)
-            print(groupings)
             data = self.dataCollection[dataID].getData()
             #does not seem efficient, get all data from db in one go?
             filterColumnDBInfo = [self.dbManager.getDBInfoForFeatureListByColumnName(data.index,colName,checkShape=False).fillna("-") for colName in filterColumns ]
@@ -1287,7 +1307,7 @@ class Data(object):
             highlightFeatures = OrderedDict() 
             if len(highlightColumns) > 0:
                 
-                data = data.join([self.dbManager.getDBInfoForFeatureListByColumnName(data.index,colName,checkShape=False).fillna("-") for colName in highlightColumns])
+                data = data.join([self.dbManager.getDBInfoForFeatureListByColumnName(data.index,colName,checkShape=False).fillna("-") for colName in highlightColumns if colName not in data.columns])
                 for highlightColumn in highlightColumns:
                     
                     splitData = data[highlightColumn].astype("str").str.split(";").values
@@ -1298,10 +1318,9 @@ class Data(object):
                         del vs['nan']
 
                     highlightFeatures[highlightColumn] = vs 
-            print(data)
             tTestResult = calculateTTest(data,columnNamesGroup1,columnNamesGroup2)
             # add filter and annotation columns
-           
+            filterToConcat = pd.Series(filterColumns + [annotationColumn]).unique().tolist()
             tTestResult = pd.concat([tTestResult,data[filterColumns + [annotationColumn]]],axis=1)
             #reset index and rename
 
@@ -1329,9 +1348,9 @@ class Data(object):
                 "pointColumnNames" : [xLabel,"-log10 p-value","Significant","Key","Label"]+ filterColumns,
                 "highlightFeatures" : highlightFeatures,
             }
-            return True, results
+            return True, results, tTestResult
                 
-        return False, {}
+        return False, {}, None
 
 
     def _getDataForBoxplot(self,boxplotData,groupedData,groupings,groupingNames,groupingColorMapper,quantileColumnName):
@@ -1393,7 +1412,7 @@ class Data(object):
             statsData = pd.DataFrame(["ANOVA could not be calculated."], columns=["Error"])
             anovaSignificant = False
 
-        return {"data" : meltedData.to_dict(orient="records"), "groupings" : groupings}
+        return {"data" : meltedData.fillna("").to_dict(orient="records"), "groupings" : groupings}
         print(meltedData)
         print(groupings)
 

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="20.24" height="24.57" viewBox="0 0 20.24 24.57">
+  <g>
+    <path d="M25.66,25.65c0-6-4.53-10.8-10.12-10.8S5.42,19.68,5.42,25.65c0,.1,0,.21,0,.31H25.65C25.65,25.86,25.66,25.75,25.66,25.65Z" transform="translate(-5.42 -2.46)" fill="#466688"/>
+    <circle cx="10.12" cy="6.66" r="6.16" fill="none" stroke="#466688" stroke-miterlimit="10"/>
+    <path d="M4.34,27" transform="translate(-5.42 -2.46)" fill="#466688"/>
+    <text transform="translate(4.23 22.32)" font-size="9" fill="#fff" font-family="MyriadPro-Regular, Myriad Pro">HN</text>
+  </g>
+</svg>

@@ -59,7 +59,7 @@
         },
         "extra-colums-in-dataset-heatmaps" : ["MitoCarta3.0_List","MitoCoP"],
         "default-number-clusters-heatmap" : 8,
-        "filters-in-volcano-plots" : ["MitoCarta3.0_List","MitoCoP"],
+        "filters-in-volcano-plots" : ["MitoCarta3.0_List","MitoCoP","MitoCarta3.0_SubMitoLocalization"],
         "highlight-in-volcano-plots" : ["MitoCarta3.0_SubMitoLocalization","MitoCarta3.0_MitoPathways"],
         "highlight-in-volcano-plots-sep-cat-by" : {
             "MitoCarta3.0_MitoPathways" : ">"},

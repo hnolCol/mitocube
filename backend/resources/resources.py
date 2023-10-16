@@ -14,10 +14,15 @@ from .login.Login import LoginWebsite, TokenValid, AdminLoginWebsite, AdminLogin
 from .performance.ShareToken import ShareTokenValid, ShareToken
 from .performance.ShareData import ShareData, ShareDataDetails
 from .ptm.PTM import PTMView, PTMItems
-from .website.Welcome import WelcomeText, News, KeyFigures, DendrogramTest, DataTest
+from .website.Welcome import WelcomeText, News, KeyFigures, DendrogramTest, DataTest, TestMitoCarta
 
 
 mitoCubeResources = [
+    {
+        "url":'/api/dataset/mitoloc',
+        "obj":  TestMitoCarta,
+        "reqKwargs" : ["token","data"]
+    },
     {
         "url":'/api/features/data',
         "obj":  DataTest,
@@ -99,7 +104,7 @@ mitoCubeResources = [
         "reqKwargs" : ["data","token"]
     },
     {
-        "url":'/api/dataset/details',
+        "url":'/api/dataset/info',
         "obj": DatasetDetails,
         "reqKwargs" : ["data","token"]
     },

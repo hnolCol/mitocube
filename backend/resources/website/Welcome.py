@@ -126,14 +126,37 @@ class DendrogramTest(Resource):
         #print(d3Dendro)
         return {"lines" : ls }
 
-    
+
+
+class TestMitoCarta(Resource):
+    def __init__(self,*args,**kwargs):
+        """
+        """
+        self.token = kwargs["token"]
+        self.data = kwargs["data"]
+
+    def get(self):
+        dataID = "8dlTWpi5MMhF"
+        grouping = {"main" : "Genotype", "group1" : "WT", "group2" : "TMBIM5KO"}
+        totalValues = self.data.getDBFeatureCounts("MitoCarta3.0_SubMitoLocalization",{"Organism" : ["Homo sapiens (Human)"]})
+        print(totalValues.to_dict())
+        bool, results, tTestResult = self.data.getVolcanoData(dataID,grouping)
+        boolIdx = tTestResult["MitoCarta3.0_SubMitoLocalization"] != "-"
+        tTestResult = tTestResult.rename(columns={"Gene names  (primary )":"GeneNames"})
+        print(tTestResult.columns)
+        return {"success" : True, 
+                "data" : tTestResult.loc[boolIdx,:].dropna(subset=["MitoCarta3.0_SubMitoLocalization"]).fillna("-").to_dict(orient="records"),
+                "yaxisName" : "x", 
+                "yLabel" : f"Log2 Fold Change {grouping['group1']} vs {grouping['group2']}",
+                "totalSubplotValues" : totalValues.to_dict(),
+                "subplotName" : "MitoCarta3.0_SubMitoLocalization"}
+        
+
 
 class KeyFigures(Resource):
     def __init__(self,*args,**kwargs):
         """
         """
-       
-
     def get(self):
         return [{"label": "Proteins", "metric" : 7834}, {"label": "Instruments", "metric" : 5}, {"label": "Users", "metric" : 25}, {"label": "Turnaround [d]", "metric" : 23}]
 
@@ -158,7 +181,9 @@ class News(Resource):
     def get(self):
         ""
         return [{"title" : "New Dataset online.","date" : "02.02.2023","message" : "This is an example message", "link" : "/dataset/asdada"}]
-    
+
+
+         
 
 class DataTest(Resource):
 
@@ -171,15 +196,13 @@ class DataTest(Resource):
             print(self.featureFinder)
           
     def get(self):
+        
         token = request.args.get('token', default="None", type=str)
         featureID = request.args.get('featureID', default="None", type=str)
         dataIDsByFeature = self.featureFinder.getDatasets([featureID], {}, returnNumberOfData=False,featureSpecFilter= {})
-        print(dataIDsByFeature)
         for featureID, dataIDs in dataIDsByFeature.items():
             X = OrderedDict([(dataID, self.data.getDataForCard(dataID,featureID,{})) for dataID in dataIDs])
 
-        print(token, featureID)
-        print("asdasda")
-
+        
 
         return X

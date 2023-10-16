@@ -23,23 +23,7 @@ print(UserManagement(auth="aodad"))
 print(UserManagement(auth="aasdad").DB.ad)
 general_settings = get_general_settings()
 
-
-app = FastAPI(
-            title=general_settings.app_name,
-            description=general_settings.description,
-            version=general_settings.version,
-            contact={
-                    "name": general_settings.contact_full_name,
-                    "url": general_settings.project_website_url,
-                    "email": general_settings.contact_email
-                },
-            license_info={
-                    "name": general_settings.licence_name,
-                    "url": general_settings.licence_url,
-                },
-            redoc_url = "/api/docs"
-            )
-
+da
 
 origins = [
     "http://localhost:5000",
@@ -99,8 +83,6 @@ app.include_router(
 
 
 templates = Jinja2Templates(directory=f"{os.path.dirname(__file__)}/../build/")
-
-
 
 @app.get("/", include_in_schema=False)
 def frontend(request: Request):

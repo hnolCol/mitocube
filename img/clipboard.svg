@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="30.86" height="38.16" viewBox="0 0 30.86 38.16">
+  <rect x="3.61" y="2.41" width="27" height="31" rx="3.21" fill="none" stroke="#000" stroke-miterlimit="10" stroke-width="0.5"/>
+  <rect x="7.61" y="6.41" width="19" height="24" fill="none" stroke="#000" stroke-miterlimit="10" stroke-width="0.5"/>
+  <path d="M28.18,11.83" transform="translate(-9.57 -5.92)" fill="#fff"/>
+  <line x1="18.11" y1="11.41" x2="24.11" y2="11.41" fill="none" stroke="#000" stroke-miterlimit="10" stroke-width="0.5"/>
+  <line x1="18.11" y1="23.41" x2="24.11" y2="23.41" fill="none" stroke="#000" stroke-miterlimit="10" stroke-width="0.5"/>
+  <line x1="18.11" y1="20.41" x2="24.11" y2="20.41" fill="none" stroke="#000" stroke-miterlimit="10" stroke-width="0.5"/>
+  <line x1="18.11" y1="17.41" x2="24.11" y2="17.41" fill="none" stroke="#000" stroke-miterlimit="10" stroke-width="0.5"/>
+  <line x1="18.11" y1="14.41" x2="24.11" y2="14.41" fill="none" stroke="#000" stroke-miterlimit="10" stroke-width="0.5"/>
+  <line x1="18.11" y1="26.41" x2="24.11" y2="26.41" fill="none" stroke="#000" stroke-miterlimit="10" stroke-width="0.5"/>
+  <polyline points="9.62 12.41 11.62 14.41 15.36 10.91" fill="none" stroke="#000" stroke-linecap="round" stroke-miterlimit="10" stroke-width="0.5"/>
+  <path d="M20,23.28a8.43,8.43,0,0,0-8.41,8.41,8.34,8.34,0,0,0,1.79,5.16l-3,3.27a2.21,2.21,0,1,0,3.26,3L17,39.52A8.41,8.41,0,1,0,20,23.28Z" transform="translate(-9.57 -5.92)" fill="#fff" stroke="#000" stroke-linecap="round" stroke-miterlimit="10" stroke-width="0.5"/>
+  <g>
+    <circle cx="10.48" cy="25.68" r="5.76" fill="none" stroke="#000" stroke-linecap="round" stroke-miterlimit="10" stroke-width="0.5"/>
+    <polyline points="7.22 25.63 9.6 27.94 13.74 23.42" fill="none" stroke="#000" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2.5"/>
+  </g>
+  <path d="M29.6,9.08a1.84,1.84,0,0,0,0-.33,2.73,2.73,0,0,0-5.45,0c0,.11,0,.22,0,.33l-3.86,5.25H33.46Z" transform="translate(-9.57 -5.92)" fill="#fff" stroke="#000" stroke-miterlimit="10" stroke-width="0.5"/>
+  <circle cx="17.34" cy="2.91" r="1"/>
+</svg>

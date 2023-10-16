@@ -94,7 +94,7 @@ export function MCGroupingTable(props) {
 
 
     const selectionRegion =(e)=>{
-        
+        console.log(e)
         return {
             rows: e.rows,
             cols: [e.cols[0],e.cols[0]]

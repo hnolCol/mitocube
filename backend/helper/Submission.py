@@ -261,7 +261,8 @@ class Submission(object):
             if isinstance(cmapDefaults,list) and len(cmapDefaults) >= len(sampleSubmission["groupings"]):
                 sampleSubmission["groupingCmap"] = OrderedDict([(groupingName,cmapDefaults[n]) for n,groupingName in enumerate(sampleSubmission["groupings"])])
             else:
-                return False, "Default colors are missing in config. Parameter 'colors-default-cmaps'"
+                maxNumGroupings = len(cmapDefaults) if isinstance(cmapDefaults) else "unknown"
+                return False, f"Default colors are missing in config or the max number of groupings were exceeded {maxNumGroupings}. Parameter 'colors-default-cmaps'"
         dataID = sampleSubmission["dataID"]
         #check folder
         if dataID in self._getListOfSubmissions():

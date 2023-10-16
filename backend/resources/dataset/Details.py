@@ -18,19 +18,15 @@ class DatasetDetails(Resource):
 
     def get(self):
         "Returns a formatted way way of params"
-        
-        # token = request.args.get('token', default="None", type=str)
-        # ok, msg = isTokenValid(token,self.token)
-        # if not ok:
-        #     return {"success":False,"msg":msg}
 
         dataID = request.args.get('dataID', default="None", type=str)
         params = self.data.getParams(dataID)
+        
 
         if params is not None:
             groupItems = OrderedDict([(groupingName, list(groupingItems.keys())) for groupingName, groupingItems in params["groupings"].items()])
             numberFeatures, _ = self.data.dataCollection[dataID].getDataShape()
-            details = OrderedDict([("DataID",dataID)] + [(h,params[h]) for h in self.detailHeaders if h in params] + [("groupItems",groupItems)])
+            details = OrderedDict([("DataID",dataID)] + [("groupings", params["groupings"])] + [(h,params[h]) for h in self.detailHeaders if h in params] + [("groupItems",groupItems)])
             details["Number of Proteins"] = numberFeatures
 
             orderedColumnNames = list(details.keys())
@@ -40,7 +36,11 @@ class DatasetDetails(Resource):
                 
 
 
-            return {"success":True,"details":details,"names":orderedColumnNames}
+            return {
+                "success":True,
+                "info":details,
+                "names":orderedColumnNames, 
+                "keyFigureNames" : ["DataID","Material","Number of Proteins", "Number Groupings", "Number Replicates", "Number Samples"]}
         return {"success":False,"error":"Parameter file not found."}
 
 
@@ -135,11 +135,21 @@ class DatasetsHeatmap(Resource):
 
     def get(self):
         ""
-        token = request.args.get('token', default="None", type=str)
-        if token == "None" or not self.token.isValid(token):
-             return {"error":"Token is not valid.","success":False}
+       # token = request.args.get('token', default="None", type=str)
+       # if token == "None" or not self.token.isValid(token):
+        #     return {"error":"Token is not valid.","success":False}
         dataID = request.args.get('dataID', default="None", type=str)
-        anovaDetails = json.loads(request.args.get("anovaDetails",default="{}",type=str))
+        grouping1 = request.args.get('grouping1', default="None", type=str)
+        anovaType = request.args.get('anovaType', default="None", type=str)
+        pvalue = request.args.get('pvalue', default="None", type=float)
+        print(dataID)
+        print("===")
+        print(request.args.get("anovaDetails",type=str))
+        print(request.args.get("anovaDetails",default="{}",type=str))
+        anovaDetails = {"grouping1" : grouping1,"pvalue":pvalue,"anovaType":anovaType} #json.loads(request.args.get("anovaDetails",default="{}",type=str))
+        print(anovaDetails)
+        print(anovaDetails["pvalue"])
+
         succes, params = self.data.getHeatmapData(dataID,anovaDetails)
         #print(succes)
         if succes:
