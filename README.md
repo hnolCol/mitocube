@@ -8,26 +8,37 @@ Welcome to the MitoCube respository. MitoCube is a full stack web application to
 
 ## Application
 
-The application is written in ReactJS (frontend)[https://github.com/hnolcol/mitocube-frontend] and Python (FastAPI-based backend)[https://github.com/hnolcol/mitocube-frontend].
+The application is written in ReactJS (frontend)[https://github.com/hnolcol/mitocube-frontend] and Python (FastAPI-based backend)[https://github.com/hnolcol/mitocube-backend].
 
+### License 
+
+MitoCube is published under the MIT license. 
 
 ## Installation
 
+
+### Requirements
+
+List of requirements to get MitoCube running. 
+
+* Sudo rights,
+* installed nginx (optional), [Python 3.11](https://www.python.org), [NodeJS](https://nodejs.org/en/download/),
+* and an email account set up to send verification codes
+
 ### Frontend 
 
+The frontend is written in ReactJS using Vite. Please clone the repository and call ```yarn install``` to install the required packages.  
 
 ### Backend
 
 Please visit the backend installation help. 
 The backend installation requires the input and adjustment of several settings, creation of folders. 
-MitoCube creates a lead account (system admin) upon start, therefore it is fundamental to have an  
-
-* Sudo rights 
-* Install nginx, python 3.11 
-* Email account set up to send verification codes
+MitoCube creates a lead account (system admin) upon start, therefore it is fundamental to have an email account. 
 
 
-#### Attributes 
+For a detailed explanation of the required settings please visit the [backend installation guide](https://github.com/hnolcol/mitocube-backend)
+
+#### Attributes/Controlled Vocabulary 
 
 MitoCube utilizes controlled vocabulary (attributes) to define metadata. Even though there is a comprehensive set of attributes predefined, you may want to adjust them to your needs. 
 Attributes can have a defined set of attribute values, numeric input (user types in, for example: column length, time), as well as features (by default Proteins). 
